@@ -7,12 +7,13 @@ class DeepDivesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final langMap = i18n[lang]!;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildDeepDiveCard(context, 'STANDARD DEEP DIVE', 'Salt Pits', 'The Hidden Grudge'),
+        _buildDeepDiveCard(context, langMap['standard_dd']!, 'Salt Pits', 'The Hidden Grudge'),
         const SizedBox(height: 24),
-        _buildDeepDiveCard(context, 'ELITE DEEP DIVE', 'Magma Core', 'Burning Hell', isElite: true),
+        _buildDeepDiveCard(context, langMap['elite_dd']!, 'Magma Core', 'Burning Hell', isElite: true),
       ],
     );
   }
@@ -38,7 +39,7 @@ class DeepDivesTab extends StatelessWidget {
               children: [
                 Text(type, style: TextStyle(color: themeColor, fontWeight: FontWeight.bold, fontSize: 12)),
                 Text(codename.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                Text(biome, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                Text(t(biome, lang), style: const TextStyle(color: Colors.grey, fontSize: 14)),
               ],
             ),
           ),
@@ -54,8 +55,8 @@ class DeepDivesTab extends StatelessWidget {
   Widget _buildStage(int stage, String primary, String secondary, String warning) {
     return ListTile(
       leading: CircleAvatar(backgroundColor: Colors.white10, child: Text('$stage', style: const TextStyle(color: Colors.orange))),
-      title: Text(primary, style: const TextStyle(color: Colors.white, fontSize: 14)),
-      subtitle: Text('$secondary | $warning', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+      title: Text(t(primary, lang), style: const TextStyle(color: Colors.white, fontSize: 14)),
+      subtitle: Text('${t(secondary, lang)} | ${t(warning, lang)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
     );
   }
 }

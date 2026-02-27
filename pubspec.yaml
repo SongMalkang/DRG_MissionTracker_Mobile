@@ -35,6 +35,8 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   google_fonts: ^8.0.2
+  shared_preferences: ^2.5.4
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -59,7 +61,13 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/bosco.png
+    - assets/images/bosco.png
+    - data/daily_missions.json
+    - assets/images/biomes/
+    - assets/images/missions/
+    - assets/icons/mutators/
+    - assets/icons/warnings/
+    - assets/icons/ui/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

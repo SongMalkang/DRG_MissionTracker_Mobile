@@ -1,13 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../widgets/mission_card.dart';
-import '../data/mock_data.dart';
 import '../models/mission_model.dart';
 import '../utils/strings.dart';
+import '../services/mission_service.dart';
 
 class LiveMissionsTab extends StatefulWidget {
   final String lang;
-  const LiveMissionsTab({super.key, required this.lang});
+  final String currentSeason;
+  final Function(String) onSeasonChange;
+
+  const LiveMissionsTab({
+    super.key, 
+    required this.lang,
+    required this.currentSeason,
+    required this.onSeasonChange,
+  });
 
   @override
   State<LiveMissionsTab> createState() => _LiveMissionsTabState();
@@ -17,23 +25,41 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
   int _timeOffset = 0; // -1: Past, 0: Current, 1: Next
   late Timer _timer;
   int _secondsUntilNext = 0;
+  
+  final MissionService _missionService = MissionService();
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _calculateTimeLeft();
+    _loadData();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _calculateTimeLeft();
     });
+  }
+
+  Future<void> _loadData() async {
+    await _missionService.loadMissions();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _calculateTimeLeft() {
     final now = DateTime.now();
     final next30 = (now.minute < 30) ? 30 : 60;
     final target = DateTime(now.year, now.month, now.day, now.hour, next30, 0);
-    setState(() {
-      _secondsUntilNext = target.difference(now).inSeconds;
-    });
+    if (mounted) {
+      setState(() {
+        _secondsUntilNext = target.difference(now).inSeconds;
+        if (_secondsUntilNext <= 0) {
+          _calculateTimeLeft();
+        }
+      });
+    }
   }
 
   @override
@@ -48,37 +74,74 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
     });
   }
 
+  void _changeSeason(int change) {
+    final available = _missionService.availableSeasons;
+    if (available.isEmpty) return;
+    
+    int currentIdx = available.indexOf(widget.currentSeason);
+    if (currentIdx == -1) currentIdx = available.indexOf("s0");
+    if (currentIdx == -1) currentIdx = 0;
+
+    int nextIdx = (currentIdx + change) % available.length;
+    if (nextIdx < 0) nextIdx = available.length - 1;
+    
+    widget.onSeasonChange(available[nextIdx]);
+  }
+
+  DateTime _getTargetUtcTime() {
+    final now = DateTime.now().toUtc();
+    final int minutes = (now.minute < 30) ? 0 : 30;
+    DateTime base = DateTime.utc(now.year, now.month, now.day, now.hour, minutes);
+    return base.add(Duration(minutes: _timeOffset * 30));
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<Mission> displayList;
-    String statusText;
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.orange));
+    }
 
+    String statusText;
     if (_timeOffset == -1) {
-      displayList = List.from(mockPrevMissions);
       statusText = i18n[widget.lang]!['past']!;
     } else if (_timeOffset == 1) {
-      displayList = List.from(mockNextMissions);
       statusText = i18n[widget.lang]!['upcoming']!;
     } else {
-      displayList = List.from(mockCurrentMissions);
       statusText = i18n[widget.lang]!['current']!;
     }
 
-    // [Req 1] Double XP 상단 고정 정렬 로직
-    displayList.sort((a, b) {
-      if (a.buff == "Double XP" && b.buff != "Double XP") return -1;
-      if (a.buff != "Double XP" && b.buff == "Double XP") return 1;
-      return 0;
+    DateTime targetUtc = _getTargetUtcTime();
+    DateTime localDisplayTime = targetUtc.toLocal();
+    List<Mission> sourceList = _missionService.getMissionsForTime(targetUtc);
+
+    // 시즌 필터링
+    List<Mission> filteredList = sourceList
+        .where((m) => m.seasons.contains(widget.currentSeason))
+        .toList();
+
+    // Double XP 상단 고정 정렬 (가장 높은 우선순위)
+    filteredList.sort((a, b) {
+      bool aIsDouble = (a.buff == "Double XP");
+      bool bIsDouble = (b.buff == "Double XP");
+      
+      if (aIsDouble && !bIsDouble) return -1;
+      if (!aIsDouble && bIsDouble) return 1;
+      
+      // Double XP가 아닌 미션들 간에는 바이옴 이름순으로 정렬 (일관성 유지)
+      return a.biome.compareTo(b.biome);
     });
 
     final minutes = (_secondsUntilNext ~/ 60).toString().padLeft(2, '0');
     final seconds = (_secondsUntilNext % 60).toString().padLeft(2, '0');
 
+    String seasonLabel = widget.currentSeason == "s0" 
+        ? i18n[widget.lang]!['standard']! 
+        : "SEASON ${widget.currentSeason.replaceAll('s', '')}";
+
     return Column(
       children: [
-        // 시간 탐색기 및 카운트다운 헤더
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           color: Colors.black45,
           child: Column(
             children: [
@@ -86,34 +149,72 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.arrow_back_ios, color: _timeOffset > -1 ? Colors.orange : Colors.grey),
+                    icon: Icon(Icons.arrow_back_ios, color: _timeOffset > -1 ? Colors.orange : Colors.grey, size: 18),
                     onPressed: () => _changeOffset(-1),
                   ),
-                  Text(statusText, style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
+                  Column(
+                    children: [
+                      Text(statusText, style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                      Text(
+                        '${localDisplayTime.hour.toString().padLeft(2, '0')}:${localDisplayTime.minute.toString().padLeft(2, '0')} Local',
+                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                      ),
+                    ],
+                  ),
                   IconButton(
-                    icon: Icon(Icons.arrow_forward_ios, color: _timeOffset < 1 ? Colors.orange : Colors.grey),
+                    icon: Icon(Icons.arrow_forward_ios, color: _timeOffset < 1 ? Colors.orange : Colors.grey, size: 18),
                     onPressed: () => _changeOffset(1),
                   ),
                 ],
               ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_left, color: Colors.orange),
+                    onPressed: () => _changeSeason(-1),
+                  ),
+                  Text(
+                    seasonLabel,
+                    style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_right, color: Colors.orange),
+                    onPressed: () => _changeSeason(1),
+                  ),
+                ],
+              ),
               if (_timeOffset == 0) ...[
-                const SizedBox(height: 8),
                 Text(
                   '${i18n[widget.lang]!['time_left']} $minutes:$seconds',
-                  style: const TextStyle(fontSize: 14, color: Colors.orangeAccent),
+                  style: const TextStyle(fontSize: 12, color: Colors.orangeAccent),
                 ),
               ]
             ],
           ),
         ),
-        // 미션 리스트 영역
         Expanded(
-          child: ListView.builder(
-            itemCount: displayList.length,
-            itemBuilder: (context, index) {
-              return MissionCard(mission: displayList[index], lang: widget.lang);
-            },
-          ),
+          child: filteredList.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.search_off, size: 48, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(
+                        "No missions found for $seasonLabel\nat this time.",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: filteredList.length,
+                  itemBuilder: (context, index) {
+                    return MissionCard(mission: filteredList[index], lang: widget.lang);
+                  },
+                ),
         ),
       ],
     );

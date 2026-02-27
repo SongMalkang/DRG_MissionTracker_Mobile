@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__filesystem__read_text_file",
+      "Bash(python scripts/fetch_assets.py --dry-run)",
+      "Bash(python3 -c \":*)",
+      "Bash(python -c \":*)",
+      "Bash(python scripts/fetch_assets.py)",
+      "Bash(flutter analyze lib/widgets/mission_card.dart)"
+    ]
+  }
+}

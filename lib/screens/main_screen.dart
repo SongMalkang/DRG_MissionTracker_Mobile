@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'live_missions_tab.dart';
 import 'highlights_tab.dart';
-import 'deep_dives_tab.dart'; // [추가] 딥 다이브 탭 임포트
-import 'settings_screen.dart'; // [추가] 설정 화면 임포트
+import 'deep_dives_tab.dart';
+import 'settings_screen.dart';
 import '../utils/strings.dart';
-
+import '../services/settings_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,21 +17,52 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   String _currentLang = 'KR';
+  String _currentSeason = 's0';
+  final SettingsService _settingsService = SettingsService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final lang = await _settingsService.getLanguage();
+    final season = await _settingsService.getSeason();
+    setState(() {
+      _currentLang = lang;
+      _currentSeason = season;
+    });
+  }
+
+  void _onLangChange(String lang) {
+    setState(() {
+      _currentLang = lang;
+    });
+    _settingsService.saveLanguage(lang);
+  }
+
+  void _onSeasonChange(String season) {
+    setState(() {
+      _currentSeason = season;
+    });
+    _settingsService.saveSeason(season);
+  }
 
   @override
   Widget build(BuildContext context) {
     final List<Widget> tabs = [
-      LiveMissionsTab(lang: _currentLang),
+      LiveMissionsTab(lang: _currentLang, currentSeason: _currentSeason, onSeasonChange: _onSeasonChange),
       HighlightsTab(lang: _currentLang),
-      DeepDivesTab(lang: _currentLang), 
+      DeepDivesTab(lang: _currentLang),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        centerTitle: true, // [Req 2] 타이틀 가운데 정렬
+        centerTitle: true,
         leading: const Padding(
           padding: EdgeInsets.only(left: 12.0),
-          child: AnimatedBosco(), // [Req 2] 좌측에 애니메이션 보스코 배치
+          child: AnimatedBosco(),
         ),
         title: Text(
           i18n[_currentLang]!['title']!,
@@ -49,7 +80,9 @@ class _MainScreenState extends State<MainScreen> {
                 MaterialPageRoute(
                   builder: (context) => SettingsScreen(
                     currentLang: _currentLang,
-                    onLangChange: (lang) => setState(() => _currentLang = lang),
+                    onLangChange: _onLangChange,
+                    currentSeason: _currentSeason,
+                    onSeasonChange: _onSeasonChange,
                   ),
                 ),
               );
@@ -127,7 +160,7 @@ class _AnimatedBoscoState extends State<AnimatedBosco> with SingleTickerProvider
         child: Transform.rotate(
           angle: -0.25,
           child: Image.asset(
-            'assets/bosco.png',
+            'assets/images/bosco.png',
             width: 35,
             height: 35,
           ),

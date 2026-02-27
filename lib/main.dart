@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'screens/main_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const DRGMissionTrackerApp());
 }
 

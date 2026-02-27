@@ -8,6 +8,7 @@
 
 This project would not be possible without the incredible work of **[rolfosian](https://github.com/rolfosian)**.
 * All real-time data is sourced from **[doublexp.net](https://doublexp.net)**.
+* **Data Policy**: To prevent server overload (leeching), this app fetches data once a day at 00:05 UTC and uses the cached JSON from this repository.
 * Deep respect to `rolfosian` for scraping and sharing Hoxxes' data with the community. **Rock and Stone!** ⛏️
 
 ## ⚖️ Disclaimer

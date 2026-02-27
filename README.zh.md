@@ -8,6 +8,7 @@
 
 本项目得以实现，离不开开发者 **[rolfosian](https://github.com/rolfosian)** 的杰出贡献。
 * 所有的实时任务数据均来自 **[doublexp.net](https://doublexp.net)**。
+* **数据政策**: 为减轻原始服务器负担，本程序每日 00:05 (UTC) 更新一次数据，并使用本存储库中的缓存 JSON。
 * 衷心感谢 `rolfosian` 为社区提供的数据抓取与分享工作。 **岩石与泥土！** ⛏️
 
 ## ⚖️ 免责声明

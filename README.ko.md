@@ -9,6 +9,7 @@
 이 프로젝트는 DRG 커뮤니티의 헌신적인 개발자 **[rolfosian](https://www.google.com/search?q=https://github.com/rolfosian)**님 덕분에 존재할 수 있었습니다.
 
 * 본 앱에서 사용하는 모든 실시간 미션 데이터는 **[doublexp.net](https://doublexp.net)** 및 **[rolfosian/drgmissions](https://github.com/rolfosian/drgmissions)** 저장소에서 제공됩니다.
+* **데이터 정책**: 원본 서버 부하를 최소화하기 위해 매일 00:05 (UTC)에 단 한 번 데이터를 갱신하여 본 저장소에 캐싱한 뒤 사용합니다. (Leeching 방지)
 * 복잡한 게임 내 데이터를 스크래핑하여 모든 드워프 형제들을 위해 공유해주신 `rolfosian`님께 깊은 존경과 감사를 표합니다. **Rock and Stone!** ⛏️
 
 ---
