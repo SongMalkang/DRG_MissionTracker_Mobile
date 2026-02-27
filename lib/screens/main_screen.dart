@@ -6,6 +6,7 @@ import 'deep_dives_tab.dart';
 import 'settings_screen.dart';
 import '../utils/strings.dart';
 import '../services/settings_service.dart';
+import '../services/mission_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -19,6 +20,7 @@ class _MainScreenState extends State<MainScreen> {
   String _currentLang = 'KR';
   String _currentSeason = 's0';
   final SettingsService _settingsService = SettingsService();
+  final MissionService _missionService = MissionService();
 
   @override
   void initState() {
@@ -29,10 +31,14 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _loadSettings() async {
     final lang = await _settingsService.getLanguage();
     final season = await _settingsService.getSeason();
-    setState(() {
-      _currentLang = lang;
-      _currentSeason = season;
-    });
+    await _missionService.loadMissions();
+    
+    if (mounted) {
+      setState(() {
+        _currentLang = lang;
+        _currentSeason = season;
+      });
+    }
   }
 
   void _onLangChange(String lang) {
@@ -49,10 +55,39 @@ class _MainScreenState extends State<MainScreen> {
     _settingsService.saveSeason(season);
   }
 
+  // [DEBUG] 상태 사이클링 로직
+  void _cycleDebugStatus() {
+    final current = _missionService.status;
+    DataStatus next;
+    
+    if (current == DataStatus.online) {
+      next = DataStatus.offline;
+    } else if (current == DataStatus.offline) {
+      next = DataStatus.outdated;
+    } else {
+      next = DataStatus.online;
+    }
+
+    _missionService.debugSetStatus(next);
+    setState(() {}); // UI 갱신
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Debug: DataStatus set to ${next.name.toUpperCase()}"),
+        duration: const Duration(seconds: 1),
+        backgroundColor: Colors.blueGrey,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> tabs = [
-      LiveMissionsTab(lang: _currentLang, currentSeason: _currentSeason, onSeasonChange: _onSeasonChange),
+      LiveMissionsTab(
+        lang: _currentLang, 
+        currentSeason: _currentSeason, 
+        onSeasonChange: _onSeasonChange
+      ),
       HighlightsTab(lang: _currentLang),
       DeepDivesTab(lang: _currentLang),
     ];
@@ -60,9 +95,9 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 12.0),
-          child: AnimatedBosco(),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12.0),
+          child: AnimatedBosco(onLongPress: _cycleDebugStatus),
         ),
         title: Text(
           i18n[_currentLang]!['title']!,
@@ -90,7 +125,18 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      body: tabs[_currentIndex],
+      body: Stack(
+        children: [
+          tabs[_currentIndex],
+          if (_missionService.status != DataStatus.online)
+            Positioned(
+              bottom: 20,
+              left: 20,
+              right: 20,
+              child: _buildOfflineWarning(),
+            ),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: Colors.white10, width: 1)),
@@ -115,10 +161,58 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
+
+  Widget _buildOfflineWarning() {
+    bool isOutdated = _missionService.status == DataStatus.outdated;
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isOutdated ? Colors.red.withOpacity(0.9) : Colors.orange.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          Image.asset('assets/images/bosco.png', width: 40, height: 40),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isOutdated ? "SIGNAL LOST!" : "OFFLINE MODE",
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                Text(
+                  isOutdated 
+                    ? "보스코가 신호를 잃었습니다! 전파 방해인가요? 데이터가 너무 오래되었습니다."
+                    : "Hoxxes 전파 상태가 좋지 않습니다. 캐시된 데이터를 사용 중입니다.",
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: () => setState(() { _missionService.loadMissions(); }),
+          )
+        ],
+      ),
+    );
+  }
 }
 
 class AnimatedBosco extends StatefulWidget {
-  const AnimatedBosco({super.key});
+  final VoidCallback? onLongPress;
+  const AnimatedBosco({super.key, this.onLongPress});
 
   @override
   State<AnimatedBosco> createState() => _AnimatedBoscoState();
@@ -155,6 +249,7 @@ class _AnimatedBoscoState extends State<AnimatedBosco> with SingleTickerProvider
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: _playAnimation,
+      onLongPress: widget.onLongPress,
       child: ScaleTransition(
         scale: _animation,
         child: Transform.rotate(

@@ -213,10 +213,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: 40, height: 40,
-                        decoration: BoxDecoration(color: Colors.blueAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                        child: const Icon(Icons.person, color: Colors.blueAccent, size: 24),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          width: 45,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.05),
+                          ),
+                          child: Image.network(
+                            'https://shared.fastly.steamstatic.com/community_assets/images/items/3331000/4ef70f99c425ae03163495f923c5d452f83ba978.gif',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => 
+                              const Icon(Icons.person, color: Colors.blueAccent, size: 24),
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -248,18 +259,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Text(langMap['bug_report_note']!, style: const TextStyle(color: Colors.grey, fontSize: 10)),
           const Divider(color: Colors.white10, height: 24),
           
-          // 6. Donation
-          _buildSectionTitle(langMap['donation']!),
-          Text(langMap['donate_note']!, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildDonateIcon('Patreon'),
-              _buildDonateIcon('BuyMeCoffee'),
-              _buildDonateIcon('Ko-fi'),
-            ],
-          ),
           const SizedBox(height: 20),
         ],
       ),
@@ -270,19 +269,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(title, style: const TextStyle(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  Widget _buildDonateIcon(String label) {
-    return Column(
-      children: [
-        Container(
-          width: 45, height: 45,
-          decoration: BoxDecoration(color: Colors.grey[800], borderRadius: BorderRadius.circular(8)),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey)),
-      ],
     );
   }
 }
