@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'screens/main_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +31,7 @@ class DRGMissionTrackerApp extends StatelessWidget {
         ),
         appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF1A1A1A), centerTitle: true, elevation: 0),
       ),
-      home: const MainScreen(),
+      home: const CustomSplashScreen(),
     );
   }
 }

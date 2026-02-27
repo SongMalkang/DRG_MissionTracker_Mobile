@@ -85,6 +85,9 @@ MUTATORS: list[str] = [
     "Golden Bugs",
     "Volatile Guts",
     "Shield Disruption",
+    # Season 6+
+    "Blood Sugar",
+    "Secret Secondary",
 ]
 
 WARNINGS: list[str] = [
@@ -99,6 +102,12 @@ WARNINGS: list[str] = [
     "Swarmageddon",
     "Rival Presence",
     "Lithophage Outbreak",
+    # Season 6+ 신규 (위키 미등록 — MANUAL_URLS에 추가 필요)
+    "Duck and Cover",
+    "Ebonite Outbreak",
+    "Pit Jaw Colony",
+    "Regenerative Bugs",
+    "Scrab Nesting Grounds",
 ]
 
 # ── Wiki 파일명 직접 지정 ─────────────────────────────────────────────────────
@@ -111,10 +120,18 @@ DIRECT_WIKI_FILES: dict[str, str] = {
     "Salvage Operation":         "Salvage icon.png",
     "Escort Duty":               "Escort icon.png",
     "Industrial Sabotage":       "Sabotage icon.png",
+    # Season 6+ Warnings (API 검증 완료)
+    "Regenerative Bugs":         "Warning regenerative bugs icon.png",
     # 아래 항목은 wiki에 파일 없음 → MANUAL_URLS에 직접 추가하거나 나중에 수동 저장
     # "Deep Scan":               ???   (위키 미등록, Season 3+ 신규 미션)
     # "Heavy Excavation":        ???   (위키 미등록, Season 5+ 신규 미션)
     # "Ossuary Depths":          ???   (위키 미등록, Season 5 바이옴)
+    # "Blood Sugar":             ???   (위키 미등록, Season 6+ Mutator)
+    # "Secret Secondary":        ???   (위키 미등록, Season 6+ Mutator)
+    # "Duck and Cover":          ???   (위키 미등록, Season 6+ Warning)
+    # "Ebonite Outbreak":        ???   (위키 미등록, Season 6+ Warning)
+    # "Pit Jaw Colony":          ???   (위키 미등록, Season 6+ Warning)
+    # "Scrab Nesting Grounds":   ???   (위키 미등록, Season 6+ Warning)
 }
 
 # ── 수동 지정 URL ─────────────────────────────────────────────────────────────

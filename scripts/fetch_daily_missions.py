@@ -1,7 +1,11 @@
+import sys
+import io
 import requests
 import json
 import os
 from datetime import datetime, timedelta
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 def fetch_bulk_data():
     base_url = "https://doublexp.net/static/json/bulkmissions/"
@@ -34,6 +38,8 @@ def fetch_bulk_data():
                             missions_list.append({
                                 "b": biome_name,
                                 "t": m.get("PrimaryObjective"),
+                                "so": m.get("SecondaryObjective"),
+                                "cn": m.get("CodeName"),
                                 "l": int(m.get("Length", 1)),
                                 "c": int(m.get("Complexity", 1)),
                                 "bf": mutator if mutator else None,
@@ -47,9 +53,14 @@ def fetch_bulk_data():
             print(f"Error processing {date}: {e}")
 
     if optimized_data:
-        os.makedirs('drg_mission_tracker/data', exist_ok=True)
-        with open('drg_mission_tracker/data/daily_missions.json', 'w', encoding='utf-8') as f:
+        # __file__ 기준 상대 경로 → 로컬·GitHub Actions 모두 올바르게 동작
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        out_path = os.path.join(script_dir, '..', 'data', 'daily_missions.json')
+        out_path = os.path.normpath(out_path)
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        with open(out_path, 'w', encoding='utf-8') as f:
             json.dump(optimized_data, f, ensure_ascii=False)
+        print(f"💾 저장 위치: {out_path}")
         print(f"✅ 최적화 완료: {len(optimized_data)} 개의 타임슬롯 저장됨")
         
         # 검증 출력

@@ -132,9 +132,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.05),
+              color: Colors.orange.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange.withOpacity(0.2)),
+              border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(langMap['show_warnings']!, style: const TextStyle(color: Colors.white, fontSize: 14)),
-            activeColor: Colors.orange,
+            activeThumbColor: Colors.orange,
             value: _showWarnings,
             onChanged: _toggleWarnings,
           ),
@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF171A21),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+                border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
@@ -215,7 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Container(
                         width: 40, height: 40,
-                        decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(color: Colors.blueAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                         child: const Icon(Icons.person, color: Colors.blueAccent, size: 24),
                       ),
                       const SizedBox(width: 12),

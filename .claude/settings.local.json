@@ -6,7 +6,10 @@
       "Bash(python3 -c \":*)",
       "Bash(python -c \":*)",
       "Bash(python scripts/fetch_assets.py)",
-      "Bash(flutter analyze lib/widgets/mission_card.dart)"
+      "Bash(flutter analyze lib/widgets/mission_card.dart)",
+      "Bash(python -:*)",
+      "Bash(flutter analyze lib/)",
+      "Bash(python scripts/fetch_daily_missions.py)"
     ]
   }
 }

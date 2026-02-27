@@ -26,6 +26,7 @@ class MissionService {
       _availableSeasons = seasons.toList()..sort();
       _isLoaded = true;
     } catch (e) {
+      // ignore: avoid_print
       print("Error loading missions: $e");
     }
   }
@@ -41,7 +42,7 @@ class MissionService {
     String h = utcTime.hour.toString().padLeft(2, '0');
     String min = (utcTime.minute < 30 ? "00" : "30");
     
-    String key = "${y}-${m}-${d}T$h:$min:00Z";
+    String key = "$y-$m-${d}T$h:$min:00Z";
     return _allMissions[key] ?? [];
   }
 
