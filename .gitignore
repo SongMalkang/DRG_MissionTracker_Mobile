@@ -1,0 +1,87 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+.fetch_missions.py
+
+# Flutter/Dart 관련
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# 생성된 데이터 (스크립트가 30분마다 새로 만든다면 제외 권장)
+data/current_missions.json
+
+# 안드로이드 관련
+.gradle/
+local.properties
+**/Android/sdk/
+gen/
+**/android/**/generated/
+
+# iOS/macOS 관련
+*.xcworkspace
+**/xcuserdata/
+**/DerivedData/
+*.moved-aside
+*.swp
+*.lock
+DerivedData/
+Pods/
+
+# IDE(도구) 관련
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# 기타 시스템 파일
+.DS_Store
+Thumbs.db
