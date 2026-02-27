@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../utils/constants.dart';
 import '../utils/strings.dart';
 import '../utils/asset_helper.dart';
 
@@ -87,7 +89,7 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
     // weekday: Mon=1 … Thu=4 … Sun=7
     int daysBack = (now.weekday - DateTime.thursday) % 7;
     if (daysBack < 0) daysBack += 7;
-    DateTime thu = DateTime.utc(now.year, now.month, now.day - daysBack, 11);
+    DateTime thu = DateTime.utc(now.year, now.month, now.day - daysBack, AppConstants.deepDiveResetHourUtc);
     // 오늘이 목요일인데 아직 11:00 UTC 전이면 이전 주
     if (now.isBefore(thu)) thu = thu.subtract(const Duration(days: 7));
     return thu;
@@ -97,7 +99,7 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
     final y = thu.year;
     final m = thu.month.toString().padLeft(2, '0');
     final d = thu.day.toString().padLeft(2, '0');
-    return 'https://doublexp.net/static/json/DD_$y-$m-${d}T11-00-00Z.json';
+    return '${AppConstants.deepDiveBaseUrl}$y-$m-${d}T11-00-00Z.json';
   }
 
   Future<void> _load() async {
@@ -111,33 +113,15 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
       final url = _buildUrl(thu);
 
       final client = HttpClient();
+      client.connectionTimeout = const Duration(seconds: AppConstants.networkTimeoutSeconds);
       final req = await client.getUrl(Uri.parse(url));
-      final res = await req.close();
+      final res = await req.close().timeout(
+        const Duration(seconds: AppConstants.networkTimeoutSeconds),
+      );
       final body = await res.transform(utf8.decoder).join();
       client.close();
 
-      final json = jsonDecode(body) as Map<String, dynamic>;
-      final ddMap = json['Deep Dives'] as Map<String, dynamic>;
-
-      final dives = <_DeepDive>[];
-      // Normal 먼저, Elite 나중
-      for (final key in ['Deep Dive Normal', 'Deep Dive Elite']) {
-        final dd = ddMap[key] as Map<String, dynamic>?;
-        if (dd == null) continue;
-        final stagesRaw = dd['Stages'] as List;
-        final stages = stagesRaw
-            .asMap()
-            .entries
-            .map((e) =>
-                _Stage.fromJson(e.key + 1, e.value as Map<String, dynamic>))
-            .toList();
-        dives.add(_DeepDive(
-          isElite: key.contains('Elite'),
-          biome: dd['Biome'] as String? ?? '',
-          codeName: dd['CodeName'] as String? ?? '',
-          stages: stages,
-        ));
-      }
+      final dives = _parseDiveData(body);
 
       if (mounted) {
         setState(() {
@@ -146,6 +130,7 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
         });
       }
     } catch (e) {
+      debugPrint("Deep Dive load failed: $e");
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -153,6 +138,33 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
         });
       }
     }
+  }
+
+  List<_DeepDive> _parseDiveData(String body) {
+    final json = jsonDecode(body) as Map<String, dynamic>;
+    final ddMap = json['Deep Dives'] as Map<String, dynamic>?;
+    if (ddMap == null) throw FormatException('Missing "Deep Dives" key');
+
+    final dives = <_DeepDive>[];
+    for (final key in ['Deep Dive Normal', 'Deep Dive Elite']) {
+      final dd = ddMap[key] as Map<String, dynamic>?;
+      if (dd == null) continue;
+      final stagesRaw = dd['Stages'] as List?;
+      if (stagesRaw == null) continue;
+      final stages = stagesRaw
+          .asMap()
+          .entries
+          .map((e) =>
+              _Stage.fromJson(e.key + 1, e.value as Map<String, dynamic>))
+          .toList();
+      dives.add(_DeepDive(
+        isElite: key.contains('Elite'),
+        biome: dd['Biome'] as String? ?? '',
+        codeName: dd['CodeName'] as String? ?? '',
+        stages: stages,
+      ));
+    }
+    return dives;
   }
 
   // 다음 목요일 UTC 11:00 계산

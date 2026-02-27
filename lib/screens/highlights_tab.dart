@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/mission_model.dart';
+import '../utils/constants.dart';
 import '../utils/strings.dart';
 import '../services/mission_service.dart';
 import '../utils/asset_helper.dart';
@@ -67,7 +68,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
 
   void _processHighlights() {
     final allMissions = _missionService.allMissions;
-    final startTime = _now.subtract(const Duration(hours: 2));
+    final startTime = _now.subtract(const Duration(hours: AppConstants.highlightLookbackHours));
 
     // 시간 슬롯별로 Double XP 미션 그룹화
     final Map<DateTime, List<Mission>> slotMap = {};
@@ -85,7 +86,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
 
     final slots = <Map<String, dynamic>>[];
     for (final time in (slotMap.keys.toList()..sort())) {
-      final endTime = time.add(const Duration(minutes: 30));
+      final endTime = time.add(const Duration(minutes: AppConstants.missionRotationMinutes));
       slots.add({
         'time': time,
         'missions': slotMap[time]!,
@@ -181,7 +182,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
 
                         // ── 타임 슬롯 블록 ────────────────────────────────
                         Opacity(
-                          opacity: isPast ? 0.38 : 1.0,
+                          opacity: isPast ? AppConstants.elapsedMissionOpacity : 1.0,
                           child: _TimeSlotBlock(
                             timeStr: slotTimeStr,
                             missions: missions,

@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../models/mission_model.dart';
+import '../utils/constants.dart';
 
 enum DataStatus { online, offline, outdated }
 
@@ -22,8 +24,7 @@ class MissionService {
   bool get isLoaded => _isLoaded;
   DataStatus get status => _status;
 
-  // GitHub CDN URL (향후 사용자님의 URL로 교체)
-  final String _remoteUrl = "https://raw.githubusercontent.com/rolfosian/drgmissions/master/data/bulk/2026-02-27.json";
+  final String _remoteUrl = AppConstants.missionDataRemoteUrl;
 
   Future<void> loadMissions() async {
     if (_isLoaded) return;
@@ -38,7 +39,7 @@ class MissionService {
         _status = DataStatus.offline; // 일단 오프라인 모드로 로드
       } else {
         // 2. 캐시 없으면 에셋에서 로드 (최초 실행)
-        jsonString = await rootBundle.loadString('data/daily_missions.json');
+        jsonString = await rootBundle.loadString(AppConstants.localMissionAsset);
       }
 
       _parseJson(jsonString);
@@ -48,26 +49,38 @@ class MissionService {
       
       _isLoaded = true;
     } catch (e) {
-      print("Error loading missions: $e");
+      debugPrint("Error loading missions: $e");
     }
   }
 
   Future<void> _refreshRemoteData() async {
     try {
-      // 원격 데이터 가져오기 (타임아웃 설정으로 무한 대기 방지)
-      final response = await http.get(Uri.parse(_remoteUrl)).timeout(const Duration(seconds: 5));
-      
-      if (response.statusCode == 200) {
-        final file = await _getLocalFile();
-        await file.writeAsString(response.body); // 로컬에 저장
-        _parseJson(response.body);
-        _status = DataStatus.online;
-      }
+      final response = await _fetchWithRetry(_remoteUrl);
+      final file = await _getLocalFile();
+      await file.writeAsString(response.body);
+      _parseJson(response.body);
+      _status = DataStatus.online;
     } catch (e) {
-      // 연결 실패 시 status는 이미 offline/outdated로 판단됨
-      print("Remote refresh failed: $e");
+      debugPrint("Remote refresh failed: $e");
       _checkDataValidity();
     }
+  }
+
+  Future<http.Response> _fetchWithRetry(String url) async {
+    for (int attempt = 0; attempt < AppConstants.maxRetryAttempts; attempt++) {
+      try {
+        final response = await http.get(Uri.parse(url)).timeout(
+          const Duration(seconds: AppConstants.networkTimeoutSeconds),
+        );
+        if (response.statusCode == 200) return response;
+      } catch (_) {
+        // retry
+      }
+      if (attempt < AppConstants.maxRetryAttempts - 1) {
+        await Future.delayed(Duration(seconds: 1 << attempt));
+      }
+    }
+    throw Exception('Failed after ${AppConstants.maxRetryAttempts} attempts');
   }
 
   void _checkDataValidity() {
@@ -108,16 +121,16 @@ class MissionService {
 
   Future<File> _getLocalFile() async {
     final directory = await getApplicationDocumentsDirectory();
-    return File('${directory.path}/cached_missions.json');
+    return File('${directory.path}/${AppConstants.cachedMissionFile}');
   }
 
   List<Mission> getMissionsForTime(DateTime utcTime) {
     return _allMissions[_getTimeKey(utcTime)] ?? [];
   }
 
-  // [DEBUG] 상태 강제 전환 트리거
   void debugSetStatus(DataStatus newStatus) {
-    _status = status; // 기존 상태 저장 로직 대신
-    _status = newStatus;
+    if (kDebugMode) {
+      _status = newStatus;
+    }
   }
 }

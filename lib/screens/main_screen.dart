@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'live_missions_tab.dart';
 import 'highlights_tab.dart';
 import 'deep_dives_tab.dart';
 import 'settings_screen.dart';
+import '../utils/constants.dart';
 import '../utils/strings.dart';
 import '../services/settings_service.dart';
 import '../services/mission_service.dart';
@@ -55,11 +57,12 @@ class _MainScreenState extends State<MainScreen> {
     _settingsService.saveSeason(season);
   }
 
-  // [DEBUG] 상태 사이클링 로직
   void _cycleDebugStatus() {
+    if (!kDebugMode) return;
+
     final current = _missionService.status;
     DataStatus next;
-    
+
     if (current == DataStatus.online) {
       next = DataStatus.offline;
     } else if (current == DataStatus.offline) {
@@ -69,8 +72,8 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     _missionService.debugSetStatus(next);
-    setState(() {}); // UI 갱신
-    
+    setState(() {});
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Debug: DataStatus set to ${next.name.toUpperCase()}"),
@@ -97,7 +100,7 @@ class _MainScreenState extends State<MainScreen> {
         centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.only(left: 12.0),
-          child: AnimatedBosco(onLongPress: _cycleDebugStatus),
+          child: AnimatedBosco(onLongPress: kDebugMode ? _cycleDebugStatus : null),
         ),
         title: Text(
           i18n[_currentLang]!['title']!,
@@ -180,7 +183,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       child: Row(
         children: [
-          Image.asset('assets/images/bosco.png', width: 40, height: 40),
+          Image.asset(AppConstants.boscoImage, width: 40, height: 40),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -255,7 +258,7 @@ class _AnimatedBoscoState extends State<AnimatedBosco> with SingleTickerProvider
         child: Transform.rotate(
           angle: -0.25,
           child: Image.asset(
-            'assets/images/bosco.png',
+            AppConstants.boscoImage,
             width: 35,
             height: 35,
           ),
