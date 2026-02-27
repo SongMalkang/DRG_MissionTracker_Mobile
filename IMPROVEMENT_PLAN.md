@@ -312,7 +312,7 @@ jobs:
       #     file: coverage/lcov.info
 
   build:
-    name: Build Verification
+    name: Build Check (verification only)
     runs-on: ubuntu-latest
     needs: test
     strategy:
@@ -325,6 +325,8 @@ jobs:
           channel: stable
       - run: flutter pub get
       - run: flutter build ${{ matrix.target }} --release
+      # ⚠️ 빌드 정상 여부만 확인. APK/아티팩트 업로드 없음.
+      # 릴리즈/배포 파이프라인은 서비스 런칭 준비 시점에 별도 설계.
 ```
 
 **핵심 설계 결정**:
@@ -335,6 +337,7 @@ jobs:
 | `data/**` 제외 | `paths-ignore` | JSON 업데이트는 코드 품질과 무관 |
 | 빌드 대상 | APK + Web | iOS는 macOS 러너 비용이 높으므로 제외 |
 | 실행 순서 | analyze → test → build | 빠른 실패: 린트 → 테스트 → 빌드 순 |
+| 빌드 목적 | **컴파일 정상 여부 검증만** | 아티팩트 저장/릴리즈 없음 (런칭 전 단계) |
 | 커버리지 | 선택 사항 | Phase 4 완료 후 Codecov 연동 가능 |
 
 ### 워크플로우 관계도
@@ -353,7 +356,7 @@ jobs:
 │  │  Python 스크립트    │  │  ① dart analyze      │  │
 │  │  → JSON 갱신       │  │  ② flutter test      │  │
 │  │  → 자동 커밋       │  │  ③ flutter build     │  │
-│  │    [skip ci]       │  │     (APK + Web)      │  │
+│  │    [skip ci]       │  │     (검증만, 배포 ✕)  │  │
 │  └─────────────────────┘  └──────────────────────┘  │
 │         ↕ 독립 운영           ↕ 코드 변경 시만       │
 └─────────────────────────────────────────────────────┘
