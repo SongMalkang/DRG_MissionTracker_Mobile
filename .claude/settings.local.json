@@ -14,7 +14,8 @@
       "Bash(flutter analyze --no-fatal-infos --no-fatal-warnings)",
       "Bash(flutter pub get)",
       "Bash(identify 'assets/icon/ic_foreground.png' 'assets/icon/icon.png')",
-      "Bash(dart run flutter_launcher_icons)"
+      "Bash(dart run flutter_launcher_icons)",
+      "Bash(dart analyze --fatal-infos)"
     ]
   }
 }

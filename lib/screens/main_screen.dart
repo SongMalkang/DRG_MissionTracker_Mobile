@@ -194,11 +194,11 @@ class _MainScreenState extends State<MainScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isOutdated ? Colors.red.withOpacity(0.9) : Colors.orange.withOpacity(0.8),
+        color: isOutdated ? Colors.red.withValues(alpha: 0.9) : Colors.orange.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
