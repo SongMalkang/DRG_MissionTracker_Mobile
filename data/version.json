@@ -2,7 +2,7 @@
   "latest_version": "1.0.0",
   "min_required": "1.0.0",
   "force_update": false,
-  "store_url": "https://play.google.com/store/apps/details?id=com.example.drg_mission_tracker",
+  "store_url": "https://play.google.com/store/apps/details?id=com.songmalkang.drg_mission_tracker",
   "changelog": {
     "KR": "• 보스코 터미널 초기 릴리즈\n• 실시간 미션 트래커\n• 딥 다이브 정보\n• 미션 알림 기능\n• 한국어 / 영어 / 중국어 지원",
     "EN": "• Bosco Terminal initial release\n• Real-time mission tracker\n• Deep dive information\n• Mission notifications\n• Korean / English / Chinese support",

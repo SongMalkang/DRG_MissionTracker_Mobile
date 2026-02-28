@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../data/trivia_data.dart';
 import '../utils/strings.dart';
 import '../utils/asset_helper.dart';
 import '../services/deep_dive_service.dart';
+import '../widgets/trivia_modal.dart';
 
 // ── Deep Dive 탭 ───────────────────────────────────────────────────────────────
 
@@ -238,7 +240,7 @@ class _DDHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 120,
+      height: 95,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -264,9 +266,9 @@ class _DDHeader extends StatelessWidget {
           ),
           // 텍스트
           Positioned(
-            left: 16,
-            right: 16,
-            bottom: 14,
+            left: 14,
+            right: 14,
+            bottom: 10,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -320,7 +322,7 @@ class _DDHeader extends StatelessWidget {
   }
 }
 
-// ── 스테이지 행 ───────────────────────────────────────────────────────────────
+// ── 스테이지 행 (콤팩트 2행 레이아웃) ─────────────────────────────────────────
 
 class _StageRow extends StatelessWidget {
   final DeepDiveStage stage;
@@ -332,15 +334,17 @@ class _StageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hastrivia = triviaData.containsKey(stage.primary);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // 스테이지 번호 원
           Container(
-            width: 30,
-            height: 30,
+            width: 26,
+            height: 26,
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.15),
               shape: BoxShape.circle,
@@ -352,87 +356,168 @@ class _StageRow extends StatelessWidget {
               style: TextStyle(
                 color: accent,
                 fontWeight: FontWeight.bold,
-                fontSize: 13,
+                fontSize: 11,
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
 
-          // 미션 아이콘
-          SizedBox(
-            width: 38,
-            height: 38,
-            child: Image.asset(
-              AssetHelper.getMissionIcon(stage.primary),
-              errorBuilder: (ctx, e, st) => const Icon(Icons.assignment,
-                  color: Colors.white24, size: 30),
+          // 미션 아이콘 (탭 → trivia)
+          GestureDetector(
+            onTap: hastrivia
+                ? () => showTriviaModal(
+                      context,
+                      itemKey: stage.primary,
+                      lang: lang,
+                      iconPath: AssetHelper.getMissionIcon(stage.primary),
+                      accentColor: accent,
+                    )
+                : null,
+            child: SizedBox(
+              width: 30,
+              height: 30,
+              child: Image.asset(
+                AssetHelper.getMissionIcon(stage.primary),
+                errorBuilder: (ctx, e, st) => Icon(
+                  Icons.assignment,
+                  color: Colors.white24,
+                  size: 24,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
 
-          // 정보 컬럼
+          // 정보 컬럼 (2행)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // 미션명
-                Text(
-                  t(stage.primary, lang),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                // 행 1: 미션명 + trivia 버튼
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        t(stage.primary, lang),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (hastrivia)
+                      GestureDetector(
+                        onTap: () => showTriviaModal(
+                          context,
+                          itemKey: stage.primary,
+                          lang: lang,
+                          iconPath: AssetHelper.getMissionIcon(stage.primary),
+                          accentColor: accent,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Icon(
+                            Icons.info_outline,
+                            color: accent.withValues(alpha: 0.5),
+                            size: 13,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 3),
 
-                // 경고
-                if (stage.warning != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
+                // 행 2: 보조목표 · 경고 · 도트 (한 줄로)
+                Row(
+                  children: [
+                    // 보조 목표
+                    if (stage.secondary != null) ...[
                       SizedBox(
-                        width: 16,
-                        height: 16,
+                        width: 12,
+                        height: 12,
+                        child: Image.asset(
+                          AssetHelper.getSecondaryIcon(stage.secondary!),
+                          errorBuilder: (ctx, e, st) => Icon(
+                            Icons.flag,
+                            color: accent.withValues(alpha: 0.6),
+                            size: 10,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Flexible(
+                        child: Text(
+                          t(stage.secondary, lang),
+                          style: TextStyle(
+                            color: accent.withValues(alpha: 0.8),
+                            fontSize: 11,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      // 구분자
+                      if (stage.warning != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                          child: Text(
+                            '·',
+                            style: TextStyle(
+                              color: Colors.white24,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                    ],
+                    // 경고
+                    if (stage.warning != null) ...[
+                      SizedBox(
+                        width: 12,
+                        height: 12,
                         child: Image.asset(
                           AssetHelper.getWarningIcon(stage.warning!),
                           errorBuilder: (ctx, e, st) => const Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.redAccent,
-                              size: 13),
+                            Icons.warning_amber_rounded,
+                            color: Colors.redAccent,
+                            size: 10,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        t(stage.warning, lang),
-                        style: const TextStyle(
+                      const SizedBox(width: 3),
+                      Flexible(
+                        child: Text(
+                          t(stage.warning, lang),
+                          style: const TextStyle(
                             color: Colors.redAccent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500),
+                            fontSize: 11,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ] else if (stage.secondary == null) ...[
+                      // secondary도 없고 warning도 없는 경우
+                      Text(
+                        i18n[lang]!['no_warnings'] ?? 'No Warnings',
+                        style: const TextStyle(
+                          color: Colors.white24,
+                          fontSize: 10,
+                        ),
                       ),
                     ],
-                  ),
-                ] else ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    i18n[lang]!['no_warnings'] ?? 'No Warnings',
-                    style: const TextStyle(
-                        color: Colors.white24, fontSize: 11),
-                  ),
-                ],
 
-                const SizedBox(height: 6),
-
-                // 길이 / 복잡도 도트
-                Row(
-                  children: [
+                    // 도트 (우측 정렬)
+                    const Spacer(),
                     _MiniDots(
-                        value: stage.length,
-                        color: accent.withValues(alpha: 0.7)),
-                    const SizedBox(width: 10),
+                      value: stage.length,
+                      color: accent.withValues(alpha: 0.8),
+                    ),
+                    const SizedBox(width: 5),
                     _MiniDots(
-                        value: stage.complexity,
-                        color: accent.withValues(alpha: 0.45)),
+                      value: stage.complexity,
+                      color: accent.withValues(alpha: 0.45),
+                    ),
                   ],
                 ),
               ],

@@ -9,7 +9,7 @@ const Map<String, Map<String, Map<String, String>>> triviaData = {
   'Azure Weald': {
     'KR': {
       'desc': '발광 식물과 푸른 수정이 가득한 아름다운 지하 숲. 높은 천장과 넓은 공간이 특징.',
-      'tips': '천장의 발광 식물이 자연 조명 역할을 해줌\n넓은 공간이 많아 이동이 비교적 수월\n수정 기둥 뒤에 자원이 숨겨져 있는 경우가 많음',
+      'tips': '천장의 발광 식물이 자연 조명 역할을 해줌\n넓은 공간이 많아 이동이 비교적 수월\n케이브 엔젤을 타고 날 수 있음!',
     },
     'EN': {
       'desc': 'A beautiful underground forest filled with bioluminescent plants and blue crystals. Features high ceilings and open spaces.',
@@ -24,7 +24,7 @@ const Map<String, Map<String, Map<String, String>>> triviaData = {
   'Crystalline Caverns': {
     'KR': {
       'desc': '거대한 수정이 벽과 천장에 박혀있는 동굴. 전기 수정이 주기적으로 방전됨.',
-      'tips': '전기 수정은 주기적으로 방전하니 가까이 가지 말 것\n수정이 많아 시야가 좋은 편\n수직 구조가 많아 집라인이 유용',
+      'tips': '전기 수정은 생각보다 강한 데미지를 줌\n수정이 많아 맵 밝기가 좋은 편\n수직 구조가 많아 집라인이 유용',
     },
     'EN': {
       'desc': 'Caves with massive crystals embedded in walls and ceilings. Electric crystals periodically discharge.',

@@ -12,6 +12,7 @@ import '../utils/constants.dart';
 class DeepDiveStage {
   final int num;
   final String primary;
+  final String? secondary;
   final String? warning;
   final int complexity;
   final int length;
@@ -19,6 +20,7 @@ class DeepDiveStage {
   const DeepDiveStage({
     required this.num,
     required this.primary,
+    this.secondary,
     this.warning,
     required this.complexity,
     required this.length,
@@ -29,6 +31,7 @@ class DeepDiveStage {
     return DeepDiveStage(
       num: num,
       primary: j['PrimaryObjective'] as String? ?? '',
+      secondary: j['SecondaryObjective'] as String?,
       warning: (warnings != null && warnings.isNotEmpty)
           ? warnings.first as String
           : null,

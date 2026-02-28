@@ -1,10 +1,16 @@
 class AssetHelper {
   static String _toSnakeCase(String text) {
-    return text
+    // CamelCase → snake_case 처리 (예: 'ApocaBlooms' → 'apoca_blooms')
+    // 소문자 뒤에 대문자가 오면 사이에 '_' 삽입
+    final camelFixed = text.replaceAllMapped(
+      RegExp(r'([a-z])([A-Z])'),
+      (m) => '${m[1]}_${m[2]}',
+    );
+    return camelFixed
         .toLowerCase()
         .replaceAll(' ', '_')
         .replaceAll('-', '_')
-        .replaceAll("'", "");
+        .replaceAll("'", '');
   }
 
   static String getBiomeImage(String biome) {

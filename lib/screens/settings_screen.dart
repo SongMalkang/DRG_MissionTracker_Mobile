@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -36,9 +39,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // 알림 설정 상태
   bool _notifEnabled = false;
-  TimeOfDay _notifTime = const TimeOfDay(hour: 18, minute: 0);
+  TimeOfDay _notifTime    = const TimeOfDay(hour: 19, minute: 0);
+  TimeOfDay _notifEndTime = const TimeOfDay(hour: 22, minute: 0);
   List<int> _notifDays = [1, 2, 3, 4, 5, 6, 7];
   Set<String> _excludedTypes = {};
+
+  /// iOS 또는 Web → Push 알림 미지원
+  bool get _isPlatformUnsupported =>
+      kIsWeb || (!kIsWeb && Platform.isIOS);
 
   static const List<String> _allMissionTypes = [
     'Mining Expedition', 'Egg Hunt', 'On-Site Refining',
@@ -58,17 +66,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final show = await _settingsService.getShowWarnings();
     await _missionService.initialize();
 
-    final notifOn = await _notifSettings.isEnabled();
-    final notifTime = await _notifSettings.getScheduledTime();
-    final notifDays = await _notifSettings.getEnabledDays();
-    final excluded = await _notifSettings.getExcludedMissionTypes();
+    final notifOn      = await _notifSettings.isEnabled();
+    final notifTime    = await _notifSettings.getScheduledTime();
+    final notifEndTime = await _notifSettings.getEndTime();
+    final notifDays    = await _notifSettings.getEnabledDays();
+    final excluded     = await _notifSettings.getExcludedMissionTypes();
 
     setState(() {
-      _showWarnings = show;
-      _notifEnabled = notifOn;
-      _notifTime = notifTime;
-      _notifDays = notifDays;
-      _excludedTypes = excluded;
+      _showWarnings   = show;
+      _notifEnabled   = notifOn;
+      _notifTime      = notifTime;
+      _notifEndTime   = notifEndTime;
+      _notifDays      = notifDays;
+      _excludedTypes  = excluded;
     });
   }
 
@@ -153,6 +163,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (picked != null) {
       setState(() => _notifTime = picked);
       await _notifSettings.setScheduledTime(picked.hour, picked.minute);
+      if (_notifEnabled) await _notifService.scheduleAlarms();
+    }
+  }
+
+  Future<void> _pickNotifEndTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _notifEndTime,
+    );
+    if (picked != null) {
+      setState(() => _notifEndTime = picked);
+      await _notifSettings.setEndTime(picked.hour, picked.minute);
       if (_notifEnabled) await _notifService.scheduleAlarms();
     }
   }
@@ -283,102 +305,191 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // 5. Notification Settings
           _buildSectionTitle(langMap['notif_settings']!),
+          // Double XP 설명 뱃지
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.bolt, color: Colors.amber, size: 13),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    langMap['notif_double_xp_desc']!,
+                    style: const TextStyle(color: Colors.amber, fontSize: 11),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 플랫폼 미지원 배너 (iOS / Web)
+          if (_isPlatformUnsupported)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.notifications_off_outlined, color: Colors.redAccent, size: 14),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      langMap['notif_platform_unsupported']!,
+                      style: const TextStyle(color: Colors.redAccent, fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // 마스터 스위치
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(langMap['notif_enable']!, style: const TextStyle(color: Colors.white, fontSize: 14)),
             activeThumbColor: Colors.orange,
-            value: _notifEnabled,
-            onChanged: _toggleNotification,
+            // 미지원 플랫폼에서는 스위치 비활성화
+            value: _isPlatformUnsupported ? false : _notifEnabled,
+            onChanged: _isPlatformUnsupported ? null : _toggleNotification,
           ),
-          AnimatedOpacity(
-            opacity: _notifEnabled ? 1.0 : 0.4,
-            duration: const Duration(milliseconds: 200),
-            child: IgnorePointer(
-              ignoring: !_notifEnabled,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 알림 시간
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(langMap['notif_time']!, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                      GestureDetector(
-                        onTap: _pickNotifTime,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+          // 아코디언: 활성화 시에만 펼쳐짐
+          ClipRect(
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeInOut,
+              child: _notifEnabled
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 4, bottom: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 알림 시간 범위: 시작 ~ 종료
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(langMap['notif_time_from']!, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                                    const SizedBox(height: 4),
+                                    GestureDetector(
+                                      onTap: _pickNotifTime,
+                                      child: _buildTimePill(
+                                        '${_notifTime.hour.toString().padLeft(2, '0')}:${_notifTime.minute.toString().padLeft(2, '0')}',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.only(top: 14, left: 8, right: 8),
+                                child: Icon(Icons.arrow_forward, color: Colors.white24, size: 14),
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(langMap['notif_time_to']!, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                                    const SizedBox(height: 4),
+                                    GestureDetector(
+                                      onTap: _pickNotifEndTime,
+                                      child: _buildTimePill(
+                                        '${_notifEndTime.hour.toString().padLeft(2, '0')}:${_notifEndTime.minute.toString().padLeft(2, '0')}',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          child: Text(
-                            '${_notifTime.hour.toString().padLeft(2, '0')}:${_notifTime.minute.toString().padLeft(2, '0')}',
-                            style: const TextStyle(color: Colors.orange, fontSize: 16, fontWeight: FontWeight.bold),
+                          const SizedBox(height: 10),
+                          // 요일 선택
+                          Text(langMap['notif_days']!, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              for (final entry in [
+                                (1, langMap['mon']!), (2, langMap['tue']!), (3, langMap['wed']!),
+                                (4, langMap['thu']!), (5, langMap['fri']!), (6, langMap['sat']!), (7, langMap['sun']!),
+                              ])
+                                GestureDetector(
+                                  onTap: () => _toggleNotifDay(entry.$1),
+                                  child: Container(
+                                    width: 34,
+                                    height: 34,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _notifDays.contains(entry.$1)
+                                          ? Colors.orange
+                                          : Colors.white.withValues(alpha: 0.06),
+                                      border: Border.all(
+                                        color: _notifDays.contains(entry.$1)
+                                            ? Colors.orange
+                                            : Colors.white.withValues(alpha: 0.12),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      entry.$2,
+                                      style: TextStyle(
+                                        color: _notifDays.contains(entry.$1) ? Colors.black : Colors.white38,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
-                        ),
+                          const SizedBox(height: 14),
+
+                          // 미션 타입 필터 (2열 컴팩트 그리드)
+                          Row(
+                            children: [
+                              Text(langMap['notif_exclude_types']!, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  langMap['notif_exclude_note']!,
+                                  style: const TextStyle(color: Colors.white24, fontSize: 10),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ...List.generate(
+                            (_allMissionTypes.length / 2).ceil(),
+                            (rowIdx) {
+                              final left  = _allMissionTypes[rowIdx * 2];
+                              final right = rowIdx * 2 + 1 < _allMissionTypes.length
+                                  ? _allMissionTypes[rowIdx * 2 + 1]
+                                  : null;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 2),
+                                child: Row(
+                                  children: [
+                                    Expanded(child: _buildTypeToggle(left)),
+                                    if (right != null) Expanded(child: _buildTypeToggle(right)),
+                                    if (right == null) const Expanded(child: SizedBox()),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 4),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // 활성 요일
-                  Text(langMap['notif_days']!, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      for (final entry in [
-                        (1, langMap['mon']!), (2, langMap['tue']!), (3, langMap['wed']!),
-                        (4, langMap['thu']!), (5, langMap['fri']!), (6, langMap['sat']!), (7, langMap['sun']!),
-                      ])
-                        GestureDetector(
-                          onTap: () => _toggleNotifDay(entry.$1),
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _notifDays.contains(entry.$1)
-                                  ? Colors.orange
-                                  : Colors.white.withValues(alpha: 0.08),
-                              border: Border.all(
-                                color: _notifDays.contains(entry.$1)
-                                    ? Colors.orange
-                                    : Colors.white.withValues(alpha: 0.15),
-                              ),
-                            ),
-                            child: Text(
-                              entry.$2,
-                              style: TextStyle(
-                                color: _notifDays.contains(entry.$1) ? Colors.black : Colors.white54,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 미션 타입 필터
-                  Text(langMap['notif_exclude_types']!, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                  const SizedBox(height: 4),
-                  Text(langMap['notif_exclude_note']!, style: const TextStyle(color: Colors.grey, fontSize: 10)),
-                  const SizedBox(height: 8),
-                  ...(_allMissionTypes.map((type) => CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    title: Text(t(type, _selectedLang), style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                    value: !_excludedTypes.contains(type),
-                    activeColor: Colors.orange,
-                    onChanged: (_) => _toggleExcludedType(type),
-                  ))),
-                ],
-              ),
+                    )
+                  : const SizedBox.shrink(),
             ),
           ),
           const Divider(color: Colors.white10, height: 24),
@@ -448,6 +559,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const SizedBox(height: 20),
         ],
+      ),
+    );
+  }
+
+  /// 시간 표시 pill 버튼
+  Widget _buildTimePill(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.access_time, color: Colors.orange, size: 13),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.orange, fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 미션 타입 토글 (컴팩트 2열 그리드 셀)
+  Widget _buildTypeToggle(String type) {
+    final included = !_excludedTypes.contains(type);
+    return GestureDetector(
+      onTap: () => _toggleExcludedType(type),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 2),
+        child: Row(
+          children: [
+            Icon(
+              included ? Icons.check_box : Icons.check_box_outline_blank,
+              color: included ? Colors.orange : Colors.white24,
+              size: 15,
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: Text(
+                t(type, _selectedLang),
+                style: TextStyle(
+                  color: included ? Colors.white70 : Colors.white30,
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

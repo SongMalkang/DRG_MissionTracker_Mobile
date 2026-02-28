@@ -7,6 +7,8 @@ class NotificationSettingsService {
   static const String _daysKey = 'notif_days';
   static const String _timeHourKey = 'notif_time_hour';
   static const String _timeMinuteKey = 'notif_time_minute';
+  static const String _endHourKey = 'notif_end_hour';
+  static const String _endMinuteKey = 'notif_end_minute';
   static const String _excludedTypesKey = 'notif_excluded_types';
 
   // ── 마스터 스위치 ──
@@ -38,11 +40,11 @@ class NotificationSettingsService {
     await prefs.setString(_daysKey, days.join(','));
   }
 
-  // ── 알림 시간 ──
+  // ── 알림 시작 시간 ──
 
   Future<TimeOfDay> getScheduledTime() async {
     final prefs = await SharedPreferences.getInstance();
-    final hour = prefs.getInt(_timeHourKey) ?? 18;
+    final hour = prefs.getInt(_timeHourKey) ?? 19;
     final minute = prefs.getInt(_timeMinuteKey) ?? 0;
     return TimeOfDay(hour: hour, minute: minute);
   }
@@ -51,6 +53,21 @@ class NotificationSettingsService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_timeHourKey, hour);
     await prefs.setInt(_timeMinuteKey, minute);
+  }
+
+  // ── 알림 종료 시간 (default 23:00) ──
+
+  Future<TimeOfDay> getEndTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hour = prefs.getInt(_endHourKey) ?? 22;
+    final minute = prefs.getInt(_endMinuteKey) ?? 0;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  Future<void> setEndTime(int hour, int minute) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_endHourKey, hour);
+    await prefs.setInt(_endMinuteKey, minute);
   }
 
   // ── 제외할 미션 타입 ──
