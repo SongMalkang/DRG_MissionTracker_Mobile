@@ -67,7 +67,7 @@ BOSCO가 Double XP 미션이 등장하면 직접 알려줍니다.
     <td valign="middle">
       <b>Pinyo</b><br/>
       <a href="https://steamcommunity.com/id/VonVon93/">🎮 Steam 프로필</a><br/>
-      <sub>버그 제보 및 피드백은 GitHub Issues로 부탁드립니다.</sub>
+      <sub>버그 제보 및 피드백은 Steam으로 부탁드립니다.</sub>
     </td>
   </tr>
 </table>
