@@ -28,7 +28,6 @@
 1. **Non-Commercial Fan Project**: 본 프로젝트는 수익을 목적으로 하지 않는 비상업적 팬 프로젝트입니다.
 2. **Intellectual Property**: *Deep Rock Galactic*의 모든 자산, 이미지, 캐릭터 및 관련 데이터의 저작권은 **Ghost Ship Games** 및 **Coffee Stain Publishing**에 있습니다.
 3. **No Affiliation**: 본 앱은 Ghost Ship Games와 공식적으로 연관되어 있지 않으며, 공식 서비스의 보조 도구로만 작동합니다.
-4. **Donation Usage**: 제공되는 후원 링크는 오직 Apple App Store 등록비($99/year) 및 서버/데이터 유지보수 비용을 충당하기 위해서만 사용됩니다.
 
 ## 🛠️ Tech Stack
 

@@ -11,7 +11,7 @@ class LiveMissionsTab extends StatefulWidget {
   final Function(String) onSeasonChange;
 
   const LiveMissionsTab({
-    super.key, 
+    super.key,
     required this.lang,
     required this.currentSeason,
     required this.onSeasonChange,
@@ -25,27 +25,21 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
   int _timeOffset = 0; // -1: Past, 0: Current, 1: Next
   late Timer _timer;
   int _secondsUntilNext = 0;
-  
+
   final MissionService _missionService = MissionService();
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _calculateTimeLeft();
-    _loadData();
+    _missionService.addListener(_onDataChanged);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _calculateTimeLeft();
     });
   }
 
-  Future<void> _loadData() async {
-    await _missionService.loadMissions();
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+  void _onDataChanged() {
+    if (mounted) setState(() {});
   }
 
   void _calculateTimeLeft() {
@@ -64,6 +58,7 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
 
   @override
   void dispose() {
+    _missionService.removeListener(_onDataChanged);
     _timer.cancel();
     super.dispose();
   }
@@ -77,14 +72,14 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
   void _changeSeason(int change) {
     final available = _missionService.availableSeasons;
     if (available.isEmpty) return;
-    
+
     int currentIdx = available.indexOf(widget.currentSeason);
     if (currentIdx == -1) currentIdx = available.indexOf("s0");
     if (currentIdx == -1) currentIdx = 0;
 
     int nextIdx = (currentIdx + change) % available.length;
     if (nextIdx < 0) nextIdx = available.length - 1;
-    
+
     widget.onSeasonChange(available[nextIdx]);
   }
 
@@ -97,7 +92,7 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (!_missionService.isInitialized) {
       return const Center(child: CircularProgressIndicator(color: Colors.orange));
     }
 
@@ -123,10 +118,10 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
     filteredList.sort((a, b) {
       bool aIsDouble = (a.buff == "Double XP");
       bool bIsDouble = (b.buff == "Double XP");
-      
+
       if (aIsDouble && !bIsDouble) return -1;
       if (!aIsDouble && bIsDouble) return 1;
-      
+
       // Double XP가 아닌 미션들 간에는 바이옴 이름순으로 정렬 (일관성 유지)
       return a.biome.compareTo(b.biome);
     });
@@ -134,8 +129,8 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
     final minutes = (_secondsUntilNext ~/ 60).toString().padLeft(2, '0');
     final seconds = (_secondsUntilNext % 60).toString().padLeft(2, '0');
 
-    String seasonLabel = widget.currentSeason == "s0" 
-        ? i18n[widget.lang]!['standard']! 
+    String seasonLabel = widget.currentSeason == "s0"
+        ? i18n[widget.lang]!['standard']!
         : "SEASON ${widget.currentSeason.replaceAll('s', '')}";
 
     return Column(
@@ -194,27 +189,32 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
           ),
         ),
         Expanded(
-          child: filteredList.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.search_off, size: 48, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      Text(
-                        "No missions found for $seasonLabel\nat this time.",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                    ],
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: filteredList.isEmpty
+                ? Center(
+                    key: const ValueKey('empty'),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.search_off, size: 48, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No missions found for $seasonLabel\nat this time.",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    key: ValueKey('missions_${targetUtc.toIso8601String()}_${widget.currentSeason}'),
+                    itemCount: filteredList.length,
+                    itemBuilder: (context, index) {
+                      return MissionCard(mission: filteredList[index], lang: widget.lang);
+                    },
                   ),
-                )
-              : ListView.builder(
-                  itemCount: filteredList.length,
-                  itemBuilder: (context, index) {
-                    return MissionCard(mission: filteredList[index], lang: widget.lang);
-                  },
-                ),
+          ),
         ),
       ],
     );

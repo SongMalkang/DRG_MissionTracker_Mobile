@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/mission_model.dart';
+import '../utils/constants.dart';
 import '../utils/strings.dart';
 import '../services/mission_service.dart';
 import '../utils/asset_helper.dart';
@@ -14,7 +15,7 @@ const Map<String, Color> _seasonColors = {
   's3': Color(0xFF66BB6A), // 초록: S03 리소파지 습격
   's4': Color(0xFFCD7F32), // 브론즈: S04 청동기 시대
   's5': Color(0xFF90CAF9), // 연파랑: S05 의무 절차
-  's6': Color(0xFFCE93D8), // 보라: S06 운명의 주사위
+  's6': Color(0xFFCE93D8), // 보라: S06 혹시스의 유물
 };
 
 const Map<String, String> _seasonLabels = {
@@ -43,13 +44,15 @@ class _HighlightsTabState extends State<HighlightsTab> {
   // 각 원소: { 'time': DateTime, 'missions': List(Mission), 'isPast': bool,
   //             'isCurrent': bool, 'isTomorrow': bool }
   List<Map<String, dynamic>> _slots = [];
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _now = DateTime.now();
-    _loadData();
+    _missionService.addListener(_onDataChanged);
+    if (_missionService.isInitialized) {
+      _processHighlights();
+    }
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) {
         setState(() {
@@ -60,14 +63,16 @@ class _HighlightsTabState extends State<HighlightsTab> {
     });
   }
 
-  Future<void> _loadData() async {
-    await _missionService.loadMissions();
-    _processHighlights();
+  void _onDataChanged() {
+    if (mounted) {
+      _now = DateTime.now();
+      _processHighlights();
+    }
   }
 
   void _processHighlights() {
     final allMissions = _missionService.allMissions;
-    final startTime = _now.subtract(const Duration(hours: 2));
+    final startTime = _now.subtract(const Duration(hours: AppConstants.highlightLookbackHours));
 
     // 시간 슬롯별로 Double XP 미션 그룹화
     final Map<DateTime, List<Mission>> slotMap = {};
@@ -85,7 +90,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
 
     final slots = <Map<String, dynamic>>[];
     for (final time in (slotMap.keys.toList()..sort())) {
-      final endTime = time.add(const Duration(minutes: 30));
+      final endTime = time.add(const Duration(minutes: AppConstants.missionRotationMinutes));
       slots.add({
         'time': time,
         'missions': slotMap[time]!,
@@ -95,23 +100,21 @@ class _HighlightsTabState extends State<HighlightsTab> {
       });
     }
 
-    if (mounted) {
-      setState(() {
-        _slots = slots;
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _slots = slots;
+    });
   }
 
   @override
   void dispose() {
+    _missionService.removeListener(_onDataChanged);
     _timer.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (!_missionService.isInitialized) {
       return const Center(
           child: CircularProgressIndicator(color: Colors.orange));
     }
@@ -181,7 +184,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
 
                         // ── 타임 슬롯 블록 ────────────────────────────────
                         Opacity(
-                          opacity: isPast ? 0.38 : 1.0,
+                          opacity: isPast ? AppConstants.elapsedMissionOpacity : 1.0,
                           child: _TimeSlotBlock(
                             timeStr: slotTimeStr,
                             missions: missions,

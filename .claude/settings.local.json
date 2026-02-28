@@ -9,7 +9,12 @@
       "Bash(flutter analyze lib/widgets/mission_card.dart)",
       "Bash(python -:*)",
       "Bash(flutter analyze lib/)",
-      "Bash(python scripts/fetch_daily_missions.py)"
+      "Bash(python scripts/fetch_daily_missions.py)",
+      "Bash(pip install requests)",
+      "Bash(flutter analyze --no-fatal-infos --no-fatal-warnings)",
+      "Bash(flutter pub get)",
+      "Bash(identify 'assets/icon/ic_foreground.png' 'assets/icon/icon.png')",
+      "Bash(dart run flutter_launcher_icons)"
     ]
   }
 }
