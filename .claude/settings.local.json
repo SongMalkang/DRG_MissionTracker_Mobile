@@ -15,7 +15,11 @@
       "Bash(flutter pub get)",
       "Bash(identify 'assets/icon/ic_foreground.png' 'assets/icon/icon.png')",
       "Bash(dart run flutter_launcher_icons)",
-      "Bash(dart analyze --fatal-infos)"
+      "Bash(dart analyze --fatal-infos)",
+      "Bash(flutter test)",
+      "Bash(flutter clean)",
+      "Bash(flutter build apk --release)",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(set\\(m.get\\(''secondary_objective'',''''\\) for s in data.values\\(\\) for ms in s.values\\(\\) for m in ms\\)\\)\")"
     ]
   }
 }

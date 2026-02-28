@@ -1,0 +1,11 @@
+{
+  "latest_version": "1.0.0",
+  "min_required": "1.0.0",
+  "force_update": false,
+  "store_url": "https://play.google.com/store/apps/details?id=com.example.drg_mission_tracker",
+  "changelog": {
+    "KR": "• 보스코 터미널 초기 릴리즈\n• 실시간 미션 트래커\n• 딥 다이브 정보\n• 미션 알림 기능\n• 한국어 / 영어 / 중국어 지원",
+    "EN": "• Bosco Terminal initial release\n• Real-time mission tracker\n• Deep dive information\n• Mission notifications\n• Korean / English / Chinese support",
+    "CN": "• 博斯科终端初始版本\n• 实时任务追踪\n• 深潜信息\n• 任务通知功能\n• 支持韩语 / 英语 / 中文"
+  }
+}

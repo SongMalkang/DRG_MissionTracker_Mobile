@@ -56,7 +56,7 @@ void main() {
     });
 
     test('translates biome names', () {
-      expect(t('Azure Weald', 'KR'), '푸른 숲');
+      expect(t('Azure Weald', 'KR'), '바닷빛 삼림');
       expect(t('Azure Weald', 'EN'), 'Azure Weald');
       expect(t('Azure Weald', 'CN'), '蔚蓝旷野');
     });

@@ -1,9 +1,16 @@
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/splash_screen.dart';
+import 'services/notification_service.dart';
+import 'services/strings_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AndroidAlarmManager.initialize();
+  await NotificationService().initialize();
+  // 번역 캐시 로드 (빠름) + 백그라운드 갱신 예약
+  await StringsService().initialize();
   runApp(const DRGMissionTrackerApp());
 }
 

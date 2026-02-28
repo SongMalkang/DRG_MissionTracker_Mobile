@@ -9,6 +9,8 @@ import '../utils/constants.dart';
 import '../utils/strings.dart';
 import '../services/settings_service.dart';
 import '../services/mission_service.dart';
+import '../services/update_service.dart';
+import '../widgets/update_dialog.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -50,6 +52,18 @@ class _MainScreenState extends State<MainScreen> {
       setState(() {
         _currentLang = lang;
         _currentSeason = season;
+      });
+      // 언어 로드 완료 후 업데이트 확인 (비동기, UI 블로킹 없음)
+      _checkForUpdate();
+    }
+  }
+
+  Future<void> _checkForUpdate() async {
+    final info = await UpdateService().checkForUpdate();
+    if (info != null && mounted) {
+      // 첫 프레임 렌더링 완료 후 다이얼로그 표시
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showUpdateDialog(context, info, _currentLang);
       });
     }
   }

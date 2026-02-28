@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/mission_model.dart';
 import '../utils/strings.dart';
 import '../utils/asset_helper.dart';
+import 'trivia_modal.dart';
 
 // ── 전역 함수: 어디서든 미션 상세 모달을 열 수 있음 ──────────────────────────
 void showMissionModal(BuildContext context, Mission mission, String lang) {
@@ -308,22 +309,9 @@ class _MissionDetailDialog extends StatelessWidget {
                               ),
                             ),
 
-                          // 주 목표
-                          _SectionLabel(
-                              text: i18n[lang]!['primary_obj'] ?? 'Primary'),
-                          const SizedBox(height: 6),
-                          _ObjectiveRow(
-                            iconPath: AssetHelper.getMissionIcon(
-                                mission.missionType),
-                            label: t(mission.missionType, lang),
-                            isPrimary: true,
-                            fallbackIcon: Icons.assignment,
-                          ),
-
                           // 보조 목표
                           if (mission.secondaryObjective != null &&
                               mission.secondaryObjective!.isNotEmpty) ...[
-                            const SizedBox(height: 10),
                             _SectionLabel(
                                 text: i18n[lang]!['secondary_obj'] ??
                                     'Secondary'),
@@ -332,7 +320,7 @@ class _MissionDetailDialog extends StatelessWidget {
                               iconPath: AssetHelper.getSecondaryIcon(
                                   mission.secondaryObjective!),
                               label: t(mission.secondaryObjective, lang),
-                              isPrimary: false,
+                              isPrimary: true,
                               fallbackIcon: Icons.local_florist_rounded,
                             ),
                           ],
@@ -388,6 +376,14 @@ class _MissionDetailDialog extends StatelessWidget {
                                   label: t(mission.buff, lang),
                                   color: Colors.amber,
                                   fallbackIcon: Icons.bolt,
+                                  onTap: () => showTriviaModal(
+                                    context,
+                                    itemKey: mission.buff!,
+                                    lang: lang,
+                                    iconPath: AssetHelper.getMutatorIcon(
+                                        mission.buff!),
+                                    accentColor: Colors.amber,
+                                  ),
                                 ),
                               ),
                             ...warnings.map(
@@ -398,6 +394,13 @@ class _MissionDetailDialog extends StatelessWidget {
                                   label: t(w, lang),
                                   color: Colors.redAccent,
                                   fallbackIcon: Icons.warning_amber_rounded,
+                                  onTap: () => showTriviaModal(
+                                    context,
+                                    itemKey: w,
+                                    lang: lang,
+                                    iconPath: AssetHelper.getWarningIcon(w),
+                                    accentColor: Colors.redAccent,
+                                  ),
                                 ),
                               ),
                             ),
@@ -518,14 +521,32 @@ class _ModalHeader extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Text(
-                        t(mission.biome, lang),
-                        style: TextStyle(
-                          color: Colors.orange.shade300,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          shadows: const [
-                            Shadow(color: Colors.black, blurRadius: 6)
+                      GestureDetector(
+                        onTap: () => showTriviaModal(
+                          context,
+                          itemKey: mission.biome,
+                          lang: lang,
+                          iconPath: null,
+                          accentColor: Colors.orange,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              t(mission.biome, lang),
+                              style: TextStyle(
+                                color: Colors.orange.shade300,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                shadows: const [
+                                  Shadow(color: Colors.black, blurRadius: 6)
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.info_outline,
+                                size: 13,
+                                color: Colors.orange.withValues(alpha: 0.5)),
                           ],
                         ),
                       ),
@@ -560,7 +581,7 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ── 목표 행 (Primary / Secondary) ─────────────────────────────────────────────
+// ── 목표 행 ─────────────────────────────────────────────────────────────────
 class _ObjectiveRow extends StatelessWidget {
   final String iconPath;
   final String label;
@@ -729,17 +750,21 @@ class _BadgeRow extends StatelessWidget {
   final String label;
   final Color color;
   final IconData fallbackIcon;
+  final VoidCallback? onTap;
 
   const _BadgeRow({
     required this.iconPath,
     required this.label,
     required this.color,
     required this.fallbackIcon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
       children: [
         SizedBox(
           width: 26,
@@ -761,7 +786,14 @@ class _BadgeRow extends StatelessWidget {
             ),
           ),
         ),
+        if (onTap != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Icon(Icons.info_outline,
+                size: 14, color: color.withValues(alpha: 0.4)),
+          ),
       ],
+    ),
     );
   }
 }

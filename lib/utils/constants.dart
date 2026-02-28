@@ -7,6 +7,15 @@ class AppConstants {
   static const String deepDiveDataUrl =
       'https://raw.githubusercontent.com/SongMalkang/DRG_MissionTracker_Mobile/main/data/deep_dive.json';
 
+  /// 번역 핫픽스: GitHub에서 동적으로 로드되는 i18n 오버라이드 맵
+  /// 앱 업데이트 없이 번역 수정 가능 (data/strings.json에서 관리)
+  static const String stringsJsonUrl =
+      'https://raw.githubusercontent.com/SongMalkang/DRG_MissionTracker_Mobile/main/data/strings.json';
+
+  /// 버전 체크: 업데이트 공지 및 changelog 표시
+  static const String versionJsonUrl =
+      'https://raw.githubusercontent.com/SongMalkang/DRG_MissionTracker_Mobile/main/data/version.json';
+
   // ── Local Assets & Cache ────────────────────────────────────────────────
   static const String localMissionAsset = 'data/daily_missions.json';
   static const String cachedMissionFile = 'cached_missions.json';

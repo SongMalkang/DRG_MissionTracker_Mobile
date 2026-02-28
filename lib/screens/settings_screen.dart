@@ -4,6 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/strings.dart';
 import '../services/settings_service.dart';
 import '../services/mission_service.dart';
+import '../services/notification_service.dart';
+import '../services/notification_settings_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final String currentLang;
@@ -29,6 +31,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _selectedSeason;
   final SettingsService _settingsService = SettingsService();
   final MissionService _missionService = MissionService();
+  final NotificationService _notifService = NotificationService();
+  final NotificationSettingsService _notifSettings = NotificationSettingsService();
+
+  // 알림 설정 상태
+  bool _notifEnabled = false;
+  TimeOfDay _notifTime = const TimeOfDay(hour: 18, minute: 0);
+  List<int> _notifDays = [1, 2, 3, 4, 5, 6, 7];
+  Set<String> _excludedTypes = {};
+
+  static const List<String> _allMissionTypes = [
+    'Mining Expedition', 'Egg Hunt', 'On-Site Refining',
+    'Point Extraction', 'Salvage Operation', 'Escort Duty',
+    'Elimination', 'Industrial Sabotage', 'Deep Scan', 'Heavy Excavation',
+  ];
 
   @override
   void initState() {
@@ -41,8 +57,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadSettings() async {
     final show = await _settingsService.getShowWarnings();
     await _missionService.initialize();
+
+    final notifOn = await _notifSettings.isEnabled();
+    final notifTime = await _notifSettings.getScheduledTime();
+    final notifDays = await _notifSettings.getEnabledDays();
+    final excluded = await _notifSettings.getExcludedMissionTypes();
+
     setState(() {
       _showWarnings = show;
+      _notifEnabled = notifOn;
+      _notifTime = notifTime;
+      _notifDays = notifDays;
+      _excludedTypes = excluded;
     });
   }
 
@@ -93,6 +119,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _showWarnings = val;
     });
     _settingsService.saveShowWarnings(val);
+  }
+
+  Future<void> _toggleNotification(bool val) async {
+    if (val) {
+      final granted = await _notifService.requestPermission();
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(i18n[_selectedLang]!['notif_permission_denied']!),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+        return;
+      }
+    }
+    setState(() => _notifEnabled = val);
+    await _notifSettings.setEnabled(val);
+    if (val) {
+      await _notifService.scheduleAlarms();
+    } else {
+      await _notifService.cancelAllAlarms();
+    }
+  }
+
+  Future<void> _pickNotifTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _notifTime,
+    );
+    if (picked != null) {
+      setState(() => _notifTime = picked);
+      await _notifSettings.setScheduledTime(picked.hour, picked.minute);
+      if (_notifEnabled) await _notifService.scheduleAlarms();
+    }
+  }
+
+  Future<void> _toggleNotifDay(int day) async {
+    setState(() {
+      if (_notifDays.contains(day)) {
+        _notifDays.remove(day);
+      } else {
+        _notifDays.add(day);
+      }
+    });
+    await _notifSettings.setEnabledDays(_notifDays);
+    if (_notifEnabled) await _notifService.scheduleAlarms();
+  }
+
+  Future<void> _toggleExcludedType(String type) async {
+    setState(() {
+      if (_excludedTypes.contains(type)) {
+        _excludedTypes.remove(type);
+      } else {
+        _excludedTypes.add(type);
+      }
+    });
+    await _notifSettings.setExcludedMissionTypes(_excludedTypes);
   }
 
   Future<void> _launchSteam() async {
@@ -195,8 +280,110 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onChanged: _toggleWarnings,
           ),
           const Divider(color: Colors.white10, height: 24),
-          
-          // 5. Steam & Community
+
+          // 5. Notification Settings
+          _buildSectionTitle(langMap['notif_settings']!),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(langMap['notif_enable']!, style: const TextStyle(color: Colors.white, fontSize: 14)),
+            activeThumbColor: Colors.orange,
+            value: _notifEnabled,
+            onChanged: _toggleNotification,
+          ),
+          AnimatedOpacity(
+            opacity: _notifEnabled ? 1.0 : 0.4,
+            duration: const Duration(milliseconds: 200),
+            child: IgnorePointer(
+              ignoring: !_notifEnabled,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 알림 시간
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(langMap['notif_time']!, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                      GestureDetector(
+                        onTap: _pickNotifTime,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            '${_notifTime.hour.toString().padLeft(2, '0')}:${_notifTime.minute.toString().padLeft(2, '0')}',
+                            style: const TextStyle(color: Colors.orange, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 활성 요일
+                  Text(langMap['notif_days']!, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      for (final entry in [
+                        (1, langMap['mon']!), (2, langMap['tue']!), (3, langMap['wed']!),
+                        (4, langMap['thu']!), (5, langMap['fri']!), (6, langMap['sat']!), (7, langMap['sun']!),
+                      ])
+                        GestureDetector(
+                          onTap: () => _toggleNotifDay(entry.$1),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _notifDays.contains(entry.$1)
+                                  ? Colors.orange
+                                  : Colors.white.withValues(alpha: 0.08),
+                              border: Border.all(
+                                color: _notifDays.contains(entry.$1)
+                                    ? Colors.orange
+                                    : Colors.white.withValues(alpha: 0.15),
+                              ),
+                            ),
+                            child: Text(
+                              entry.$2,
+                              style: TextStyle(
+                                color: _notifDays.contains(entry.$1) ? Colors.black : Colors.white54,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 미션 타입 필터
+                  Text(langMap['notif_exclude_types']!, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  const SizedBox(height: 4),
+                  Text(langMap['notif_exclude_note']!, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                  const SizedBox(height: 8),
+                  ...(_allMissionTypes.map((type) => CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Text(t(type, _selectedLang), style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                    value: !_excludedTypes.contains(type),
+                    activeColor: Colors.orange,
+                    onChanged: (_) => _toggleExcludedType(type),
+                  ))),
+                ],
+              ),
+            ),
+          ),
+          const Divider(color: Colors.white10, height: 24),
+
+          // 6. Steam & Community
           _buildSectionTitle(langMap['steam_profile']!),
           InkWell(
             onTap: _launchSteam,
