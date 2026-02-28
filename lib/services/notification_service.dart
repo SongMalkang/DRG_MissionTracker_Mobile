@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show Color;
 
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,37 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mission_model.dart';
 import '../utils/constants.dart';
 import '../utils/strings.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  보스코 테마 위트있는 알림 메시지 (언어별 · 5개 변형)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const _boscoMessages = {
+  'KR': {
+    'titles': [
+      '📡 BOSCO 정찰 보고',
+    ],
+    'prefixes': [
+      'BOSCO가 열심히 정찰한 결과입니다.',
+    ],
+  },
+  'EN': {
+    'titles': [
+      '📡 BOSCO Scouting Report',
+    ],
+    'prefixes': [
+      'BOSCO reporting in. Don\'t miss this!',
+    ],
+  },
+  'CN': {
+    'titles': [
+      '📡 博斯科侦察报告',
+    ],
+    'prefixes': [
+      '博斯科侦察完毕，不要错过！',
+    ],
+  },
+};
 
 /// 알림 서비스 (싱글톤)
 ///
@@ -202,20 +234,40 @@ Future<void> alarmCallback(int alarmId) async {
     const initSettings    = InitializationSettings(android: androidSettings);
     await plugin.initialize(initSettings);
 
-    final body = missions.map((m) {
+    // ── 위트있는 보스코 메시지 선택 (alarmId 기반 결정론적 선택) ──────────
+    final langMessages = _boscoMessages[lang] ?? _boscoMessages['EN']!;
+    final msgIdx  = alarmId % 5;
+    final title   = (langMessages['titles']  as List)[msgIdx] as String;
+    final prefix  = (langMessages['prefixes'] as List)[msgIdx] as String;
+
+    // ── 미션 목록 (최대 5개 표시, 초과 시 "외 N개" 안내) ─────────────────
+    final missionLines = StringBuffer();
+    final displayCount = missions.length > 5 ? 5 : missions.length;
+    for (int i = 0; i < displayCount; i++) {
+      final m           = missions[i];
       final missionName = i18n[lang]?[m.missionType] ?? m.missionType;
       final biomeName   = i18n[lang]?[m.biome] ?? m.biome;
-      final buffName    = i18n[lang]?[m.buff] ?? m.buff ?? '';
-      return '$buffName: $missionName ($biomeName)';
-    }).join('\n');
+      missionLines.writeln('• $missionName  [$biomeName]');
+    }
+    if (missions.length > 5) {
+      final extra = missions.length - 5;
+      final extraText = lang == 'KR' ? '외 $extra개 더'
+                      : lang == 'CN' ? '以及另外$extra个'
+                      : '+ $extra more';
+      missionLines.write(extraText);
+    }
 
-    final title = i18n[lang]?['notif_title'] ?? 'Bosco Terminal';
+    final bodyFull    = '$prefix\n${missionLines.toString().trimRight()}';
+    final summaryText = i18n[lang]?['notif_summary']
+        ?.replaceAll('{n}', '${missions.length}')
+        ?? '${missions.length} Double XP';
 
+    // ── 알림 표시 (largeIcon: 보스코, BigText 스타일) ─────────────────────
     await plugin.show(
       alarmId, // 슬롯별 고유 ID → 시간대별로 별도 알림
       title,
-      body,
-      const NotificationDetails(
+      bodyFull,
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'mission_alerts',
           'Mission Alerts',
@@ -223,6 +275,15 @@ Future<void> alarmCallback(int alarmId) async {
           importance: Importance.high,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
+          largeIcon: const DrawableResourceAndroidBitmap('bosco_notification'),
+          color: const Color(0xFFFF9800), // 주황 액센트
+          styleInformation: BigTextStyleInformation(
+            bodyFull,
+            contentTitle: title,
+            summaryText: summaryText,
+            htmlFormatBigText: false,
+            htmlFormatContentTitle: false,
+          ),
         ),
       ),
     );
@@ -244,7 +305,7 @@ Future<void> alarmCallback(int alarmId) async {
   }
 }
 
-/// MissionService._getTimeKey와 동일 로직 (isolate에서 접근 불가하므로 별도 정의)
+
 String _formatTimeKey(DateTime utcTime) {
   final y   = utcTime.year.toString();
   final m   = utcTime.month.toString().padLeft(2, '0');

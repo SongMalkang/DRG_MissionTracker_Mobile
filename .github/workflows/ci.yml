@@ -46,5 +46,13 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
-      - run: flutter build ${{ matrix.target }} --release
+      # PWA 캐시 문제 방지: web 빌드는 --pwa-strategy=none (서비스 워커 비활성화)
+      # 이 앱은 실시간 데이터가 필요하므로 오프라인 지원 불필요.
+      # offline-first(기본값)를 사용하면 구버전이 캐시되어 사용자가 갱신을 못 보는 문제 발생.
+      - run: |
+          if [ "${{ matrix.target }}" = "web" ]; then
+            flutter build web --release --pwa-strategy=none
+          else
+            flutter build ${{ matrix.target }} --release
+          fi
       # Build verification only. No artifact upload or release.

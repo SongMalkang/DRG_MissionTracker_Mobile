@@ -1,5 +1,5 @@
 name: drg_mission_tracker
-description: "A new Flutter project."
+description: "Bosco Terminal — DRG 비공식 실시간 미션 트래커. Double XP 미션 및 Deep Dive 정보 제공."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
