@@ -194,26 +194,40 @@ class MissionCard extends StatelessWidget {
                             if (mission.buff != null && mission.debuff != null)
                               const SizedBox(height: 4),
                             if (mission.debuff != null)
-                              Tooltip(
-                                message: t(
-                                    mission.debuff!.split(',').first.trim(),
-                                    lang),
-                                child: SizedBox(
-                                  width: 28,
-                                  height: 28,
-                                  child: Image.asset(
-                                    AssetHelper.getWarningIcon(mission.debuff!
-                                        .split(',')
-                                        .first
-                                        .trim()),
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            const Icon(
-                                                Icons.warning_amber_rounded,
-                                                color: Colors.redAccent,
-                                                size: 22),
-                                  ),
-                                ),
+                              Builder(
+                                builder: (_) {
+                                  final ws = mission.debuff!
+                                      .split(',')
+                                      .map((e) => e.trim())
+                                      .where((e) => e.isNotEmpty)
+                                      .toList();
+                                  return Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      for (int i = 0; i < ws.length; i++) ...[
+                                        if (i > 0)
+                                          const SizedBox(width: 4),
+                                        Tooltip(
+                                          message: t(ws[i], lang),
+                                          child: SizedBox(
+                                            width: 28,
+                                            height: 28,
+                                            child: Image.asset(
+                                              AssetHelper.getWarningIcon(
+                                                  ws[i]),
+                                              errorBuilder: (_, _, _) =>
+                                                  const Icon(
+                                                    Icons.warning_amber_rounded,
+                                                    color: Colors.redAccent,
+                                                    size: 22,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                },
                               ),
                           ],
                         ),

@@ -500,16 +500,16 @@ const Map<String, Map<String, Map<String, String>>> triviaData = {
 
   'Parasites': {
     'KR': {
-      'desc': '적을 처치하면 기생충 소형 적이 추가 생성됩니다.',
-      'tips': '처치 후에도 방심하지 말 것\n소형 적은 근접 공격이 효율적\n군중 제어 무기가 유용',
+      'desc': '기생충을 보유한 적이 드워프에게 달려듭니다. 감염되면 지속 피해를 받습니다.',
+      'tips': '기생충 적에 지나치게 가까이 가지 말 것\n팀원이 감염되면 즉시 지원\n원거리 처치로 감염 예방',
     },
     'EN': {
-      'desc': 'Killing enemies spawns small parasite enemies.',
-      'tips': 'Stay alert even after kills\nMelee attacks are efficient against small enemies\nCrowd control weapons are useful',
+      'desc': 'Enemies carrying parasites will charge at dwarves. Getting infected causes continuous damage.',
+      'tips': 'Avoid getting too close to parasite-carrying enemies\nSupport teammates who get infected immediately\nEliminate from range to prevent infection',
     },
     'CN': {
-      'desc': '击杀敌人后会生成小型寄生虫敌人。',
-      'tips': '击杀后也不要放松警惕\n近战攻击对小型敌人效率高\n群体控制武器很有用',
+      'desc': '携带寄生虫的敌人会冲向矮人。感染后会持续受到伤害。',
+      'tips': '避免与携带寄生虫的敌人过近\n队友感染时立即支援\n远程击杀以防止感染',
     },
   },
 
@@ -545,31 +545,31 @@ const Map<String, Map<String, Map<String, String>>> triviaData = {
 
   'Low Oxygen': {
     'KR': {
-      'desc': '산소가 부족하여 몰리에서 멀어지면 질식 데미지를 받습니다.',
-      'tips': '몰리(보급 팟) 근처에서 행동\n산소 보충 식물을 적극 활용\n팀이 분산되면 위험이 증가',
+      'desc': '산소가 부족한 환경. 몰리 또는 보급 포드 등 시설물 근처에서만 산소를 보충할 수 있습니다.',
+      'tips': '몰리 또는 보급 포드 반경을 벗어나지 말 것\n산소 소진 시 지속 피해 발생\n팀이 분산되면 산소 부족 위험 증가',
     },
     'EN': {
-      'desc': 'Low oxygen causes suffocation damage when far from Molly.',
-      'tips': 'Stay near Molly (supply pod)\nActively use oxygen replenishment plants\nSplitting the team increases danger',
+      'desc': 'Low oxygen environment. Oxygen is only replenished near Molly or supply pods.',
+      'tips': 'Never stray far from Molly or supply pods\nRunning out of oxygen causes continuous damage\nSplitting up increases the risk of oxygen deprivation',
     },
     'CN': {
-      'desc': '氧气不足，远离莫莉时会受到窒息伤害。',
-      'tips': '在莫莉（补给舱）附近行动\n积极利用氧气补充植物\n团队分散会增加危险',
+      'desc': '低氧环境。只能在莫莉或补给舱等设施附近补充氧气。',
+      'tips': '不要离开莫莉或补给舱的范围\n氧气耗尽时会持续受到伤害\n团队分散会增加缺氧风险',
     },
   },
 
   'Haunted Cave': {
     'KR': {
-      'desc': '무적의 유령 적이 한 명의 드워프를 계속 추적합니다.',
-      'tips': '유령은 처치 불가, 무조건 도망\n타겟이 되면 팀에게 알리기\n좁은 공간에 몰리면 매우 위험',
+      'desc': '유령 벌크(Ghostly Bulk Detonator)가 출몰합니다. 무적 상태이므로 처치할 수 없습니다.',
+      'tips': '처치 불가 — 최대한 빠르게 미션 목표 달성\n목표 완료 후 즉시 추출 개시\n팀 전체가 신속하게 움직이는 것이 핵심',
     },
     'EN': {
-      'desc': 'An invincible ghost enemy continuously chases one dwarf.',
-      'tips': 'Ghost cannot be killed - always run\nAlert team when you\'re the target\nGetting cornered in tight spaces is very dangerous',
+      'desc': 'A Ghostly Bulk Detonator appears. It is invincible and cannot be killed.',
+      'tips': 'Cannot be killed — complete objectives as fast as possible\nInitiate extraction immediately after objectives are done\nThe key is keeping the entire team moving quickly',
     },
     'CN': {
-      'desc': '一个无敌的幽灵敌人持续追踪一名矮人。',
-      'tips': '幽灵无法击杀，只能逃跑\n成为目标时通知队友\n在狭窄空间被逼到角落非常危险',
+      'desc': '幽灵爆炸矮人出没。处于无敌状态，无法击杀。',
+      'tips': '无法击杀——尽快完成任务目标\n目标完成后立即开始撤离\n全队快速行动是关键',
     },
   },
 
@@ -606,15 +606,15 @@ const Map<String, Map<String, Map<String, String>>> triviaData = {
   'Rival Presence': {
     'KR': {
       'desc': '라이벌 사의 로봇과 터렛이 맵 곳곳에 배치됩니다.',
-      'tips': '터렛은 접근 전에 원거리 파괴\n전자 장비 파괴 시 주변 폭발 주의\n통신 라우터를 찾아 파괴하면 효과적',
+      'tips': '발화(화염) 피해가 로봇에 효과적\n게이지 100% 도달 시 폭파 주의\n터렛은 접근 전에 원거리로 먼저 파괴',
     },
     'EN': {
       'desc': 'Rival company robots and turrets deployed throughout the map.',
-      'tips': 'Destroy turrets from range before approaching\nWatch for explosions when destroying electronics\nFind and destroy comm routers for effectiveness',
+      'tips': 'Fire/incendiary damage is effective against robots\nWatch out when the gauge reaches 100% — they explode\nDestroy turrets from range before approaching',
     },
     'CN': {
       'desc': '竞争公司的机器人和炮塔部署在地图各处。',
-      'tips': '接近前远距离摧毁炮塔\n摧毁电子设备时注意周围爆炸\n找到并摧毁通信路由器效果好',
+      'tips': '火焰/燃烧伤害对机器人很有效\n注意仪表达到100%时会爆炸\n接近前先远程摧毁炮塔',
     },
   },
 

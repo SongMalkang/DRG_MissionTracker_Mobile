@@ -1,11 +1,11 @@
 {
-  "latest_version": "1.0.0",
+  "latest_version": "1.1.0",
   "min_required": "1.0.0",
   "force_update": false,
   "store_url": "https://play.google.com/store/apps/details?id=com.songmalkang.drg_mission_tracker",
   "changelog": {
-    "KR": "• 보스코 터미널 초기 릴리즈\n• 실시간 미션 트래커\n• 딥 다이브 정보\n• 미션 알림 기능\n• 한국어 / 영어 / 중국어 지원",
-    "EN": "• Bosco Terminal initial release\n• Real-time mission tracker\n• Deep dive information\n• Mission notifications\n• Korean / English / Chinese support",
-    "CN": "• 博斯科终端初始版本\n• 实时任务追踪\n• 深潜信息\n• 任务通知功能\n• 支持韩语 / 英语 / 中文"
+    "KR": "• 이중 주의보 카드 표시 개선\n• BOSCO 테마 알림 문구 추가\n• PWA 캐시 버그 수정\n• APK 크래시(MainActivity) 수정\n• Trivia 데이터 정확도 개선",
+    "EN": "• Dual warning icons on mission cards\n• BOSCO-themed notification messages\n• PWA cache bug fix\n• APK crash (MainActivity) fix\n• Trivia accuracy improvements",
+    "CN": "• 任务卡片双重警告图标显示\n• BOSCO主题通知消息\n• PWA缓存错误修复\n• APK崩溃(MainActivity)修复\n• Trivia数据准确性改进"
   }
 }
