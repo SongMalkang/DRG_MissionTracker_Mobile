@@ -27,8 +27,8 @@ void main() {
     });
 
     test('API URLs are not empty', () {
-      expect(AppConstants.missionDataRemoteUrl, isNotEmpty);
-      expect(AppConstants.deepDiveBaseUrl, isNotEmpty);
+      expect(AppConstants.missionDataUrl, isNotEmpty);
+      expect(AppConstants.deepDiveDataUrl, isNotEmpty);
       expect(AppConstants.localMissionAsset, isNotEmpty);
       expect(AppConstants.cachedMissionFile, isNotEmpty);
     });

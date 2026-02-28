@@ -27,14 +27,25 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    _missionService.addListener(_onDataChanged);
     _loadSettings();
+  }
+
+  @override
+  void dispose() {
+    _missionService.removeListener(_onDataChanged);
+    super.dispose();
+  }
+
+  void _onDataChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadSettings() async {
     final lang = await _settingsService.getLanguage();
     final season = await _settingsService.getSeason();
-    await _missionService.loadMissions();
-    
+    await _missionService.initialize();
+
     if (mounted) {
       setState(() {
         _currentLang = lang;
@@ -67,12 +78,13 @@ class _MainScreenState extends State<MainScreen> {
       next = DataStatus.offline;
     } else if (current == DataStatus.offline) {
       next = DataStatus.outdated;
+    } else if (current == DataStatus.outdated) {
+      next = DataStatus.refreshing;
     } else {
       next = DataStatus.online;
     }
 
     _missionService.debugSetStatus(next);
-    setState(() {});
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -87,8 +99,8 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final List<Widget> tabs = [
       LiveMissionsTab(
-        lang: _currentLang, 
-        currentSeason: _currentSeason, 
+        lang: _currentLang,
+        currentSeason: _currentSeason,
         onSeasonChange: _onSeasonChange
       ),
       HighlightsTab(lang: _currentLang),
@@ -127,11 +139,22 @@ class _MainScreenState extends State<MainScreen> {
             },
           ),
         ],
+        bottom: _missionService.status == DataStatus.refreshing
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(2),
+                child: LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                ),
+              )
+            : null,
       ),
       body: Stack(
         children: [
           tabs[_currentIndex],
-          if (_missionService.status != DataStatus.online)
+          if (_missionService.status == DataStatus.offline ||
+              _missionService.status == DataStatus.outdated)
             Positioned(
               bottom: 20,
               left: 20,
@@ -167,7 +190,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildOfflineWarning() {
     bool isOutdated = _missionService.status == DataStatus.outdated;
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -191,13 +214,15 @@ class _MainScreenState extends State<MainScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  isOutdated ? "SIGNAL LOST!" : "OFFLINE MODE",
+                  isOutdated
+                      ? (i18n[_currentLang]!['signal_lost'] ?? "SIGNAL LOST!")
+                      : (i18n[_currentLang]!['offline_mode'] ?? "OFFLINE MODE"),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 Text(
-                  isOutdated 
-                    ? "보스코가 신호를 잃었습니다! 전파 방해인가요? 데이터가 너무 오래되었습니다."
-                    : "Hoxxes 전파 상태가 좋지 않습니다. 캐시된 데이터를 사용 중입니다.",
+                  isOutdated
+                      ? (i18n[_currentLang]!['signal_lost_desc'] ?? "Data is too old.")
+                      : (i18n[_currentLang]!['offline_mode_desc'] ?? "Using cached data."),
                   style: const TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ],
@@ -205,7 +230,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => setState(() { _missionService.loadMissions(); }),
+            onPressed: () => _missionService.forceRefresh(),
           )
         ],
       ),

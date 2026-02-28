@@ -1,59 +1,7 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
 import '../utils/strings.dart';
 import '../utils/asset_helper.dart';
-
-// ── 데이터 모델 ────────────────────────────────────────────────────────────────
-
-class _Stage {
-  final int num;
-  final String primary;
-  final String secondary;
-  final String? warning;
-  final int complexity;
-  final int length;
-
-  const _Stage({
-    required this.num,
-    required this.primary,
-    required this.secondary,
-    this.warning,
-    required this.complexity,
-    required this.length,
-  });
-
-  factory _Stage.fromJson(int num, Map<String, dynamic> j) {
-    final warnings = j['MissionWarnings'] as List?;
-    return _Stage(
-      num: num,
-      primary: j['PrimaryObjective'] as String? ?? '',
-      secondary: j['SecondaryObjective'] as String? ?? '',
-      warning: (warnings != null && warnings.isNotEmpty)
-          ? warnings.first as String
-          : null,
-      complexity:
-          int.tryParse(j['Complexity']?.toString() ?? '1') ?? 1,
-      length: int.tryParse(j['Length']?.toString() ?? '1') ?? 1,
-    );
-  }
-}
-
-class _DeepDive {
-  final bool isElite;
-  final String biome;
-  final String codeName;
-  final List<_Stage> stages;
-
-  const _DeepDive({
-    required this.isElite,
-    required this.biome,
-    required this.codeName,
-    required this.stages,
-  });
-}
+import '../services/deep_dive_service.dart';
 
 // ── Deep Dive 탭 ───────────────────────────────────────────────────────────────
 
@@ -66,121 +14,33 @@ class DeepDivesTab extends StatefulWidget {
 }
 
 class _DeepDivesTabState extends State<DeepDivesTab> {
-  List<_DeepDive>? _dives;
-  DateTime? _thursdayUtc;
-  bool _isLoading = true;
-  String? _error;
+  final DeepDiveService _ddService = DeepDiveService();
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _ddService.addListener(_onDataChanged);
+    _ddService.loadDeepDives();
+  }
+
+  void _onDataChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
-  void didUpdateWidget(covariant DeepDivesTab oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 언어 변경 시 리빌드만 하면 됨 (데이터 재로딩 불필요)
-  }
-
-  // ── 이번 주 목요일 UTC 11:00 계산 ─────────────────────────────────────────
-  DateTime _latestThursday() {
-    final now = DateTime.now().toUtc();
-    // weekday: Mon=1 … Thu=4 … Sun=7
-    int daysBack = (now.weekday - DateTime.thursday) % 7;
-    if (daysBack < 0) daysBack += 7;
-    DateTime thu = DateTime.utc(now.year, now.month, now.day - daysBack, AppConstants.deepDiveResetHourUtc);
-    // 오늘이 목요일인데 아직 11:00 UTC 전이면 이전 주
-    if (now.isBefore(thu)) thu = thu.subtract(const Duration(days: 7));
-    return thu;
-  }
-
-  String _buildUrl(DateTime thu) {
-    final y = thu.year;
-    final m = thu.month.toString().padLeft(2, '0');
-    final d = thu.day.toString().padLeft(2, '0');
-    return '${AppConstants.deepDiveBaseUrl}$y-$m-${d}T11-00-00Z.json';
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final thu = _latestThursday();
-      _thursdayUtc = thu;
-      final url = _buildUrl(thu);
-
-      final client = HttpClient();
-      client.connectionTimeout = const Duration(seconds: AppConstants.networkTimeoutSeconds);
-      final req = await client.getUrl(Uri.parse(url));
-      final res = await req.close().timeout(
-        const Duration(seconds: AppConstants.networkTimeoutSeconds),
-      );
-      final body = await res.transform(utf8.decoder).join();
-      client.close();
-
-      final dives = _parseDiveData(body);
-
-      if (mounted) {
-        setState(() {
-          _dives = dives;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint("Deep Dive load failed: $e");
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  List<_DeepDive> _parseDiveData(String body) {
-    final json = jsonDecode(body) as Map<String, dynamic>;
-    final ddMap = json['Deep Dives'] as Map<String, dynamic>?;
-    if (ddMap == null) throw FormatException('Missing "Deep Dives" key');
-
-    final dives = <_DeepDive>[];
-    for (final key in ['Deep Dive Normal', 'Deep Dive Elite']) {
-      final dd = ddMap[key] as Map<String, dynamic>?;
-      if (dd == null) continue;
-      final stagesRaw = dd['Stages'] as List?;
-      if (stagesRaw == null) continue;
-      final stages = stagesRaw
-          .asMap()
-          .entries
-          .map((e) =>
-              _Stage.fromJson(e.key + 1, e.value as Map<String, dynamic>))
-          .toList();
-      dives.add(_DeepDive(
-        isElite: key.contains('Elite'),
-        biome: dd['Biome'] as String? ?? '',
-        codeName: dd['CodeName'] as String? ?? '',
-        stages: stages,
-      ));
-    }
-    return dives;
-  }
-
-  // 다음 목요일 UTC 11:00 계산
-  DateTime _nextThursday() {
-    final thu = _thursdayUtc ?? _latestThursday();
-    return thu.add(const Duration(days: 7));
+  void dispose() {
+    _ddService.removeListener(_onDataChanged);
+    super.dispose();
   }
 
   String _formatNextUpdate() {
-    final next = _nextThursday().toLocal();
+    final next = _ddService.nextThursday().toLocal();
     return '${next.month}/${next.day}  ${next.hour.toString().padLeft(2, '0')}:00';
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (_ddService.isLoading && _ddService.dives == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -196,7 +56,7 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
       );
     }
 
-    if (_error != null) {
+    if (_ddService.error != null && _ddService.dives == null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -213,7 +73,7 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: _load,
+                onPressed: () => _ddService.loadDeepDives(forceRefresh: true),
                 icon: const Icon(Icons.refresh),
                 label: const Text('Retry'),
                 style: ElevatedButton.styleFrom(
@@ -234,12 +94,12 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
         _UpdateBanner(
           nextUpdate: _formatNextUpdate(),
           lang: widget.lang,
-          onRefresh: _load,
+          onRefresh: () => _ddService.loadDeepDives(forceRefresh: true),
         ),
         const SizedBox(height: 12),
 
         // Deep Dive 카드들
-        ...(_dives ?? []).map((dive) => Padding(
+        ...(_ddService.dives ?? []).map((dive) => Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: _DeepDiveCard(dive: dive, lang: widget.lang),
             )),
@@ -294,7 +154,7 @@ class _UpdateBanner extends StatelessWidget {
 // ── Deep Dive 카드 ─────────────────────────────────────────────────────────────
 
 class _DeepDiveCard extends StatelessWidget {
-  final _DeepDive dive;
+  final DeepDive dive;
   final String lang;
 
   const _DeepDiveCard({required this.dive, required this.lang});
@@ -463,7 +323,7 @@ class _DDHeader extends StatelessWidget {
 // ── 스테이지 행 ───────────────────────────────────────────────────────────────
 
 class _StageRow extends StatelessWidget {
-  final _Stage stage;
+  final DeepDiveStage stage;
   final Color accent;
   final String lang;
 
@@ -525,20 +385,6 @@ class _StageRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-
-                // 보조 목표
-                Row(
-                  children: [
-                    const Icon(Icons.task_alt,
-                        color: Colors.white30, size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      t(stage.secondary, lang),
-                      style: const TextStyle(
-                          color: Colors.white54, fontSize: 12),
-                    ),
-                  ],
-                ),
 
                 // 경고
                 if (stage.warning != null) ...[

@@ -16,7 +16,6 @@ This project would not be possible without the incredible work of **[rolfosian](
 1. **Non-Commercial**: This is a non-profit fan project.
 2. **Intellectual Property**: All game assets, images, and characters are property of **Ghost Ship Games**.
 3. **No Affiliation**: This app is not affiliated with Ghost Ship Games and is only used as a supplementary tool for official services.
-4. **Donation Usage**: Any support is strictly used for Apple App Store fees ($99/yr) and maintenance.
 
 ---
 ## 🛠️ Tech Stack

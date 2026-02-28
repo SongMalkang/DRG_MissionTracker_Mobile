@@ -40,7 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final show = await _settingsService.getShowWarnings();
-    await _missionService.loadMissions();
+    await _missionService.initialize();
     setState(() {
       _showWarnings = show;
     });

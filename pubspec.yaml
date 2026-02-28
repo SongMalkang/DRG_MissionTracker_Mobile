@@ -40,12 +40,21 @@ dependencies:
   flutter_native_splash: ^2.4.7
   path_provider: ^2.1.5
   http: ^1.6.0
+  in_app_purchase: ^3.2.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_foreground: "assets/icon/ic_foreground.png"
+  adaptive_icon_background: "#2D2D2D"
 
 flutter_native_splash:
   color: "#121212"
@@ -69,6 +78,7 @@ flutter:
   assets:
     - assets/images/bosco.png
     - data/daily_missions.json
+    - data/deep_dive.json
     - assets/images/biomes/
     - assets/images/missions/
     - assets/icons/mutators/
