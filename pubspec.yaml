@@ -97,6 +97,7 @@ flutter:
     - assets/audio/shouts/mushroom/
     - assets/audio/shouts/yeastcone/
     - assets/audio/shouts/gold/
+    - assets/images/minigames/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

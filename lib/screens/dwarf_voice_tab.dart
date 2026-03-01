@@ -3,6 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../data/shout_data.dart';
 import '../utils/strings.dart';
+import '../widgets/minigame_banner.dart';
+import '../widgets/minigame_list.dart';
+import '../widgets/jet_boots_game.dart';
+
+// ─── 서브 페이지 enum ───────────────────────────────────────────────────────
+
+enum _DwarfPage { shouts, miniGameList, miniGame }
+
+// ─── 메인 탭 위젯 (서브 네비게이션 허브) ─────────────────────────────────────
 
 class DwarfVoiceTab extends StatefulWidget {
   final String lang;
@@ -17,6 +26,10 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final Random _random = Random();
   int _currentPage = 0;
+
+  // 서브 네비게이션 상태
+  _DwarfPage _dwarfPage = _DwarfPage.shouts;
+  bool _isForward = true; // 전환 방향: true=오른쪽→, false=←왼쪽
 
   @override
   void dispose() {
@@ -43,13 +56,67 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
     );
   }
 
+  void _navigateTo(_DwarfPage page) {
+    setState(() {
+      _isForward = page.index > _dwarfPage.index;
+      _dwarfPage = page;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 250),
+      transitionBuilder: (child, animation) {
+        final offset = _isForward
+            ? const Offset(0.12, 0)
+            : const Offset(-0.12, 0);
+        return SlideTransition(
+          position: Tween<Offset>(begin: offset, end: Offset.zero).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          ),
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      child: _buildCurrentPage(),
+    );
+  }
+
+  Widget _buildCurrentPage() {
+    switch (_dwarfPage) {
+      case _DwarfPage.shouts:
+        return _buildShoutsPage();
+      case _DwarfPage.miniGameList:
+        return MiniGameList(
+          key: const ValueKey('miniGameList'),
+          lang: widget.lang,
+          onSelectGame: (gameId) => _navigateTo(_DwarfPage.miniGame),
+          onBack: () => _navigateTo(_DwarfPage.shouts),
+        );
+      case _DwarfPage.miniGame:
+        return JetBootsGame(
+          key: const ValueKey('jetBootsGame'),
+          lang: widget.lang,
+          onBack: () => _navigateTo(_DwarfPage.miniGameList),
+        );
+    }
+  }
+
+  // ─── Shout 페이지 (기존 레이아웃 + 상단 배너 + pointing 전폭) ───────────
+
+  Widget _buildShoutsPage() {
     return Stack(
+      key: const ValueKey('shouts'),
       children: [
         // 메인 콘텐츠
         Column(
           children: [
+            // MiniGame 배너 (상단)
+            MiniGameBanner(
+              lang: widget.lang,
+              onTap: () => _navigateTo(_DwarfPage.miniGameList),
+            ),
+
             // Carousel 영역
             Expanded(
               child: Stack(
@@ -125,7 +192,7 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
           ],
         ),
 
-        // 드워프 Pointing Meme — 하단 고정
+        // 드워프 Pointing Meme — 하단 고정, 전폭
         Positioned(
           left: 0,
           right: 0,
@@ -133,8 +200,8 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
           child: IgnorePointer(
             child: Image.asset(
               'assets/images/pointing.png',
-              height: 140,
-              fit: BoxFit.contain,
+              width: double.infinity,
+              fit: BoxFit.fitWidth,
             ),
           ),
         ),

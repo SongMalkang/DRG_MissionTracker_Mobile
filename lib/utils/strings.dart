@@ -161,6 +161,16 @@ const Map<String, Map<String, String>> i18n = {
     'shout_mushroom': '버섯',
     'shout_yeastcone': '이스트콘',
     'shout_gold': '금덩어리',
+    // MiniGame
+    'minigame_banner_title': '미니 게임',
+    'minigame_banner_subtitle': '탭하여 플레이',
+    'minigame_jet_boots_title': 'JET BOOTS',
+    'minigame_jet_boots_desc': 'Im leaving on a jet boots nanananana♫',
+    'minigame_coming_soon_title': '준비 중',
+    'minigame_coming_soon_desc': '더 많은 게임이 개발 중입니다...',
+    'minigame_back': '뒤로',
+    'minigame_tap_to_start': '탭하여 시작',
+    'minigame_score': '점수',
   },
 
   'EN': {
@@ -316,6 +326,16 @@ const Map<String, Map<String, String>> i18n = {
     'shout_mushroom': 'Mushroom',
     'shout_yeastcone': 'Yeast Cone',
     'shout_gold': 'Gold',
+    // MiniGame
+    'minigame_banner_title': 'MINI GAMES',
+    'minigame_banner_subtitle': 'TAP TO PLAY',
+    'minigame_jet_boots_title': 'JET BOOTS',
+    'minigame_jet_boots_desc': 'Im leaving on a jet boots nanananana♫',
+    'minigame_coming_soon_title': 'COMING SOON',
+    'minigame_coming_soon_desc': 'More games are being developed...',
+    'minigame_back': 'BACK',
+    'minigame_tap_to_start': 'TAP TO START',
+    'minigame_score': 'SCORE',
   },
   'CN': {
     'title': '博斯科终端',
@@ -470,6 +490,16 @@ const Map<String, Map<String, String>> i18n = {
     'shout_mushroom': '蘑菇',
     'shout_yeastcone': '酵母锥',
     'shout_gold': '金块',
+    // MiniGame
+    'minigame_banner_title': '迷你游戏',
+    'minigame_banner_subtitle': '点击游玩',
+    'minigame_jet_boots_title': 'JET BOOTS NANANANA',
+    'minigame_jet_boots_desc': '横版点击跳跃冒险！',
+    'minigame_coming_soon_title': '即将推出',
+    'minigame_coming_soon_desc': '更多游戏正在开发中...',
+    'minigame_back': '返回',
+    'minigame_tap_to_start': '点击开始',
+    'minigame_score': '分数',
   }
 };
 
