@@ -85,3 +85,8 @@ Pods/
 # 기타 시스템 파일
 .DS_Store
 Thumbs.db
+
+# Keystore / 서명 관련 (절대 커밋 금지)
+android/key.properties
+*.jks
+*.keystore

@@ -9,6 +9,7 @@ import '../services/settings_service.dart';
 import '../services/mission_service.dart';
 import '../services/notification_service.dart';
 import '../services/notification_settings_service.dart';
+import '../utils/constants.dart';
 
 class SettingsScreen extends StatefulWidget {
   final String currentLang;
@@ -204,6 +205,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _launchSteam() async {
     final Uri url = Uri.parse('https://steamcommunity.com/id/VonVon93/');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      debugPrint('Could not launch $url');
+    }
+  }
+
+  Future<void> _launchPrivacyPolicy() async {
+    final Uri url = Uri.parse(AppConstants.privacyPolicyUrl);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       debugPrint('Could not launch $url');
     }
@@ -556,7 +564,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 8),
           Text(langMap['bug_report_note']!, style: const TextStyle(color: Colors.grey, fontSize: 10)),
           const Divider(color: Colors.white10, height: 24),
-          
+
+          // 7. Privacy Policy & GitHub
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.privacy_tip_outlined, color: Colors.grey, size: 20),
+            title: Text(
+              langMap['privacy_policy']!,
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            trailing: const Icon(Icons.open_in_new, color: Colors.grey, size: 14),
+            onTap: _launchPrivacyPolicy,
+          ),
+
           const SizedBox(height: 20),
         ],
       ),

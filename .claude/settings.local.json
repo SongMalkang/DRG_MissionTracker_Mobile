@@ -37,7 +37,15 @@
       "Bash(curl -s \"https://raw.githubusercontent.com/SongMalkang/DRG_MissionTracker_Mobile/main/data/deep_dive.json\")",
       "Bash(flutter analyze --no-pub)",
       "Bash(flutter analyze --fatal-infos)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(find /c/Project/DRG_MissionTracker_Mobile/android/app/src/main/res/mipmap-* -type f)",
+      "Bash(ls -lh \"C:\\\\Project\\\\DRG_MissionTracker_Mobile/assets/icon/\"*.png)",
+      "Bash(identify /c/Project/DRG_MissionTracker_Mobile/assets/icon/icon.png /c/Project/DRG_MissionTracker_Mobile/assets/icon/ic_foreground.png)",
+      "Bash(find /c/Project/DRG_MissionTracker_Mobile -name \"local.properties\" -exec cat {} ;)",
+      "Bash(flutter --version)",
+      "Bash(xargs grep -l \"url_launcher\\\\|launchUrl\")",
+      "WebFetch(domain:support.google.com)",
+      "Bash(flutter build appbundle --release)"
     ]
   }
 }

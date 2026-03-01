@@ -42,4 +42,10 @@ class AppConstants {
 
   // ── Assets ──────────────────────────────────────────────────────────────
   static const String boscoImage = 'assets/images/bosco.png';
+
+  // ── External Links ────────────────────────────────────────────────────
+  static const String privacyPolicyUrl =
+      'https://songmalkang.github.io/DRG_MissionTracker_Mobile/privacy.html';
+  static const String githubRepoUrl =
+      'https://github.com/SongMalkang/DRG_MissionTracker_Mobile';
 }
