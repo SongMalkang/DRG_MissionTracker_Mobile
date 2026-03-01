@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>개인정보처리방침 · DRG Mission Terminal</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --surface: #1e1e1e;
+      --border: #2a2a2a;
+      --orange: #FF9800;
+      --orange-dim: rgba(255,152,0,0.15);
+      --text: #e0e0e0;
+      --text-dim: #888;
+      --text-muted: #555;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.7;
+      padding: 0 16px 60px;
+    }
+    .container { max-width: 720px; margin: 0 auto; }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 32px 0 24px;
+      margin-bottom: 32px;
+    }
+    .app-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--orange-dim);
+      border: 1px solid var(--orange);
+      border-radius: 8px;
+      padding: 8px 14px;
+      margin-bottom: 16px;
+    }
+    .app-badge span { color: var(--orange); font-weight: 700; font-size: 14px; letter-spacing: 0.5px; }
+    h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .meta { color: var(--text-dim); font-size: 13px; }
+    .lang-switch {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+    .lang-switch button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-switch button.active, .lang-switch button:hover {
+      background: var(--orange-dim);
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+
+    section { margin-bottom: 28px; }
+    h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    p { color: var(--text); font-size: 14px; margin-bottom: 8px; }
+    ul { padding-left: 20px; }
+    ul li { color: var(--text); font-size: 14px; margin-bottom: 4px; }
+    .highlight {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--orange);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+    .highlight strong { color: var(--orange); }
+    a { color: var(--orange); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* Language sections */
+    .lang-content { display: none; }
+    .lang-content.active { display: block; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="app-badge">
+      <span>DRG MISSION TERMINAL</span>
+    </div>
+    <h1 id="page-title">개인정보처리방침</h1>
+    <p class="meta" id="page-meta">최종 수정일: 2026년 2월 28일 &nbsp;·&nbsp; SongMalkang</p>
+    <div class="lang-switch">
+      <button class="active" onclick="setLang('ko')">한국어</button>
+      <button onclick="setLang('en')">English</button>
+      <button onclick="setLang('zh')">中文</button>
+    </div>
+  </header>
+
+  <!-- ─── 한국어 ─────────────────────────────────────── -->
+  <div class="lang-content active" id="lang-ko">
+    <div class="highlight">
+      <strong>요약:</strong> DRG Mission Terminal은 어떠한 개인정보도 수집하지 않습니다. 모든 설정은 기기 내에만 저장됩니다.
+    </div>
+
+    <section>
+      <h2>1. 수집하는 정보</h2>
+      <p>DRG Mission Terminal은 다음과 같은 정보를 <strong>수집하지 않습니다</strong>:</p>
+      <ul>
+        <li>이름, 이메일, 전화번호 등 개인 식별 정보</li>
+        <li>위치 정보</li>
+        <li>기기 고유 식별자</li>
+        <li>사용 통계 또는 분석 데이터</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. 기기 내 저장 데이터</h2>
+      <p>앱은 다음 정보를 <strong>기기 내에만</strong> 저장합니다 (외부 전송 없음):</p>
+      <ul>
+        <li>선택한 언어 설정 (한국어/영어/중국어)</li>
+        <li>선택한 시즌 설정</li>
+        <li>미션 알림 시간 및 요일 설정</li>
+        <li>미션 데이터 캐시 (오프라인 사용)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. 네트워크 통신</h2>
+      <p>앱은 미션 데이터를 최신 상태로 유지하기 위해 다음 주소에서만 데이터를 읽어옵니다:</p>
+      <div class="highlight">
+        <strong>GitHub Raw Content</strong><br>
+        <code>raw.githubusercontent.com/SongMalkang/DRG_MissionTracker_Mobile</code><br>
+        <span style="font-size:12px; color: #666;">읽기 전용. 사용자 정보는 전송되지 않습니다.</span>
+      </div>
+      <p>제3자 광고 SDK, 분석 도구, 추적 라이브러리는 일체 포함되어 있지 않습니다.</p>
+    </section>
+
+    <section>
+      <h2>4. 비공식 팬 앱</h2>
+      <p>DRG Mission Terminal은 <strong>Deep Rock Galactic의 비공식 팬 제작 앱</strong>입니다. Ghost Ship Games 및 Coffee Stain Publishing과 무관합니다.</p>
+    </section>
+
+    <section>
+      <h2>5. 아동 개인정보 보호</h2>
+      <p>이 앱은 13세 미만 아동을 대상으로 하지 않으며, 아동의 개인정보를 의도적으로 수집하지 않습니다.</p>
+    </section>
+
+    <section>
+      <h2>6. 문의</h2>
+      <p>개인정보 관련 문의는 GitHub 이슈를 통해 접수해 주세요:</p>
+      <p><a href="https://github.com/SongMalkang/DRG_MissionTracker_Mobile/issues" target="_blank">github.com/SongMalkang/DRG_MissionTracker_Mobile/issues</a></p>
+    </section>
+  </div>
+
+  <!-- ─── English ───────────────────────────────────── -->
+  <div class="lang-content" id="lang-en">
+    <div class="highlight">
+      <strong>Summary:</strong> DRG Mission Terminal does not collect any personal information. All settings are stored only on your device.
+    </div>
+
+    <section>
+      <h2>1. Information We Collect</h2>
+      <p>DRG Mission Terminal does <strong>NOT</strong> collect:</p>
+      <ul>
+        <li>Personal identifiers (name, email, phone number, etc.)</li>
+        <li>Location data</li>
+        <li>Device identifiers</li>
+        <li>Usage statistics or analytics data</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. Data Stored on Device</h2>
+      <p>The app stores the following data <strong>locally on your device only</strong> (never transmitted):</p>
+      <ul>
+        <li>Selected language preference (Korean / English / Chinese)</li>
+        <li>Selected season setting</li>
+        <li>Mission notification time and day settings</li>
+        <li>Cached mission data (for offline use)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. Network Communication</h2>
+      <p>The app fetches data exclusively from the following source to keep mission data up to date:</p>
+      <div class="highlight">
+        <strong>GitHub Raw Content</strong><br>
+        <code>raw.githubusercontent.com/SongMalkang/DRG_MissionTracker_Mobile</code><br>
+        <span style="font-size:12px; color: #666;">Read-only. No user data is transmitted.</span>
+      </div>
+      <p>No third-party ad SDKs, analytics tools, or tracking libraries are included.</p>
+    </section>
+
+    <section>
+      <h2>4. Unofficial Fan App</h2>
+      <p>DRG Mission Terminal is an <strong>unofficial fan-made app</strong> for Deep Rock Galactic. It is not affiliated with Ghost Ship Games or Coffee Stain Publishing.</p>
+    </section>
+
+    <section>
+      <h2>5. Children's Privacy</h2>
+      <p>This app is not directed at children under 13, and we do not knowingly collect personal information from children.</p>
+    </section>
+
+    <section>
+      <h2>6. Contact</h2>
+      <p>For privacy-related inquiries, please open a GitHub issue:</p>
+      <p><a href="https://github.com/SongMalkang/DRG_MissionTracker_Mobile/issues" target="_blank">github.com/SongMalkang/DRG_MissionTracker_Mobile/issues</a></p>
+    </section>
+  </div>
+
+  <!-- ─── 中文 ───────────────────────────────────────── -->
+  <div class="lang-content" id="lang-zh">
+    <div class="highlight">
+      <strong>摘要：</strong>DRG Mission Terminal 不收集任何个人信息。所有设置仅存储在您的设备上。
+    </div>
+
+    <section>
+      <h2>1. 我们收集的信息</h2>
+      <p>DRG Mission Terminal <strong>不会</strong>收集：</p>
+      <ul>
+        <li>个人识别信息（姓名、电子邮件、电话号码等）</li>
+        <li>位置数据</li>
+        <li>设备标识符</li>
+        <li>使用统计或分析数据</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>2. 设备本地存储数据</h2>
+      <p>应用程序仅在您的<strong>设备本地</strong>存储以下数据（不会传输）：</p>
+      <ul>
+        <li>语言偏好设置（韩语 / 英语 / 中文）</li>
+        <li>赛季设置</li>
+        <li>任务通知时间和日期设置</li>
+        <li>任务数据缓存（供离线使用）</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. 网络通信</h2>
+      <p>为保持任务数据最新，应用程序仅从以下来源获取数据：</p>
+      <div class="highlight">
+        <strong>GitHub Raw Content</strong><br>
+        <code>raw.githubusercontent.com/SongMalkang/DRG_MissionTracker_Mobile</code><br>
+        <span style="font-size:12px; color: #666;">只读访问，不传输任何用户数据。</span>
+      </div>
+      <p>不包含任何第三方广告 SDK、分析工具或追踪库。</p>
+    </section>
+
+    <section>
+      <h2>4. 非官方粉丝应用</h2>
+      <p>DRG Mission Terminal 是<strong>非官方粉丝制作的应用程序</strong>，专为《深岩银河》玩家设计，与 Ghost Ship Games 及 Coffee Stain Publishing 无关。</p>
+    </section>
+
+    <section>
+      <h2>5. 儿童隐私</h2>
+      <p>本应用不针对13岁以下儿童，我们不会故意收集儿童的个人信息。</p>
+    </section>
+
+    <section>
+      <h2>6. 联系方式</h2>
+      <p>如有隐私相关问题，请通过 GitHub Issues 联系：</p>
+      <p><a href="https://github.com/SongMalkang/DRG_MissionTracker_Mobile/issues" target="_blank">github.com/SongMalkang/DRG_MissionTracker_Mobile/issues</a></p>
+    </section>
+  </div>
+
+  <footer>
+    DRG Mission Terminal &nbsp;·&nbsp; SongMalkang &nbsp;·&nbsp;
+    <a href="https://github.com/SongMalkang/DRG_MissionTracker_Mobile" target="_blank">GitHub</a>
+  </footer>
+</div>
+
+<script>
+  function setLang(lang) {
+    document.querySelectorAll('.lang-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.lang-switch button').forEach(el => el.classList.remove('active'));
+    document.getElementById('lang-' + lang).classList.add('active');
+    event.target.classList.add('active');
+
+    const titles = { ko: '개인정보처리방침', en: 'Privacy Policy', zh: '隐私政策' };
+    const metas  = {
+      ko: '최종 수정일: 2026년 2월 28일 · SongMalkang',
+      en: 'Last updated: February 28, 2026 · SongMalkang',
+      zh: '最后更新：2026年2月28日 · SongMalkang'
+    };
+    document.getElementById('page-title').textContent = titles[lang];
+    document.getElementById('page-meta').textContent  = metas[lang];
+    document.documentElement.lang = lang === 'ko' ? 'ko' : lang === 'zh' ? 'zh' : 'en';
+  }
+</script>
+</body>
+</html>
