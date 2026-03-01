@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,9 +5,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/strings.dart';
 import '../services/settings_service.dart';
 import '../services/mission_service.dart';
-import '../services/notification_service.dart';
 import '../services/notification_settings_service.dart';
 import '../utils/constants.dart';
+
+// 조건부 임포트: 웹에서는 Android 알림 패키지 import 차단
+import '../platform/notification_helpers_stub.dart'
+    if (dart.library.io) '../platform/notification_helpers_native.dart';
 
 class SettingsScreen extends StatefulWidget {
   final String currentLang;
@@ -35,7 +36,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _selectedSeason;
   final SettingsService _settingsService = SettingsService();
   final MissionService _missionService = MissionService();
-  final NotificationService _notifService = NotificationService();
   final NotificationSettingsService _notifSettings = NotificationSettingsService();
 
   // 알림 설정 상태
@@ -45,9 +45,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   List<int> _notifDays = [1, 2, 3, 4, 5, 6, 7];
   Set<String> _excludedTypes = {};
 
-  /// iOS 또는 Web → Push 알림 미지원
-  bool get _isPlatformUnsupported =>
-      kIsWeb || (!kIsWeb && Platform.isIOS);
+  /// 웹 → Push 알림 미지원
+  bool get _isPlatformUnsupported => kIsWeb;
 
   static const List<String> _allMissionTypes = [
     'Mining Expedition', 'Egg Hunt', 'On-Site Refining',
@@ -134,7 +133,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _toggleNotification(bool val) async {
     if (val) {
-      final granted = await _notifService.requestPermission();
+      final granted = await requestNotificationPermission();
       if (!granted) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -150,9 +149,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() => _notifEnabled = val);
     await _notifSettings.setEnabled(val);
     if (val) {
-      await _notifService.scheduleAlarms();
+      await scheduleNotificationAlarms();
     } else {
-      await _notifService.cancelAllAlarms();
+      await cancelAllNotificationAlarms();
     }
   }
 
@@ -164,7 +163,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (picked != null) {
       setState(() => _notifTime = picked);
       await _notifSettings.setScheduledTime(picked.hour, picked.minute);
-      if (_notifEnabled) await _notifService.scheduleAlarms();
+      if (_notifEnabled) await scheduleNotificationAlarms();
     }
   }
 
@@ -176,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (picked != null) {
       setState(() => _notifEndTime = picked);
       await _notifSettings.setEndTime(picked.hour, picked.minute);
-      if (_notifEnabled) await _notifService.scheduleAlarms();
+      if (_notifEnabled) await scheduleNotificationAlarms();
     }
   }
 
@@ -189,7 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     });
     await _notifSettings.setEnabledDays(_notifDays);
-    if (_notifEnabled) await _notifService.scheduleAlarms();
+    if (_notifEnabled) await scheduleNotificationAlarms();
   }
 
   Future<void> _toggleExcludedType(String type) async {
