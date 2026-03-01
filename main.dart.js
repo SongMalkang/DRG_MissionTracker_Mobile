@@ -45024,7 +45024,7 @@ m=A.dN(new A.d9(B.h9,A.ir(B.bO,s,B.Y,B.c2),n),n,n,n)
 l=o.d
 s=A.W(a)
 r=A.b([A.aya(B.JJ,B.X.h(0,o.e).h(0,"live")),A.aya(B.Jm,B.X.h(0,o.e).h(0,"highlights")),A.aya(B.JC,B.X.h(0,o.e).h(0,"deep_dives"))],t.ur)
-return A.azn(k,n,m,A.bw(n,A.dN(new A.d9(B.h9,A.bw(n,new A.y2(r,new A.aq9(o),l,0,B.k1,s.ax.b,B.c1,n),B.p,n,n,B.nq,n,n,n,n,n,n,n),n),n,n,n),B.p,B.k1,n,n,n,n,n,n,n,n,n))},
+return A.azn(k,n,m,A.bw(n,A.dN(new A.d9(B.h9,A.bw(n,new A.y2(r,new A.aq9(o),l,0,B.k1,s.ax.b,B.c1,n),B.p,n,n,B.nq,n,n,n,n,n,n,n),n),1,n,n),B.p,B.k1,n,n,n,n,n,n,n,n,n))},
 a86(){var s,r,q=this,p=null,o=q.w.d===B.kl,n=o?B.lD.aL(0.9):B.a3.aL(0.8),m=A.ca(12),l=A.b([new A.cY(0,B.bC,B.m.aL(0.3),B.ws,10)],t.sq),k=A.dQ("assets/images/bosco.png",p,p,p,p,40,40),j=q.e
 if(o){j=B.X.h(0,j).h(0,"signal_lost")
 if(j==null)j="SIGNAL LOST!"}else{j=B.X.h(0,j).h(0,"offline_mode")
