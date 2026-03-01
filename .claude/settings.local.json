@@ -53,7 +53,11 @@
       "Bash(gh api repos/SongMalkang/DRG_MissionTracker_Mobile/pages --jq '.source')",
       "Bash(flutter build web --release --pwa-strategy=none --base-href \"/DRG_MissionTracker_Mobile/\")",
       "Bash(MSYS_NO_PATHCONV=1 flutter build web --release --pwa-strategy=none --base-href '/DRG_MissionTracker_Mobile/')",
-      "WebFetch(domain:songmalkang.github.io)"
+      "WebFetch(domain:songmalkang.github.io)",
+      "WebFetch(domain:localhost)",
+      "Bash(pkill -f \"python -m http.server\")",
+      "Bash(MSYS_NO_PATHCONV=1 flutter build web --release --pwa-strategy=none --base-href '/')",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

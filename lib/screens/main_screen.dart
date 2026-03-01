@@ -185,6 +185,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: Container(
         color: const Color(0xFF1A1A1A),
         child: Center(
+          heightFactor: 1.0, // 세로 확장 방지: Center가 전체 높이를 차지하지 않도록
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Container(
