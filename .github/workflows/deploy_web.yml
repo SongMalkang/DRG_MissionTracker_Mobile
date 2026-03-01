@@ -1,0 +1,35 @@
+name: Deploy Web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'data/**'
+      - '**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+
+      - run: flutter build web --release --pwa-strategy=none --base-href "/DRG_MissionTracker_Mobile/"
+
+      # docs/privacy.html을 빌드 결과에 복사 (기존 URL 유지)
+      - run: cp docs/privacy.html build/web/privacy.html
+
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          publish_branch: gh-pages

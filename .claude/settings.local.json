@@ -45,7 +45,14 @@
       "Bash(flutter --version)",
       "Bash(xargs grep -l \"url_launcher\\\\|launchUrl\")",
       "WebFetch(domain:support.google.com)",
-      "Bash(flutter build appbundle --release)"
+      "Bash(flutter build appbundle --release)",
+      "Bash(cat .github/workflows/*)",
+      "Bash(test -f _config.yml)",
+      "Bash(test -f docs/_config.yml)",
+      "Bash(test -f README.md)",
+      "Bash(gh api repos/SongMalkang/DRG_MissionTracker_Mobile/pages --jq '.source')",
+      "Bash(flutter build web --release --pwa-strategy=none --base-href \"/DRG_MissionTracker_Mobile/\")",
+      "Bash(MSYS_NO_PATHCONV=1 flutter build web --release --pwa-strategy=none --base-href '/DRG_MissionTracker_Mobile/')"
     ]
   }
 }

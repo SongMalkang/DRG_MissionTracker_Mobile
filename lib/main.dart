@@ -1,14 +1,18 @@
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/splash_screen.dart';
-import 'services/notification_service.dart';
 import 'services/strings_service.dart';
+
+// 조건부 임포트: 웹에서는 no-op stub, 네이티브에서는 AlarmManager+Notification 초기화
+import 'platform/platform_init_stub.dart'
+    if (dart.library.io) 'platform/platform_init_native.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AndroidAlarmManager.initialize();
-  await NotificationService().initialize();
+
+  // Android 전용 초기화 (웹에서는 no-op)
+  await platformInit();
+
   // 번역 캐시 로드 (빠름) + 백그라운드 갱신 예약
   await StringsService().initialize();
   runApp(const DRGMissionTrackerApp());

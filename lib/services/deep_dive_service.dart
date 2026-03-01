@@ -1,11 +1,13 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
+
+// 조건부 임포트: 웹에서는 SharedPreferences, 네이티브에서는 파일 I/O
+import '../platform/file_cache_stub.dart'
+    if (dart.library.io) '../platform/file_cache_native.dart';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 
@@ -141,7 +143,7 @@ class DeepDiveService {
     } catch (e) {
       debugPrint("Deep Dive GitHub fetch failed: $e");
 
-      // Tier 3: 번들 에셋onment
+      // Tier 3: 번들 에셋
       try {
         final assetBody = await rootBundle.loadString('data/deep_dive.json');
         final dives = _parseDiveData(assetBody);
@@ -204,11 +206,9 @@ class DeepDiveService {
         if (cachedThursday != _thursdayKey(thu)) return null;
       }
 
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/${AppConstants.cachedDeepDiveFile}');
-      if (!await file.exists()) return null;
+      final body = await loadCacheString(AppConstants.cachedDeepDiveFile);
+      if (body == null) return null;
 
-      final body = await file.readAsString();
       return _parseDiveData(body);
     } catch (e) {
       debugPrint("Deep Dive cache load failed: $e");
@@ -218,9 +218,7 @@ class DeepDiveService {
 
   Future<void> _saveToCache(String body, DateTime thu) async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/${AppConstants.cachedDeepDiveFile}');
-      await file.writeAsString(body);
+      await saveCacheString(AppConstants.cachedDeepDiveFile, body);
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(

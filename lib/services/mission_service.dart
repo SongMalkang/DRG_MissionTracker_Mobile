@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mission_model.dart';
 import '../utils/constants.dart';
+
+// 조건부 임포트: 웹에서는 dart:io / path_provider 사용 불가
+import '../platform/file_cache_stub.dart'
+    if (dart.library.io) '../platform/file_cache_native.dart';
 
 enum DataStatus { online, offline, outdated, refreshing }
 
@@ -52,9 +54,8 @@ class MissionService {
 
     try {
       // Tier 1: 로컬 캐시 (빠른 시작)
-      final file = await _getLocalFile();
-      if (await file.exists()) {
-        final cacheJson = await file.readAsString();
+      final cacheJson = await loadCacheString(AppConstants.cachedMissionFile);
+      if (cacheJson != null) {
         _parseJson(cacheJson);
         _status = DataStatus.offline;
         _isInitialized = true;
@@ -97,8 +98,7 @@ class MissionService {
       _parseJson(response.body);
 
       // 캐시 저장
-      final file = await _getLocalFile();
-      await file.writeAsString(response.body);
+      await saveCacheString(AppConstants.cachedMissionFile, response.body);
       await _saveCacheTimestamp();
 
       _status = DataStatus.online;
@@ -194,11 +194,6 @@ class MissionService {
     String h = utcTime.hour.toString().padLeft(2, '0');
     String min = (utcTime.minute < 30 ? "00" : "30");
     return "$y-$m-${d}T$h:$min:00Z";
-  }
-
-  Future<File> _getLocalFile() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return File('${directory.path}/${AppConstants.cachedMissionFile}');
   }
 
   List<Mission> getMissionsForTime(DateTime utcTime) {

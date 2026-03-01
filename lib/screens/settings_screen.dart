@@ -240,7 +240,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(langMap['settings']!)),
-      body: ListView(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         children: [
           // 1. Disclaimer (상단 이동)
@@ -579,6 +582,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 20),
         ],
+      ),
+        ),
       ),
     );
   }

@@ -164,39 +164,52 @@ class _MainScreenState extends State<MainScreen> {
               )
             : null,
       ),
-      body: Stack(
-        children: [
-          tabs[_currentIndex],
-          if (_missionService.status == DataStatus.offline ||
-              _missionService.status == DataStatus.outdated)
-            Positioned(
-              bottom: 20,
-              left: 20,
-              right: 20,
-              child: _buildOfflineWarning(),
-            ),
-        ],
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Stack(
+            children: [
+              tabs[_currentIndex],
+              if (_missionService.status == DataStatus.offline ||
+                  _missionService.status == DataStatus.outdated)
+                Positioned(
+                  bottom: 20,
+                  left: 20,
+                  right: 20,
+                  child: _buildOfflineWarning(),
+                ),
+            ],
+          ),
+        ),
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.white10, width: 1)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          selectedItemColor: Theme.of(context).colorScheme.primary,
-          unselectedItemColor: Colors.grey,
-          backgroundColor: const Color(0xFF1A1A1A),
-          elevation: 0,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          items: [
-            BottomNavigationBarItem(icon: const Icon(Icons.list_alt), label: i18n[_currentLang]!['live']),
-            BottomNavigationBarItem(icon: const Icon(Icons.star), label: i18n[_currentLang]!['highlights']),
-            BottomNavigationBarItem(icon: const Icon(Icons.diamond), label: i18n[_currentLang]!['deep_dives']),
-          ],
+        color: const Color(0xFF1A1A1A),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Container(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Colors.white10, width: 1)),
+              ),
+              child: BottomNavigationBar(
+                currentIndex: _currentIndex,
+                selectedItemColor: Theme.of(context).colorScheme.primary,
+                unselectedItemColor: Colors.grey,
+                backgroundColor: const Color(0xFF1A1A1A),
+                elevation: 0,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                items: [
+                  BottomNavigationBarItem(icon: const Icon(Icons.list_alt), label: i18n[_currentLang]!['live']),
+                  BottomNavigationBarItem(icon: const Icon(Icons.star), label: i18n[_currentLang]!['highlights']),
+                  BottomNavigationBarItem(icon: const Icon(Icons.diamond), label: i18n[_currentLang]!['deep_dives']),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

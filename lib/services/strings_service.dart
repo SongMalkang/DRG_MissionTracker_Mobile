@@ -1,11 +1,13 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
 import '../utils/strings.dart';
+
+// 조건부 임포트: 웹에서는 SharedPreferences, 네이티브에서는 파일 I/O
+import '../platform/file_cache_stub.dart'
+    if (dart.library.io) '../platform/file_cache_native.dart';
 
 /// 동적 i18n 로더
 ///
@@ -90,10 +92,9 @@ class StringsService {
 
   Future<Map<String, dynamic>?> _loadFromCache() async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$_cacheFile');
-      if (await file.exists()) {
-        return jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      final content = await loadCacheString(_cacheFile);
+      if (content != null) {
+        return jsonDecode(content) as Map<String, dynamic>;
       }
     } catch (e) {
       debugPrint('StringsService: 캐시 읽기 실패: $e');
@@ -103,9 +104,7 @@ class StringsService {
 
   Future<void> _saveToCache(Map<String, dynamic> data) async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File('${dir.path}/$_cacheFile');
-      await file.writeAsString(jsonEncode(data));
+      await saveCacheString(_cacheFile, jsonEncode(data));
     } catch (e) {
       debugPrint('StringsService: 캐시 저장 실패: $e');
     }

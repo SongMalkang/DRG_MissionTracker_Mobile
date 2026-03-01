@@ -2,12 +2,19 @@
     "name": "Bosco Terminal",
     "short_name": "Bosco",
     "description": "DRG 비공식 실시간 미션 트래커. Double XP 미션, Deep Dive 정보를 한눈에.",
-    "start_url": ".",
+    "start_url": "/DRG_MissionTracker_Mobile/",
     "display": "standalone",
     "background_color": "#0D0D0D",
     "theme_color": "#FF9800",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "related_applications": [
+        {
+            "platform": "play",
+            "url": "https://play.google.com/store/apps/details?id=com.songmalkang.drg_mission_tracker",
+            "id": "com.songmalkang.drg_mission_tracker"
+        }
+    ],
     "icons": [
         {
             "src": "icons/Icon-192.png",
