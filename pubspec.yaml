@@ -45,6 +45,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   permission_handler: ^11.3.1
   package_info_plus: ^8.1.2
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:
@@ -89,6 +90,13 @@ flutter:
     - assets/icons/warnings/
     - assets/icons/secondary/
     - assets/icons/ui/
+    - assets/images/pointing.png
+    - assets/images/mushroom.png
+    - assets/images/yeastcorn.png
+    - assets/images/gold.png
+    - assets/audio/shouts/mushroom/
+    - assets/audio/shouts/yeastcone/
+    - assets/audio/shouts/gold/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

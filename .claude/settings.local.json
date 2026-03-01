@@ -57,7 +57,11 @@
       "WebFetch(domain:localhost)",
       "Bash(pkill -f \"python -m http.server\")",
       "Bash(MSYS_NO_PATHCONV=1 flutter build web --release --pwa-strategy=none --base-href '/')",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(ls -la /c/Project/DRG_MissionTracker_Mobile/assets/audio*)",
+      "Bash(xargs grep -l \"AnimationController\\\\|AnimatedWidget\\\\|Transition\")",
+      "Bash(flutter build web --release --pwa-strategy=none --base-href \"/\")",
+      "Bash(MSYS_NO_PATHCONV=1 flutter build web --release --pwa-strategy=none --base-href \"/\")"
     ]
   }
 }

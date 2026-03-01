@@ -153,7 +153,16 @@ const Map<String, Map<String, String>> i18n = {
     'update_ver_current': '현재 버전',
     'update_ver_new': '새 버전',
     'update_force_desc': '앱을 계속 사용하려면 업데이트가 필요합니다.',
+    // Changelog
+    'changelog_title': '새로운 소식',
+    'changelog_ok': '확인',
+    // Dwarf Voice
+    'dwarf_voice': 'Dwarf',
+    'shout_mushroom': '버섯',
+    'shout_yeastcone': '이스트콘',
+    'shout_gold': '금덩어리',
   },
+
   'EN': {
     'title': 'BOSCO TERMINAL',
     'live': 'LIVE',
@@ -299,6 +308,14 @@ const Map<String, Map<String, String>> i18n = {
     'update_ver_current': 'Current',
     'update_ver_new': 'New',
     'update_force_desc': 'An update is required to continue using the app.',
+    // Changelog
+    'changelog_title': "What's New",
+    'changelog_ok': 'OK',
+    // Dwarf Voice
+    'dwarf_voice': 'Dwarf',
+    'shout_mushroom': 'Mushroom',
+    'shout_yeastcone': 'Yeast Cone',
+    'shout_gold': 'Gold',
   },
   'CN': {
     'title': '博斯科终端',
@@ -445,6 +462,14 @@ const Map<String, Map<String, String>> i18n = {
     'update_ver_current': '当前版本',
     'update_ver_new': '新版本',
     'update_force_desc': '需要更新才能继续使用应用。',
+    // Changelog
+    'changelog_title': '更新内容',
+    'changelog_ok': '确认',
+    // Dwarf Voice
+    'dwarf_voice': '矮人',
+    'shout_mushroom': '蘑菇',
+    'shout_yeastcone': '酵母锥',
+    'shout_gold': '金块',
   }
 };
 

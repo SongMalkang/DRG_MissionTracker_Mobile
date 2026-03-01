@@ -4,12 +4,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'live_missions_tab.dart';
 import 'highlights_tab.dart';
 import 'deep_dives_tab.dart';
+import 'dwarf_voice_tab.dart';
 import 'settings_screen.dart';
 import '../utils/constants.dart';
 import '../utils/strings.dart';
 import '../services/settings_service.dart';
 import '../services/mission_service.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import '../services/notification_service.dart';
 import '../services/update_service.dart';
+import '../widgets/changelog_dialog.dart';
 import '../widgets/update_dialog.dart';
 
 class MainScreen extends StatefulWidget {
@@ -61,9 +65,14 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _checkForUpdate() async {
     final info = await UpdateService().checkForUpdate();
     if (info != null && mounted) {
-      // 첫 프레임 렌더링 완료 후 다이얼로그 표시
+      // 첫 프레임 렌더링 완료 후 업데이트 다이얼로그 표시
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) showUpdateDialog(context, info, _currentLang);
+      });
+    } else if (mounted) {
+      // 업데이트 없을 때만 changelog 팝업 확인 (중복 팝업 방지)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) checkAndShowChangelog(context, _currentLang);
       });
     }
   }
@@ -82,9 +91,113 @@ class _MainScreenState extends State<MainScreen> {
     _settingsService.saveSeason(season);
   }
 
-  void _cycleDebugStatus() {
+  // ── 디버그 액션 메뉴 (보스코 롱프레스) ───────────────────────────────────
+  void _showDebugMenu() {
     if (!kDebugMode) return;
 
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                '🛠 DEBUG MENU',
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+            const Divider(color: Colors.white10, height: 1),
+            ListTile(
+              leading: const Icon(Icons.notifications_active, color: Colors.orange),
+              title: const Text('테스트 Push 알림 발송',
+                  style: TextStyle(color: Colors.white70)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _testPushAlarm();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome, color: Colors.orange),
+              title: const Text('Changelog 팝업 표시',
+                  style: TextStyle(color: Colors.white70)),
+              onTap: () async {
+                Navigator.pop(ctx);
+                final info = await PackageInfo.fromPlatform();
+                if (mounted) {
+                  showChangelogDialog(context, _currentLang, info.version);
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.sync, color: Colors.orange),
+              title: const Text('DataStatus 순환',
+                  style: TextStyle(color: Colors.white70)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _cycleDebugStatus();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _testPushAlarm() async {
+    try {
+      final notifService = NotificationService();
+
+      // 알림 권한 확인 → 미부여 시 요청
+      if (!await notifService.hasPermission()) {
+        final granted = await notifService.requestPermission();
+        if (!granted && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Debug: 알림 권한이 필요합니다 🔒'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+          return;
+        }
+      }
+
+      await notifService.showTestNotification(_currentLang);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Debug: 테스트 알림 발송 완료 📡'),
+            duration: Duration(seconds: 1),
+            backgroundColor: Colors.blueGrey,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Debug: 알림 실패 — $e'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  void _cycleDebugStatus() {
     final current = _missionService.status;
     DataStatus next;
 
@@ -102,7 +215,7 @@ class _MainScreenState extends State<MainScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Debug: DataStatus set to ${next.name.toUpperCase()}"),
+        content: Text("Debug: DataStatus → ${next.name.toUpperCase()}"),
         duration: const Duration(seconds: 1),
         backgroundColor: Colors.blueGrey,
       ),
@@ -119,6 +232,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       HighlightsTab(lang: _currentLang),
       DeepDivesTab(lang: _currentLang),
+      if (!kIsWeb) DwarfVoiceTab(lang: _currentLang),
     ];
 
     return Scaffold(
@@ -126,7 +240,7 @@ class _MainScreenState extends State<MainScreen> {
         centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.only(left: 12.0),
-          child: AnimatedBosco(onLongPress: kDebugMode ? _cycleDebugStatus : null),
+          child: AnimatedBosco(onLongPress: kDebugMode ? _showDebugMenu : null),
         ),
         title: Text(
           i18n[_currentLang]!['title']!,
@@ -198,6 +312,7 @@ class _MainScreenState extends State<MainScreen> {
                 unselectedItemColor: Colors.grey,
                 backgroundColor: const Color(0xFF1A1A1A),
                 elevation: 0,
+                type: BottomNavigationBarType.fixed,
                 onTap: (index) {
                   setState(() {
                     _currentIndex = index;
@@ -207,6 +322,7 @@ class _MainScreenState extends State<MainScreen> {
                   BottomNavigationBarItem(icon: const Icon(Icons.list_alt), label: i18n[_currentLang]!['live']),
                   BottomNavigationBarItem(icon: const Icon(Icons.star), label: i18n[_currentLang]!['highlights']),
                   BottomNavigationBarItem(icon: const Icon(Icons.diamond), label: i18n[_currentLang]!['deep_dives']),
+                  if (!kIsWeb) BottomNavigationBarItem(icon: const Icon(Icons.record_voice_over), label: i18n[_currentLang]!['dwarf_voice']),
                 ],
               ),
             ),

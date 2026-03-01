@@ -125,6 +125,45 @@ class NotificationService {
     }
   }
 
+  // ── 테스트 알림 (디버그용) ───────────────────────────────────────────────
+  /// 보스코 롱프레스 시 즉시 테스트 알림을 표시한다.
+  Future<void> showTestNotification(String lang) async {
+    final langMessages = _boscoMessages[lang] ?? _boscoMessages['EN']!;
+    final title  = (langMessages['titles']  as List)[0] as String;
+    final prefix = (langMessages['prefixes'] as List)[0] as String;
+
+    final testBody = lang == 'KR'
+        ? '$prefix\n• 🧪 이것은 테스트 알림입니다!'
+        : lang == 'CN'
+            ? '$prefix\n• 🧪 这是测试通知！'
+            : '$prefix\n• 🧪 This is a test notification!';
+
+    await _notifPlugin.show(
+      99999, // 테스트 전용 ID
+      title,
+      testBody,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'mission_alerts',
+          'Mission Alerts',
+          channelDescription: 'Double XP mission notifications',
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+          largeIcon: const DrawableResourceAndroidBitmap('bosco_notification'),
+          color: const Color(0xFFFF9800),
+          styleInformation: BigTextStyleInformation(
+            testBody,
+            contentTitle: title,
+            summaryText: 'DEBUG TEST',
+            htmlFormatBigText: false,
+            htmlFormatContentTitle: false,
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── 모든 알람 취소 ──────────────────────────────────────────────────────
   Future<void> cancelAllAlarms() async {
     // day 1~7, slot 0~47 → 최대 336개
