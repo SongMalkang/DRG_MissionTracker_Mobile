@@ -90,7 +90,7 @@ const Map<String, Map<String, String>> i18n = {
     'Rich Atmosphere': '풍부한 산소',
     'Critical Weakness': '치명적 약점',
     'Golden Bugs': '황금 벌레',
-    'Volatile Guts': '불안정한 내장',
+    'Volatile Guts': '휘발성 내장',
     'Blood Sugar': '혈당',
     'Secret Secondary': '비밀 보조 목표',
     'ApocaBlooms': '아포카 꽃', // 데이터 키가 CamelCase로 올 때 대응

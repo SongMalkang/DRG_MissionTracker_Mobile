@@ -1,6 +1,8 @@
 import 'dart:math';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/strings.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -8,6 +10,7 @@ import '../utils/strings.dart';
 //  ─ 터미널 녹색 CRT 모니터 미감
 //  ─ 좌우 벽에서 뻗어나온 기둥 + 슬릿(틈) 통과
 //  ─ 슬릿 통과마다 미터(M) 증가
+//  ─ 점진적 난이도 + 사운드 + 로컬 리더보드
 // ═══════════════════════════════════════════════════════════════════════════
 
 // 터미널 녹색 색상 팔레트
@@ -45,10 +48,49 @@ class _JetBootsGameState extends State<JetBootsGame>
 
   // 캐릭터 위치 (화면 비율)
   static const _characterX = 0.2; // 좌측에서 20% 위치
-  static const _gapSize = 0.25; // 슬릿 틈 크기 (난이도)
 
   // 깜박임
   int _blinkCounter = 0;
+
+  // ── 오디오 ──
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  static const _sfxStart = 'audio/shouts/jetboots/JetBootsUse_02.ogg';
+  static const _sfxMilestone = 'audio/shouts/jetboots/JetBootsUse_16.ogg';
+  static const _sfxFail = 'audio/shouts/jetboots/JetBoots_Overheat_2.ogg';
+  final Set<int> _playedMilestones = {};
+
+  // ── 리더보드 ──
+  static const _topScoresKey = 'jetboots_top_scores';
+  List<int> _topScores = [];
+  bool _canRestart = false;
+  int _visibleScoreCount = 0; // 리더보드 순차 등장 애니메이션
+
+  // ── 난이도 상수 ──
+  static const _maxDifficultyMeter = 50;
+
+  /// 현재 미터 기반 동적 갭 크기 (0M: 0.30 → 50M+: 0.18)
+  double get _currentGapSize {
+    const startGap = 0.30;
+    const endGap = 0.18;
+    final progress = (_meter / _maxDifficultyMeter).clamp(0.0, 1.0);
+    return startGap - (startGap - endGap) * progress;
+  }
+
+  /// 현재 미터 기반 슬릿 간 X축 간격 (0M: 0.50 → 50M+: 0.32)
+  double get _currentSpacing {
+    const startSpacing = 0.50;
+    const endSpacing = 0.32;
+    final progress = (_meter / _maxDifficultyMeter).clamp(0.0, 1.0);
+    return startSpacing - (startSpacing - endSpacing) * progress;
+  }
+
+  /// 현재 미터 기반 이동 속도 (0M: 0.005 → 50M+: 0.007)
+  double get _currentSpeed {
+    const startSpeed = 0.005;
+    const endSpeed = 0.007;
+    final progress = (_meter / _maxDifficultyMeter).clamp(0.0, 1.0);
+    return startSpeed + (endSpeed - startSpeed) * progress;
+  }
 
   @override
   void initState() {
@@ -59,6 +101,7 @@ class _JetBootsGameState extends State<JetBootsGame>
     )..addListener(_gameLoop);
 
     _initSlits();
+    _loadTopScores();
   }
 
   void _initSlits() {
@@ -73,9 +116,11 @@ class _JetBootsGameState extends State<JetBootsGame>
   }
 
   void _gameLoop() {
+    // 깜박임은 게임오버 중에도 갱신 (오버레이 애니메이션용)
+    _blinkCounter++;
+
     if (!_isStarted || _isGameOver) return;
 
-    _blinkCounter++;
     setState(() {
       _velocity += 0.0009;
       _characterY = (_characterY + _velocity).clamp(0.0, 1.0);
@@ -86,19 +131,22 @@ class _JetBootsGameState extends State<JetBootsGame>
         return;
       }
 
+      final speed = _currentSpeed;
+
       // 슬릿 이동 (좌측으로 스크롤)
       for (final slit in _slits) {
-        slit.x -= 0.005;
+        slit.x -= speed;
 
         // 슬릿 통과 판정
         if (!slit.passed && slit.x < _characterX - 0.03) {
           slit.passed = true;
           _meter++;
+          _checkMilestone(_meter);
         }
 
         // 화면 밖으로 나가면 재배치
         if (slit.x < -0.1) {
-          slit.x = 1.1;
+          slit.x = _getNextSlitX();
           slit.gapCenter = 0.2 + _random.nextDouble() * 0.6;
           slit.fromLeft = _random.nextBool();
           slit.passed = false;
@@ -115,6 +163,15 @@ class _JetBootsGameState extends State<JetBootsGame>
     });
   }
 
+  /// 가장 우측 슬릿 기준으로 최소 간격을 보장한 X좌표 반환
+  double _getNextSlitX() {
+    double maxX = 0.0;
+    for (final s in _slits) {
+      if (s.x > maxX) maxX = s.x;
+    }
+    return max(1.1, maxX + _currentSpacing);
+  }
+
   bool _checkCollision(_Slit slit) {
     // 캐릭터가 슬릿의 x 범위 안에 있는지
     const charWidth = 0.06;
@@ -126,27 +183,47 @@ class _JetBootsGameState extends State<JetBootsGame>
     if (charRight < slitLeft || charLeft > slitRight) return false;
 
     // 슬릿의 기둥 영역과 겹치는지
-    final gapTop = slit.gapCenter - _gapSize / 2;
-    final gapBottom = slit.gapCenter + _gapSize / 2;
+    final gapSize = _currentGapSize;
+    final gapTop = slit.gapCenter - gapSize / 2;
+    final gapBottom = slit.gapCenter + gapSize / 2;
 
     return _characterY < gapTop || _characterY > gapBottom;
   }
 
   void _triggerGameOver() {
     _isGameOver = true;
-    if (_meter > _highScore) _highScore = _meter;
+    _canRestart = false;
+    _visibleScoreCount = 0;
     _gameLoopController.stop();
+    _playSound(_sfxFail);
+
+    // Top 5 진입 여부 확인 후 저장
+    final isTopScore =
+        _meter > 0 &&
+        (_topScores.length < 5 ||
+            _topScores.isEmpty ||
+            _meter > _topScores.last);
+    if (isTopScore) {
+      _saveScore(_meter);
+    }
+
+    if (_meter > _highScore) _highScore = _meter;
+
+    _startLeaderboardReveal();
   }
 
   void _jump() {
     if (_isGameOver) {
+      if (!_canRestart) return; // 리더보드 애니메이션 중 탭 무시
       // 재시작
       setState(() {
         _isGameOver = false;
         _isStarted = false;
+        _canRestart = false;
         _characterY = 0.5;
         _velocity = 0.0;
         _meter = 0;
+        _playedMilestones.clear();
         _initSlits();
       });
       return;
@@ -155,6 +232,7 @@ class _JetBootsGameState extends State<JetBootsGame>
     if (!_isStarted) {
       setState(() => _isStarted = true);
       _gameLoopController.repeat();
+      _playSound(_sfxStart);
       return;
     }
 
@@ -162,9 +240,82 @@ class _JetBootsGameState extends State<JetBootsGame>
     setState(() => _velocity = -0.016);
   }
 
+  // ── 오디오 헬퍼 ──
+
+  Future<void> _playSound(String assetPath) async {
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(AssetSource(assetPath));
+    } catch (_) {
+      // 사운드 재생 실패해도 게임에는 영향 없음
+    }
+  }
+
+  void _checkMilestone(int meter) {
+    const milestones = {10, 30, 50};
+    if (milestones.contains(meter) && !_playedMilestones.contains(meter)) {
+      _playedMilestones.add(meter);
+      _playSound(_sfxMilestone);
+    }
+  }
+
+  // ── 리더보드 저장/로드 ──
+
+  Future<void> _loadTopScores() async {
+    final prefs = await SharedPreferences.getInstance();
+    final str = prefs.getString(_topScoresKey) ?? '';
+    if (str.isNotEmpty) {
+      _topScores = str
+          .split(',')
+          .where((s) => s.isNotEmpty)
+          .map((s) => int.parse(s))
+          .toList();
+    }
+    if (_topScores.isNotEmpty && mounted) {
+      setState(() => _highScore = _topScores.first);
+    }
+  }
+
+  Future<void> _saveScore(int score) async {
+    _topScores.add(score);
+    _topScores.sort((a, b) => b.compareTo(a)); // 내림차순
+    if (_topScores.length > 5) {
+      _topScores = _topScores.sublist(0, 5);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_topScoresKey, _topScores.join(','));
+  }
+
+  // ── 리더보드 순차 등장 애니메이션 ──
+
+  void _startLeaderboardReveal() {
+    final count = _topScores.isEmpty ? 1 : _topScores.length;
+    // 0.5초 후 시작, 행당 0.3초
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _revealNextScore(0, count);
+    });
+  }
+
+  void _revealNextScore(int index, int total) {
+    if (!mounted || !_isGameOver) return;
+    setState(() => _visibleScoreCount = index + 1);
+    if (index + 1 < total) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _revealNextScore(index + 1, total);
+      });
+    } else {
+      // 마지막 행 표시 후 0.3초 뒤 재시작 가능
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (!mounted || !_isGameOver) return;
+        setState(() => _canRestart = true);
+      });
+    }
+  }
+
   @override
   void dispose() {
     _gameLoopController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -373,8 +524,9 @@ class _JetBootsGameState extends State<JetBootsGame>
   Widget _buildSlit(_Slit slit, double screenW, double screenH) {
     final x = slit.x * screenW;
     const pillarWidth = 28.0;
-    final gapTop = (slit.gapCenter - _gapSize / 2) * screenH;
-    final gapBottom = (slit.gapCenter + _gapSize / 2) * screenH;
+    final gapSize = _currentGapSize;
+    final gapTop = (slit.gapCenter - gapSize / 2) * screenH;
+    final gapBottom = (slit.gapCenter + gapSize / 2) * screenH;
 
     return Positioned(
       left: x - pillarWidth / 2,
@@ -481,16 +633,18 @@ class _JetBootsGameState extends State<JetBootsGame>
   }
 
   Widget _buildGameOverOverlay() {
+    final blink = _blinkCounter % 60 < 30;
     return Center(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         decoration: BoxDecoration(
-          color: _termBg.withValues(alpha: 0.92),
+          color: _termBg.withValues(alpha: 0.94),
           border: Border.all(color: Colors.redAccent.withValues(alpha: 0.6)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 1. PROTOCOL FAILED
             Text(
               'PROTOCOL FAILED',
               style: GoogleFonts.pressStart2p(
@@ -499,7 +653,9 @@ class _JetBootsGameState extends State<JetBootsGame>
                 letterSpacing: 1,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+
+            // 2. 현재 점수
             Text(
               '${_meter}M',
               style: GoogleFonts.pressStart2p(
@@ -508,25 +664,113 @@ class _JetBootsGameState extends State<JetBootsGame>
               ),
             ),
             const SizedBox(height: 4),
+
+            // 3. NEW RECORD
             if (_meter >= _highScore && _meter > 0)
-              Text(
-                'NEW RECORD!',
-                style: GoogleFonts.pressStart2p(
-                  fontSize: 7,
-                  color: _termGreen,
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'NEW RECORD!',
+                  style: GoogleFonts.pressStart2p(
+                    fontSize: 7,
+                    color: _termGreen,
+                  ),
                 ),
               ),
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 12),
+
+            // 4. 리더보드 (순차 등장)
+            _buildLeaderboard(),
+
+            const SizedBox(height: 14),
+
+            // 5. 재시작 안내 (리더보드 완료 후만)
+            if (_canRestart)
+              AnimatedOpacity(
+                opacity: blink ? 1.0 : 0.3,
+                duration: const Duration(milliseconds: 200),
+                child: Text(
+                  t('minigame_tap_to_start', widget.lang),
+                  style: GoogleFonts.pressStart2p(
+                    fontSize: 6,
+                    color: _termGreen,
+                    letterSpacing: 1,
+                  ),
+                ),
+              )
+            else
+              Text(
+                'ANALYZING...',
+                style: GoogleFonts.pressStart2p(
+                  fontSize: 6,
+                  color: _termGreenDim,
+                  letterSpacing: 1,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeaderboard() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        border: Border.all(color: _termGreenDim.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '── LEADERBOARD ──',
+            style: GoogleFonts.pressStart2p(
+              fontSize: 5,
+              color: _termGreenDim,
+            ),
+          ),
+          const SizedBox(height: 6),
+          if (_topScores.isEmpty && _visibleScoreCount > 0)
             Text(
-              t('minigame_tap_to_start', widget.lang),
+              'NO DATA',
               style: GoogleFonts.pressStart2p(
                 fontSize: 6,
                 color: _termGreenDim,
-                letterSpacing: 1,
               ),
-            ),
-          ],
-        ),
+            )
+          else
+            for (int i = 0; i < _topScores.length && i < _visibleScoreCount; i++)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 28,
+                      child: Text(
+                        '${i + 1}.',
+                        style: GoogleFonts.pressStart2p(
+                          fontSize: 6,
+                          color: _topScores[i] == _meter && _meter > 0
+                              ? _termGreen
+                              : _termGreenDim,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${_topScores[i]}M',
+                      style: GoogleFonts.pressStart2p(
+                        fontSize: 6,
+                        color: _topScores[i] == _meter && _meter > 0
+                            ? _termGreen
+                            : _termGreenDim,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+        ],
       ),
     );
   }

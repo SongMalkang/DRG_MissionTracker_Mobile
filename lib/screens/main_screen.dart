@@ -322,7 +322,7 @@ class _MainScreenState extends State<MainScreen> {
                   BottomNavigationBarItem(icon: const Icon(Icons.list_alt), label: i18n[_currentLang]!['live']),
                   BottomNavigationBarItem(icon: const Icon(Icons.star), label: i18n[_currentLang]!['highlights']),
                   BottomNavigationBarItem(icon: const Icon(Icons.diamond), label: i18n[_currentLang]!['deep_dives']),
-                  if (!kIsWeb) BottomNavigationBarItem(icon: const Icon(Icons.record_voice_over), label: i18n[_currentLang]!['dwarf_voice']),
+                  if (!kIsWeb) BottomNavigationBarItem(icon: const Icon(Icons.casino), label: i18n[_currentLang]!['dwarf_voice']),
                 ],
               ),
             ),
