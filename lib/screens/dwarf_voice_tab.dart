@@ -6,6 +6,7 @@ import '../utils/strings.dart';
 import '../widgets/minigame_banner.dart';
 import '../widgets/minigame_list.dart';
 import '../widgets/jet_boots_game.dart';
+import '../widgets/whack_a_mole_game.dart';
 
 // ─── 서브 페이지 enum ───────────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
   // 서브 네비게이션 상태
   _DwarfPage _dwarfPage = _DwarfPage.shouts;
   bool _isForward = true; // 전환 방향: true=오른쪽→, false=←왼쪽
+  String? _selectedGameId;
 
   @override
   void dispose() {
@@ -90,14 +92,33 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
         return MiniGameList(
           key: const ValueKey('miniGameList'),
           lang: widget.lang,
-          onSelectGame: (gameId) => _navigateTo(_DwarfPage.miniGame),
+          onSelectGame: (gameId) {
+            setState(() => _selectedGameId = gameId);
+            _navigateTo(_DwarfPage.miniGame);
+          },
           onBack: () => _navigateTo(_DwarfPage.shouts),
         );
       case _DwarfPage.miniGame:
+        return _buildGameWidget();
+    }
+  }
+
+  void _goBackToList() => _navigateTo(_DwarfPage.miniGameList);
+
+  Widget _buildGameWidget() {
+    switch (_selectedGameId) {
+      case 'whack_a_mole':
+        return WhackAMoleGame(
+          key: const ValueKey('whackAMoleGame'),
+          lang: widget.lang,
+          onBack: _goBackToList,
+        );
+      case 'jet_boots':
+      default:
         return JetBootsGame(
           key: const ValueKey('jetBootsGame'),
           lang: widget.lang,
-          onBack: () => _navigateTo(_DwarfPage.miniGameList),
+          onBack: _goBackToList,
         );
     }
   }

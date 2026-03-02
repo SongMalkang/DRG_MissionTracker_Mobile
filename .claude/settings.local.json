@@ -61,7 +61,8 @@
       "Bash(ls -la /c/Project/DRG_MissionTracker_Mobile/assets/audio*)",
       "Bash(xargs grep -l \"AnimationController\\\\|AnimatedWidget\\\\|Transition\")",
       "Bash(flutter build web --release --pwa-strategy=none --base-href \"/\")",
-      "Bash(MSYS_NO_PATHCONV=1 flutter build web --release --pwa-strategy=none --base-href \"/\")"
+      "Bash(MSYS_NO_PATHCONV=1 flutter build web --release --pwa-strategy=none --base-href \"/\")",
+      "Bash(flutter analyze)"
     ]
   }
 }

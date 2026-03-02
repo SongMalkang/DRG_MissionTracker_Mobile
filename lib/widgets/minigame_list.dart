@@ -109,7 +109,7 @@ class MiniGameList extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
-                  isAvailable ? Icons.rocket_launch : Icons.lock_outline,
+                  isAvailable ? game.icon : Icons.lock_outline,
                   color: isAvailable ? Colors.orange : Colors.white24,
                   size: 20,
                 ),
