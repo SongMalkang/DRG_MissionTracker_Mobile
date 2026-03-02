@@ -89,7 +89,9 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
 
   // 오디오
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final AudioPlayer _rescuePlayer = AudioPlayer();
+  // 구출 사운드 풀 (동시재생 지원, 3개 라운드 로빈)
+  final List<AudioPlayer> _rescuePool = List.generate(3, (_) => AudioPlayer());
+  int _rescuePoolIdx = 0;
   static const _sfxSurprise = 'audio/shouts/pitjaw/NEW_Saluting_7.ogg';
   static const _sfxGrabbed = 'audio/shouts/pitjaw/Dwarf_Taken_by_Grabber_06.ogg';
   static const _sfxHit = 'audio/shouts/pitjaw/Dwarf_Taken_by_Grabber_09.ogg';
@@ -120,6 +122,10 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
   // 사운드 중복 재생 방지
   bool _playedSurpriseSound = false;
   bool _playedGrabbedSound = false;
+
+  // ── 콤보 애니메이션 ──
+  late AnimationController _comboAnimController;
+  late Animation<double> _comboScaleAnim;
 
   // ── 난이도 ──
   double get _progress => 1.0 - (_remainingTime / _gameDuration);
@@ -161,6 +167,18 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
     );
 
     _introController.addListener(_introTick);
+
+    // 콤보 바운스 애니메이션 (400ms elasticOut)
+    _comboAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _comboScaleAnim = Tween<double>(begin: 1.6, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _comboAnimController,
+        curve: Curves.elasticOut,
+      ),
+    );
 
     _introController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
@@ -338,6 +356,8 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
 
     _combo++;
     if (_combo > _maxCombo) _maxCombo = _combo;
+    // 콤보 바운스 애니메이션 트리거
+    if (_combo > 1) _comboAnimController.forward(from: 0);
 
     // 콤보 보너스 점수
     const basePoints = 10;
@@ -415,14 +435,21 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
   }
 
   /// 탈출 시 사운드: 7콤보마다 그래플링 훅 랜덤, 그 외 pop
+  /// 풀 방식으로 동시재생 지원 (최대 3개)
   Future<void> _playRescueEscapeSound() async {
     try {
-      await _rescuePlayer.stop();
+      // 히트 사운드(ogg) 중단 → pop/훅이 묻히지 않도록
+      _audioPlayer.stop();
+
+      final player = _rescuePool[_rescuePoolIdx % _rescuePool.length];
+      _rescuePoolIdx++;
+
+      await player.stop();
       if (_combo > 0 && _combo % 7 == 0) {
         final idx = _random.nextInt(_sfxGrappleHooks.length);
-        await _rescuePlayer.play(AssetSource(_sfxGrappleHooks[idx]));
+        await player.play(AssetSource(_sfxGrappleHooks[idx]));
       } else {
-        await _rescuePlayer.play(AssetSource(_sfxPop));
+        await player.play(AssetSource(_sfxPop));
       }
     } catch (_) {}
   }
@@ -480,8 +507,11 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
   void dispose() {
     _gameLoopController.dispose();
     _introController.dispose();
+    _comboAnimController.dispose();
     _audioPlayer.dispose();
-    _rescuePlayer.dispose();
+    for (final p in _rescuePool) {
+      p.dispose();
+    }
     super.dispose();
   }
 
@@ -524,6 +554,10 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
                           _buildGameGrid(constraints)
                         else if (_gamePhase == _GamePhase.gameOver)
                           _buildGameOverOverlay(),
+
+                        // 콤보 대형 오버레이 (히트박스 위, 스캔라인 아래)
+                        if (_gamePhase == _GamePhase.playing && _combo > 1)
+                          _buildComboOverlay(),
 
                         // CRT 스캔라인 오버레이
                         Positioned.fill(
@@ -639,6 +673,62 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
     );
   }
 
+  // ── 콤보 대형 오버레이 (상단 표시, 히트박스 미차단) ──
+
+  Widget _buildComboOverlay() {
+    return Positioned(
+      top: 6,
+      left: 0,
+      right: 0,
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _comboAnimController,
+          builder: (context, child) {
+            final scale = _comboScaleAnim.value;
+            return Transform.scale(
+              scale: scale,
+              child: child,
+            );
+          },
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '▸ ${t('minigame_wam_combo', widget.lang)} ◂',
+                  style: GoogleFonts.pressStart2p(
+                    fontSize: 8,
+                    color: _termAmber.withValues(alpha: 0.7),
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'x$_combo',
+                  style: GoogleFonts.pressStart2p(
+                    fontSize: 22,
+                    color: _termAmber,
+                    letterSpacing: 2,
+                    shadows: [
+                      Shadow(
+                        color: _termAmber.withValues(alpha: 0.5),
+                        blurRadius: 16,
+                      ),
+                      Shadow(
+                        color: _termAmber.withValues(alpha: 0.3),
+                        blurRadius: 32,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // ── 하단 바 ──
 
   Widget _buildBottomBar() {
@@ -648,13 +738,11 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
       child: Center(
         child: Text(
           _gamePhase == _GamePhase.playing
-              ? (_combo > 1
-                  ? '${t('minigame_wam_combo', widget.lang)} x$_combo'
-                  : 'TAP SCOUTS TO RESCUE')
+              ? 'TAP SCOUTS TO RESCUE'
               : '',
           style: GoogleFonts.pressStart2p(
             fontSize: 7,
-            color: _combo > 1 ? _termAmber : _termGreenDim,
+            color: _termGreenDim,
             letterSpacing: 0.5,
           ),
         ),
@@ -862,28 +950,7 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
               for (int col = 0; col < 3; col++)
                 _buildHoleCell(row, col, cellSize),
 
-            // 콤보 표시
-            if (_combo > 1)
-              Positioned(
-                right: 0,
-                top: -24,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _termBg.withValues(alpha: 0.8),
-                    border: Border.all(color: _termAmber, width: 1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '${t('minigame_wam_combo', widget.lang)} x$_combo',
-                    style: GoogleFonts.pressStart2p(
-                      fontSize: 7,
-                      color: _termAmber,
-                    ),
-                  ),
-                ),
-              ),
+            // 콤보 표시는 부모 Stack에서 오버레이로 표시
           ],
         ),
       ),
