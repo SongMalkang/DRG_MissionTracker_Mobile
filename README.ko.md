@@ -76,9 +76,9 @@ BOSCO가 Double XP 미션이 등장하면 직접 알려줍니다.
 
 ## ⚖️ 면책 조항
 
-1. **Non-Commercial**: 본 프로젝트는 수익을 목적으로 하지 않는 비상업적 팬 프로젝트입니다.
-2. **Intellectual Property**: *Deep Rock Galactic*의 모든 자산, 이미지, 캐릭터 및 관련 데이터의 저작권은 **Ghost Ship Games** 및 **Coffee Stain Publishing**에 있습니다.
-3. **No Affiliation**: 본 앱은 Ghost Ship Games와 공식적으로 연관되어 있지 않으며, 공식 서비스의 보조 도구로만 작동합니다.
+1. **Zero-Revenue & Non-Commercial**: 본 프로젝트는 어떠한 수익도 창출하지 않는 **순수 비영리 팬 프로젝트**입니다. 앱 내에 광고, 인앱 결제, 유료 콘텐츠가 일절 포함되어 있지 않으며, 향후에도 이를 통한 수익화를 하지 않습니다.
+2. **Intellectual Property**: *Deep Rock Galactic*의 모든 자산, 이미지, 캐릭터 및 관련 데이터의 저작권은 **Ghost Ship Games** 및 **Coffee Stain Publishing**에 있습니다. 본 앱은 공정 이용(Fair Use) 가이드라인을 준수하고자 노력합니다.
+3. **No Affiliation**: 본 앱은 Ghost Ship Games와 공식적으로 연관되어 있지 않으며, 커뮤니티를 위한 보조 도구로만 작동합니다.
 
 ---
 

@@ -237,12 +237,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ? langMap['standard']! 
         : "SEASON ${_selectedSeason.replaceAll('s', '')}";
 
-    return Scaffold(
-      appBar: AppBar(title: Text(langMap['settings']!)),
-      body: Center(
+    return ColoredBox(
+      color: const Color(0xFF0D0D0D), // Scaffold 바깥 영역 배경
+      child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
-          child: ListView(
+          child: Scaffold(
+            appBar: AppBar(title: Text(langMap['settings']!)),
+            body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         children: [
           // 1. Disclaimer (상단 이동)
@@ -582,6 +584,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 20),
         ],
       ),
+          ),
         ),
       ),
     );

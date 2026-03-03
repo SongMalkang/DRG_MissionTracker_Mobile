@@ -232,77 +232,71 @@ class _MainScreenState extends State<MainScreen> {
       ),
       HighlightsTab(lang: _currentLang),
       DeepDivesTab(lang: _currentLang),
-      if (!kIsWeb) DwarfVoiceTab(lang: _currentLang),
+      DwarfVoiceTab(lang: _currentLang), // kIsWeb 필터 해제 (GSG 데모용 — 복원: if (!kIsWeb) 추가)
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 12.0),
-          child: AnimatedBosco(onLongPress: kDebugMode ? _showDebugMenu : null),
-        ),
-        title: Text(
-          i18n[_currentLang]!['title']!,
-          style: GoogleFonts.russoOne(
-            color: Theme.of(context).colorScheme.primary,
-            letterSpacing: 1.5,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SettingsScreen(
-                    currentLang: _currentLang,
-                    onLangChange: _onLangChange,
-                    currentSeason: _currentSeason,
-                    onSeasonChange: _onSeasonChange,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-        bottom: _missionService.status == DataStatus.refreshing
-            ? const PreferredSize(
-                preferredSize: Size.fromHeight(2),
-                child: LinearProgressIndicator(
-                  minHeight: 2,
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
-                ),
-              )
-            : null,
-      ),
-      body: Center(
+    return ColoredBox(
+      color: const Color(0xFF0D0D0D), // Scaffold 바깥 영역 배경
+      child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
-          child: Stack(
-            children: [
-              tabs[_currentIndex],
-              if (_missionService.status == DataStatus.offline ||
-                  _missionService.status == DataStatus.outdated)
-                Positioned(
-                  bottom: 20,
-                  left: 20,
-                  right: 20,
-                  child: _buildOfflineWarning(),
+          child: Scaffold(
+            appBar: AppBar(
+              centerTitle: true,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 12.0),
+                child: AnimatedBosco(onLongPress: kDebugMode ? _showDebugMenu : null),
+              ),
+              title: Text(
+                i18n[_currentLang]!['title']!,
+                style: GoogleFonts.russoOne(
+                  color: Theme.of(context).colorScheme.primary,
+                  letterSpacing: 1.5,
                 ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        color: const Color(0xFF1A1A1A),
-        child: Center(
-          heightFactor: 1.0, // 세로 확장 방지: Center가 전체 높이를 차지하지 않도록
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Container(
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SettingsScreen(
+                          currentLang: _currentLang,
+                          onLangChange: _onLangChange,
+                          currentSeason: _currentSeason,
+                          onSeasonChange: _onSeasonChange,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+              bottom: _missionService.status == DataStatus.refreshing
+                  ? const PreferredSize(
+                      preferredSize: Size.fromHeight(2),
+                      child: LinearProgressIndicator(
+                        minHeight: 2,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                      ),
+                    )
+                  : null,
+            ),
+            body: Stack(
+              children: [
+                tabs[_currentIndex],
+                if (_missionService.status == DataStatus.offline ||
+                    _missionService.status == DataStatus.outdated)
+                  Positioned(
+                    bottom: 20,
+                    left: 20,
+                    right: 20,
+                    child: _buildOfflineWarning(),
+                  ),
+              ],
+            ),
+            bottomNavigationBar: Container(
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: Colors.white10, width: 1)),
               ),
@@ -322,7 +316,7 @@ class _MainScreenState extends State<MainScreen> {
                   BottomNavigationBarItem(icon: const Icon(Icons.list_alt), label: i18n[_currentLang]!['live']),
                   BottomNavigationBarItem(icon: const Icon(Icons.star), label: i18n[_currentLang]!['highlights']),
                   BottomNavigationBarItem(icon: const Icon(Icons.diamond), label: i18n[_currentLang]!['deep_dives']),
-                  if (!kIsWeb) BottomNavigationBarItem(icon: const Icon(Icons.casino), label: i18n[_currentLang]!['dwarf_voice']),
+                  BottomNavigationBarItem(icon: const Icon(Icons.casino), label: i18n[_currentLang]!['dwarf_voice']), // kIsWeb 필터 해제
                 ],
               ),
             ),

@@ -76,9 +76,9 @@ This project would not be possible without **[rolfosian](https://github.com/rolf
 
 ## ⚖️ Disclaimer
 
-1. **Non-Commercial**: This is a non-profit fan project.
-2. **Intellectual Property**: All game assets, images, and characters are property of **Ghost Ship Games**.
-3. **No Affiliation**: This app is not affiliated with Ghost Ship Games and is only used as a supplementary tool for official services.
+1. **Zero-Revenue & Non-Commercial**: This is a **strictly non-profit fan project** that generates zero revenue. There are no ads, no in-app purchases, and no paid features. We do not accept donations within this project.
+2. **Intellectual Property**: All game assets, images, and characters are property of **Ghost Ship Games**. This app is intended to follow Fair Use guidelines.
+3. **No Affiliation**: This app is not affiliated with Ghost Ship Games and is used only as a supplementary community tool.
 
 ---
 

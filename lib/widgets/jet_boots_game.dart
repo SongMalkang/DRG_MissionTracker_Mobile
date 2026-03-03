@@ -39,8 +39,15 @@ class _JetBootsGameState extends State<JetBootsGame>
   bool _isGameOver = false;
   double _characterY = 0.5; // 정규화: 0.0 = 상단, 1.0 = 하단
   double _velocity = 0.0;
+  DateTime _lastFrameTime = DateTime.now();
   int _meter = 0; // 통과한 슬릿 수 (미터)
   int _highScore = 0;
+
+  // 스테이지
+  int _stage = 1;
+  int _stageStartMeter = 0;
+  static const _slitsPerStage = 10;
+  bool _stageFlash = false;
 
   // 장애물: 좌우 벽에서 뻗어나온 기둥 + 슬릿
   final List<_Slit> _slits = [];
@@ -57,7 +64,6 @@ class _JetBootsGameState extends State<JetBootsGame>
   static const _sfxStart = 'audio/shouts/jetboots/JetBootsUse_02.ogg';
   static const _sfxMilestone = 'audio/shouts/jetboots/JetBootsUse_16.ogg';
   static const _sfxFail = 'audio/shouts/jetboots/JetBoots_Overheat_2.ogg';
-  final Set<int> _playedMilestones = {};
 
   // ── 리더보드 ──
   static const _topScoresKey = 'jetboots_top_scores';
@@ -65,31 +71,22 @@ class _JetBootsGameState extends State<JetBootsGame>
   bool _canRestart = false;
   int _visibleScoreCount = 0; // 리더보드 순차 등장 애니메이션
 
-  // ── 난이도 상수 ──
-  static const _maxDifficultyMeter = 50;
+  // ── 난이도 (스테이지 기반 점근적 공식) ──
+  double get _difficultyProgress => 1.0 - (1.0 / (1.0 + 0.25 * (_stage - 1)));
 
-  /// 현재 미터 기반 동적 갭 크기 (0M: 0.30 → 50M+: 0.18)
+  /// 갭 크기: 0.30 → 0.16
   double get _currentGapSize {
-    const startGap = 0.30;
-    const endGap = 0.18;
-    final progress = (_meter / _maxDifficultyMeter).clamp(0.0, 1.0);
-    return startGap - (startGap - endGap) * progress;
+    return 0.30 - 0.14 * _difficultyProgress;
   }
 
-  /// 현재 미터 기반 슬릿 간 X축 간격 (0M: 0.50 → 50M+: 0.32)
+  /// 슬릿 간 X축 간격: 0.50 → 0.28
   double get _currentSpacing {
-    const startSpacing = 0.50;
-    const endSpacing = 0.32;
-    final progress = (_meter / _maxDifficultyMeter).clamp(0.0, 1.0);
-    return startSpacing - (startSpacing - endSpacing) * progress;
+    return 0.50 - 0.22 * _difficultyProgress;
   }
 
-  /// 현재 미터 기반 이동 속도 (0M: 0.005 → 50M+: 0.007)
+  /// 이동 속도: 0.30/s → 0.48/s
   double get _currentSpeed {
-    const startSpeed = 0.005;
-    const endSpeed = 0.007;
-    final progress = (_meter / _maxDifficultyMeter).clamp(0.0, 1.0);
-    return startSpeed + (endSpeed - startSpeed) * progress;
+    return 0.30 + 0.18 * _difficultyProgress;
   }
 
   @override
@@ -121,9 +118,14 @@ class _JetBootsGameState extends State<JetBootsGame>
 
     if (!_isStarted || _isGameOver) return;
 
+    final now = DateTime.now();
+    final dt = (now.difference(_lastFrameTime).inMicroseconds / 1000000.0)
+        .clamp(0.0, 0.1);
+    _lastFrameTime = now;
+
     setState(() {
-      _velocity += 0.0009;
-      _characterY = (_characterY + _velocity).clamp(0.0, 1.0);
+      _velocity += 3.24 * dt;
+      _characterY = (_characterY + _velocity * dt).clamp(0.0, 1.0);
 
       // 바닥/천장 충돌
       if (_characterY >= 0.98 || _characterY <= 0.02) {
@@ -135,7 +137,7 @@ class _JetBootsGameState extends State<JetBootsGame>
 
       // 슬릿 이동 (좌측으로 스크롤)
       for (final slit in _slits) {
-        slit.x -= speed;
+        slit.x -= speed * dt;
 
         // 슬릿 통과 판정
         if (!slit.passed && slit.x < _characterX - 0.03) {
@@ -223,7 +225,9 @@ class _JetBootsGameState extends State<JetBootsGame>
         _characterY = 0.5;
         _velocity = 0.0;
         _meter = 0;
-        _playedMilestones.clear();
+        _stage = 1;
+        _stageStartMeter = 0;
+        _stageFlash = false;
         _initSlits();
       });
       return;
@@ -231,13 +235,14 @@ class _JetBootsGameState extends State<JetBootsGame>
 
     if (!_isStarted) {
       setState(() => _isStarted = true);
+      _lastFrameTime = DateTime.now();
       _gameLoopController.repeat();
       _playSound(_sfxStart);
       return;
     }
 
     // 점프 (완화된 상승력)
-    setState(() => _velocity = -0.016);
+    setState(() => _velocity = -0.96);
   }
 
   // ── 오디오 헬퍼 ──
@@ -252,10 +257,15 @@ class _JetBootsGameState extends State<JetBootsGame>
   }
 
   void _checkMilestone(int meter) {
-    const milestones = {10, 30, 50};
-    if (milestones.contains(meter) && !_playedMilestones.contains(meter)) {
-      _playedMilestones.add(meter);
+    final slitsInStage = meter - _stageStartMeter;
+    if (slitsInStage >= _slitsPerStage) {
+      _stage++;
+      _stageStartMeter = meter;
       _playSound(_sfxMilestone);
+      _stageFlash = true;
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) setState(() => _stageFlash = false);
+      });
     }
   }
 
@@ -445,7 +455,7 @@ class _JetBootsGameState extends State<JetBootsGame>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${_meter}M',
+                  'STG $_stage  ${_meter}M',
                   style: GoogleFonts.pressStart2p(
                     fontSize: 7,
                     color: _termGreenDim,
@@ -468,14 +478,16 @@ class _JetBootsGameState extends State<JetBootsGame>
   }
 
   Widget _buildMeterBar() {
-    // 프로그레스 도트 (DRG 레퍼런스의 상단 프로그레스)
+    final stageProgress = _meter - _stageStartMeter;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      color: _termSurface,
+      color: _stageFlash
+          ? _termGreen.withValues(alpha: 0.3)
+          : _termSurface,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(10, (i) {
-          final filled = _meter > i;
+          final filled = stageProgress > i;
           return Container(
             width: 10,
             height: 10,
@@ -661,6 +673,14 @@ class _JetBootsGameState extends State<JetBootsGame>
               style: GoogleFonts.pressStart2p(
                 fontSize: 18,
                 color: _termGreen,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'STAGE $_stage',
+              style: GoogleFonts.pressStart2p(
+                fontSize: 7,
+                color: _termGreenDim,
               ),
             ),
             const SizedBox(height: 4),

@@ -77,9 +77,16 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
   int _maxCombo = 0;
   int _blinkCounter = 0;
 
-  // 타이머
-  static const _gameDuration = 60.0;
-  double _remainingTime = _gameDuration;
+  // 생명 & 스테이지
+  int _lives = 4;
+  static const _maxLives = 4;
+  int _stage = 1;
+  int _rescueCount = 0;
+  int _stageRescueCount = 0;
+  static const _rescuesPerStage = 10;
+  double _surgeCooldown = 0.0;
+  bool _isSurging = false;
+  bool _lifeLostFlash = false;
   DateTime _lastFrameTime = DateTime.now();
 
   // 구멍 그리드
@@ -94,7 +101,6 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
   int _rescuePoolIdx = 0;
   static const _sfxSurprise = 'audio/shouts/pitjaw/NEW_Saluting_7.ogg';
   static const _sfxGrabbed = 'audio/shouts/pitjaw/Dwarf_Taken_by_Grabber_06.ogg';
-  static const _sfxHit = 'audio/shouts/pitjaw/Dwarf_Taken_by_Grabber_09.ogg';
   static const _sfxPop = 'audio/shouts/pitjaw/pop.mp3';
   static const _sfxGrappleHooks = [
     'audio/shouts/pitjaw/WeaponsGrapplingHookUse_1.ogg',
@@ -127,21 +133,32 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
   late AnimationController _comboAnimController;
   late Animation<double> _comboScaleAnim;
 
-  // ── 난이도 ──
-  double get _progress => 1.0 - (_remainingTime / _gameDuration);
+  // ── 난이도 (스테이지 기반 점근적 공식) ──
+  double get _difficultyProgress => 1.0 - (1.0 / (1.0 + 0.25 * (_stage - 1)));
 
-  double get _currentVisibleTime {
-    return 2.0 - 1.3 * _progress.clamp(0.0, 1.0);
+  /// 기본 노출 시간: 2.2s → 0.65s
+  double get _baseVisibleTime => 2.2 - 1.55 * _difficultyProgress;
+
+  /// 기본 스폰 간격: 1.3s → 0.30s (서지 시 절반)
+  double get _baseSpawnInterval {
+    final base = 1.3 - 1.0 * _difficultyProgress;
+    return _isSurging ? base * 0.5 : base;
   }
 
-  double get _currentSpawnInterval {
-    return 1.2 - 0.8 * _progress.clamp(0.0, 1.0);
-  }
-
+  /// 최대 활성 두더지: 1→1→2→2→3→3→4+
   int get _maxActiveMoles {
-    if (_progress < 0.3) return 1;
-    if (_progress < 0.6) return 2;
-    return 3;
+    if (_stage <= 2) return 1;
+    if (_stage <= 4) return 2;
+    if (_stage <= 6) return 3;
+    return 4;
+  }
+
+  /// 개별 두더지 랜덤 노출 시간 (스테이지↑ → 분산↑)
+  double _randomizedVisibleTime() {
+    final base = _baseVisibleTime;
+    final variance = 0.15 + 0.20 * _difficultyProgress; // 0.15 → 0.35
+    final multiplier = (1.0 - variance) + _random.nextDouble() * (2 * variance);
+    return (base * multiplier).clamp(0.45, 3.0);
   }
 
   @override
@@ -252,12 +269,20 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
     _lastFrameTime = now;
 
     setState(() {
-      // 타이머 감소
-      _remainingTime -= dt;
-      if (_remainingTime <= 0) {
-        _remainingTime = 0;
-        _triggerGameOver();
-        return;
+      // 서지 쿨다운 처리
+      if (_isSurging) {
+        _surgeCooldown -= dt;
+        if (_surgeCooldown <= 0) {
+          _isSurging = false;
+          _surgeCooldown = 0;
+        }
+      } else {
+        // 서지 발생 확률: ~3%/s → ~8%/s
+        final surgeChancePerSec = 0.03 + 0.05 * _difficultyProgress;
+        if (_random.nextDouble() < surgeChancePerSec * dt) {
+          _isSurging = true;
+          _surgeCooldown = 2.0 + _random.nextDouble() * 1.5;
+        }
       }
 
       // 활성 구멍 수 세기
@@ -273,7 +298,7 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
           // 타격 임팩트 시점 (0.45): 히트 사운드 + 플래시
           if (hole.pickaxeProgress >= 0.45 && !hole.hitSoundPlayed) {
             hole.hitSoundPlayed = true;
-            _playSound(_sfxHit);
+            _playSound(_sfxPop);
           }
 
           // 히트 플래시 진행 (0.45~1.0)
@@ -310,9 +335,19 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
           // 노출 타이머 감소
           hole.visibleTimer -= dt;
           if (hole.visibleTimer <= 0) {
-            // 놓침 → 리셋
+            // 놓침 → 생명 감소
             hole.reset();
             _combo = 0;
+            _lives--;
+            _lifeLostFlash = true;
+            Future.delayed(const Duration(milliseconds: 200), () {
+              if (mounted) setState(() => _lifeLostFlash = false);
+            });
+            if (_lives <= 0) {
+              _lives = 0;
+              _triggerGameOver();
+              return;
+            }
           }
         }
       }
@@ -320,8 +355,15 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
       // 새 스카웃 스폰
       _spawnTimer -= dt;
       if (_spawnTimer <= 0 && activeCount < _maxActiveMoles) {
-        _spawnMole();
-        _spawnTimer = _currentSpawnInterval;
+        // 버스트 확률: 8% → 15% (스테이지에 따라)
+        final burstChance = 0.08 + 0.07 * _difficultyProgress;
+        final burstCount = (_random.nextDouble() < burstChance)
+            ? min(2 + (_stage >= 7 ? 1 : 0), _maxActiveMoles - activeCount)
+            : 1;
+        for (int i = 0; i < burstCount; i++) {
+          _spawnMole();
+        }
+        _spawnTimer = _baseSpawnInterval;
       }
     });
   }
@@ -341,7 +383,7 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
     hole.popProgress = 0.0;
     hole.isRescued = false;
     hole.pickaxeProgress = 0.0;
-    hole.totalVisibleTime = _currentVisibleTime;
+    hole.totalVisibleTime = _randomizedVisibleTime();
     hole.visibleTimer = hole.totalVisibleTime;
   }
 
@@ -363,6 +405,16 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
     const basePoints = 10;
     final comboMultiplier = 1.0 + (_combo - 1) * 0.2;
     _score += (basePoints * comboMultiplier).round();
+
+    // 스테이지 진행
+    _rescueCount++;
+    _stageRescueCount++;
+    if (_stageRescueCount >= _rescuesPerStage) {
+      _stage++;
+      _stageRescueCount = 0;
+      if (_lives < _maxLives) _lives++; // 스테이지 클리어 보상: +1 생명
+      _playSound(_sfxGrappleHooks[_random.nextInt(_sfxGrappleHooks.length)]);
+    }
     // 사운드는 곡괭이 임팩트 시점(gameLoop)에서 재생
   }
 
@@ -387,7 +439,13 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
         _score = 0;
         _combo = 0;
         _maxCombo = 0;
-        _remainingTime = _gameDuration;
+        _lives = _maxLives;
+        _stage = 1;
+        _rescueCount = 0;
+        _stageRescueCount = 0;
+        _surgeCooldown = 0;
+        _isSurging = false;
+        _lifeLostFlash = false;
         _canRestart = false;
         _visibleScoreCount = 0;
         _spawnTimer = 1.5;
@@ -439,7 +497,7 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
   Future<void> _playRescueEscapeSound() async {
     try {
       // 히트 사운드(ogg) 중단 → pop/훅이 묻히지 않도록
-      _audioPlayer.stop();
+      await _audioPlayer.stop();
 
       final player = _rescuePool[_rescuePoolIdx % _rescuePool.length];
       _rescuePoolIdx++;
@@ -635,40 +693,60 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
     );
   }
 
-  // ── 타이머 바 ──
+  // ── 생명 + 스테이지 바 ──
 
   Widget _buildTimerBar() {
-    final filledDots =
-        (_remainingTime / _gameDuration * 10).ceil().clamp(0, 10);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       color: _termSurface,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(10, (i) {
-          final filled = i < filledDots;
-          return Container(
-            width: 10,
-            height: 10,
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: filled ? _termGreen : Colors.transparent,
-              border: Border.all(
-                color: filled ? _termGreen : _termGreenDim,
-                width: 1.5,
-              ),
-              boxShadow: filled
-                  ? [
-                      BoxShadow(
-                        color: _termGreen.withValues(alpha: 0.4),
-                        blurRadius: 6,
-                      ),
-                    ]
-                  : null,
+        children: [
+          // 스테이지 표시
+          Text(
+            'STG $_stage',
+            style: GoogleFonts.pressStart2p(
+              fontSize: 6,
+              color: _termGreenDim,
             ),
-          );
-        }),
+          ),
+          const SizedBox(width: 8),
+          // 하트 (생명)
+          for (int i = 0; i < _maxLives; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Icon(
+                i < _lives ? Icons.favorite : Icons.favorite_border,
+                size: 14,
+                color: _lifeLostFlash && i == _lives
+                    ? Colors.redAccent
+                    : (i < _lives ? _termGreen : _termGreenDim),
+              ),
+            ),
+          const Spacer(),
+          // 스테이지 내 진행률 도트
+          for (int i = 0; i < 10; i++)
+            Container(
+              width: 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 1.5),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _stageRescueCount > i ? _termGreen : Colors.transparent,
+                border: Border.all(
+                  color: _stageRescueCount > i ? _termGreen : _termGreenDim,
+                  width: 1,
+                ),
+                boxShadow: _stageRescueCount > i
+                    ? [
+                        BoxShadow(
+                          color: _termGreen.withValues(alpha: 0.4),
+                          blurRadius: 4,
+                        ),
+                      ]
+                    : null,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -732,17 +810,20 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
   // ── 하단 바 ──
 
   Widget _buildBottomBar() {
+    final showSurge = _gamePhase == _GamePhase.playing && _isSurging;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       color: _termSurface,
       child: Center(
         child: Text(
-          _gamePhase == _GamePhase.playing
-              ? 'TAP SCOUTS TO RESCUE'
-              : '',
+          showSurge
+              ? t('minigame_wam_swarm', widget.lang)
+              : (_gamePhase == _GamePhase.playing
+                  ? 'TAP SCOUTS TO RESCUE'
+                  : ''),
           style: GoogleFonts.pressStart2p(
             fontSize: 7,
-            color: _termGreenDim,
+            color: showSurge ? _termAmber : _termGreenDim,
             letterSpacing: 0.5,
           ),
         ),
@@ -897,7 +978,7 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
           ),
           const SizedBox(height: 16),
           Text(
-            'RESCUE SCOUTS\nTRAPPED BY PIT JAWS',
+            'RESCUE SCOUTS\nDON\'T LET THEM ESCAPE',
             textAlign: TextAlign.center,
             style: GoogleFonts.pressStart2p(
               fontSize: 7,
@@ -907,7 +988,7 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
           ),
           const SizedBox(height: 8),
           Text(
-            '60 SEC',
+            '4 LIVES',
             style: GoogleFonts.pressStart2p(
               fontSize: 8,
               color: _termGreenDim,
@@ -993,6 +1074,8 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
     final isNewRecord =
         _score > 0 && _topScores.isNotEmpty && _score >= _topScores.first;
 
+    final isAllLost = _lives <= 0;
+
     return Container(
       color: _termBg.withValues(alpha: 0.85),
       child: Center(
@@ -1000,10 +1083,12 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              t('minigame_wam_extraction_complete', widget.lang),
+              isAllLost
+                  ? t('minigame_wam_all_lost', widget.lang)
+                  : t('minigame_wam_extraction_complete', widget.lang),
               style: GoogleFonts.pressStart2p(
                 fontSize: 10,
-                color: _termGreen,
+                color: isAllLost ? Colors.redAccent : _termGreen,
                 letterSpacing: 1,
               ),
             ),
@@ -1017,6 +1102,15 @@ class _WhackAMoleGameState extends State<WhackAMoleGame>
               ),
             ),
             const SizedBox(height: 6),
+
+            Text(
+              'STAGE: $_stage  ${t('minigame_wam_rescued', widget.lang)}: $_rescueCount',
+              style: GoogleFonts.pressStart2p(
+                fontSize: 6,
+                color: _termGreenDim,
+              ),
+            ),
+            const SizedBox(height: 4),
 
             Text(
               '${t('minigame_wam_max_combo', widget.lang)}: $_maxCombo',

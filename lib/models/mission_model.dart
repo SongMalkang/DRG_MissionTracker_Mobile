@@ -35,7 +35,7 @@ class Mission {
       complexity: json['c'] ?? 1,
       buff: json['bf'],
       debuff: json['df'],
-      seasons: List<String>.from(json['s'] ?? []),
+      seasons: (json['s'] as List?)?.whereType<String>().toList() ?? [],
     );
   }
 }
