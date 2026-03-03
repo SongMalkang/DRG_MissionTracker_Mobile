@@ -160,7 +160,7 @@ class MissionService {
 
   // ── Data Validity Check ─────────────────────────────────────────────────
   void _checkDataValidity() {
-    final nowKey = _getTimeKey(DateTime.now().toUtc());
+    final nowKey = getTimeKey(DateTime.now().toUtc());
     if (!_allMissions.containsKey(nowKey)) {
       if (_status != DataStatus.online && _status != DataStatus.refreshing) {
         _status = DataStatus.outdated;
@@ -187,7 +187,7 @@ class MissionService {
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
-  String _getTimeKey(DateTime utcTime) {
+  static String getTimeKey(DateTime utcTime) {
     String y = utcTime.year.toString();
     String m = utcTime.month.toString().padLeft(2, '0');
     String d = utcTime.day.toString().padLeft(2, '0');
@@ -197,7 +197,26 @@ class MissionService {
   }
 
   List<Mission> getMissionsForTime(DateTime utcTime) {
-    return _allMissions[_getTimeKey(utcTime)] ?? [];
+    final key = getTimeKey(utcTime);
+    if (_allMissions.containsKey(key)) {
+      return _allMissions[key]!;
+    }
+    // outdated 상태: 가장 가까운 과거 시간 키의 데이터 반환
+    if (_allMissions.isNotEmpty) {
+      final keys = _allMissions.keys.toList()..sort();
+      // 요청 시간보다 이전이면서 가장 가까운 키
+      String? closest;
+      for (final k in keys.reversed) {
+        if (k.compareTo(key) <= 0) {
+          closest = k;
+          break;
+        }
+      }
+      // 과거에도 없으면 가장 마지막 키
+      closest ??= keys.last;
+      return _allMissions[closest] ?? [];
+    }
+    return [];
   }
 
   void debugSetStatus(DataStatus newStatus) {

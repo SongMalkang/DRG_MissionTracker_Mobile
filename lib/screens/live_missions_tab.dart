@@ -189,31 +189,41 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
           ),
         ),
         Expanded(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: filteredList.isEmpty
-                ? Center(
-                    key: const ValueKey('empty'),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+          child: RefreshIndicator(
+            color: Colors.orange,
+            backgroundColor: const Color(0xFF1E1E1E),
+            onRefresh: () => _missionService.forceRefresh(),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: filteredList.isEmpty
+                  ? ListView(
+                      key: const ValueKey('empty'),
                       children: [
-                        const Icon(Icons.search_off, size: 48, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        Text(
-                          "No missions found for $seasonLabel\nat this time.",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.grey),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.5,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.search_off, size: 48, color: Colors.grey),
+                              const SizedBox(height: 16),
+                              Text(
+                                "No missions found for $seasonLabel\nat this time.",
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
+                    )
+                  : ListView.builder(
+                      key: ValueKey('missions_${targetUtc.toIso8601String()}_${widget.currentSeason}'),
+                      itemCount: filteredList.length,
+                      itemBuilder: (context, index) {
+                        return MissionCard(mission: filteredList[index], lang: widget.lang);
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    key: ValueKey('missions_${targetUtc.toIso8601String()}_${widget.currentSeason}'),
-                    itemCount: filteredList.length,
-                    itemBuilder: (context, index) {
-                      return MissionCard(mission: filteredList[index], lang: widget.lang);
-                    },
-                  ),
+            ),
           ),
         ),
       ],

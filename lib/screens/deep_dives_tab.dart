@@ -89,23 +89,28 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 32),
-      children: [
-        // 업데이트 안내 배너
-        _UpdateBanner(
-          nextUpdate: _formatNextUpdate(),
-          lang: widget.lang,
-          onRefresh: () => _ddService.loadDeepDives(forceRefresh: true),
-        ),
-        const SizedBox(height: 12),
+    return RefreshIndicator(
+      color: Colors.blueAccent,
+      backgroundColor: const Color(0xFF1E1E1E),
+      onRefresh: () => _ddService.loadDeepDives(forceRefresh: true),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 32),
+        children: [
+          // 업데이트 안내 배너
+          _UpdateBanner(
+            nextUpdate: _formatNextUpdate(),
+            lang: widget.lang,
+            onRefresh: () => _ddService.loadDeepDives(forceRefresh: true),
+          ),
+          const SizedBox(height: 12),
 
-        // Deep Dive 카드들
-        ...(_ddService.dives ?? []).map((dive) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _DeepDiveCard(dive: dive, lang: widget.lang),
-            )),
-      ],
+          // Deep Dive 카드들
+          ...(_ddService.dives ?? []).map((dive) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _DeepDiveCard(dive: dive, lang: widget.lang),
+              )),
+        ],
+      ),
     );
   }
 }

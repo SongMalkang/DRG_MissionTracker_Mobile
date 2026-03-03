@@ -172,22 +172,31 @@ class MissionCard extends StatelessWidget {
                           ),
                         ),
 
-                        // 버프 / 디버프 아이콘 (우측)
+                        // 버프 / 디버프 아이콘 (우측, 탭 → Trivia)
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             if (mission.buff != null)
-                              Tooltip(
-                                message: t(mission.buff, lang),
-                                child: SizedBox(
-                                  width: 28,
-                                  height: 28,
-                                  child: Image.asset(
-                                    AssetHelper.getMutatorIcon(mission.buff!),
-                                    errorBuilder:
-                                        (context, error, stackTrace) =>
-                                            const Icon(Icons.bolt,
-                                                color: Colors.amber, size: 22),
+                              GestureDetector(
+                                onTap: () => showTriviaModal(
+                                  context,
+                                  itemKey: mission.buff!,
+                                  lang: lang,
+                                  iconPath: AssetHelper.getMutatorIcon(mission.buff!),
+                                  accentColor: Colors.amber,
+                                ),
+                                child: Tooltip(
+                                  message: t(mission.buff, lang),
+                                  child: SizedBox(
+                                    width: 28,
+                                    height: 28,
+                                    child: Image.asset(
+                                      AssetHelper.getMutatorIcon(mission.buff!),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Icon(Icons.bolt,
+                                                  color: Colors.amber, size: 22),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -207,20 +216,29 @@ class MissionCard extends StatelessWidget {
                                       for (int i = 0; i < ws.length; i++) ...[
                                         if (i > 0)
                                           const SizedBox(width: 4),
-                                        Tooltip(
-                                          message: t(ws[i], lang),
-                                          child: SizedBox(
-                                            width: 28,
-                                            height: 28,
-                                            child: Image.asset(
-                                              AssetHelper.getWarningIcon(
-                                                  ws[i]),
-                                              errorBuilder: (_, _, _) =>
-                                                  const Icon(
-                                                    Icons.warning_amber_rounded,
-                                                    color: Colors.redAccent,
-                                                    size: 22,
-                                                  ),
+                                        GestureDetector(
+                                          onTap: () => showTriviaModal(
+                                            context,
+                                            itemKey: ws[i],
+                                            lang: lang,
+                                            iconPath: AssetHelper.getWarningIcon(ws[i]),
+                                            accentColor: Colors.redAccent,
+                                          ),
+                                          child: Tooltip(
+                                            message: t(ws[i], lang),
+                                            child: SizedBox(
+                                              width: 28,
+                                              height: 28,
+                                              child: Image.asset(
+                                                AssetHelper.getWarningIcon(
+                                                    ws[i]),
+                                                errorBuilder: (_, _, _) =>
+                                                    const Icon(
+                                                      Icons.warning_amber_rounded,
+                                                      color: Colors.redAccent,
+                                                      size: 22,
+                                                    ),
+                                              ),
                                             ),
                                           ),
                                         ),

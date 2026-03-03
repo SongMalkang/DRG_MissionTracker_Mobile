@@ -235,7 +235,11 @@ class DeepDiveService {
   }
 
   // ── Parsing ───────────────────────────────────────────────────────────
-  List<DeepDive> _parseDiveData(String body) {
+  static List<DeepDive> parseDiveDataPublic(String body) => DeepDiveService._parseDiveDataImpl(body);
+
+  List<DeepDive> _parseDiveData(String body) => _parseDiveDataImpl(body);
+
+  static List<DeepDive> _parseDiveDataImpl(String body) {
     final jsonData = jsonDecode(body) as Map<String, dynamic>;
     final ddMap = jsonData['Deep Dives'] as Map<String, dynamic>?;
     if (ddMap == null) throw const FormatException('Missing "Deep Dives" key');

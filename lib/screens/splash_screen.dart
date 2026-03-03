@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'main_screen.dart';
+import '../services/mission_service.dart';
+import '../services/deep_dive_service.dart';
 
 class CustomSplashScreen extends StatefulWidget {
   const CustomSplashScreen({super.key});
@@ -14,9 +16,13 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> with TickerProv
   late AnimationController _logoController;
   late Animation<double> _logoScale;
   late Animation<double> _logoFade;
-  
+
   late AnimationController _textController;
   late Animation<double> _textFade;
+
+  bool _animationDone = false;
+  bool _dataDone = false;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -49,20 +55,38 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> with TickerProv
       _textController.forward();
     });
 
-    // Navigate to MainScreen after delay
-    Timer(const Duration(milliseconds: 3500), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => const MainScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-            transitionDuration: const Duration(milliseconds: 800),
-          ),
-        );
-      }
+    // 데이터 프리로딩 (병렬 실행)
+    _preloadData();
+
+    // 최소 애니메이션 시간 보장 (2.5초)
+    Timer(const Duration(milliseconds: 2500), () {
+      _animationDone = true;
+      _tryNavigate();
     });
+  }
+
+  Future<void> _preloadData() async {
+    await Future.wait([
+      MissionService().initialize(),
+      DeepDiveService().loadDeepDives(),
+    ]);
+    _dataDone = true;
+    _tryNavigate();
+  }
+
+  void _tryNavigate() {
+    if (_animationDone && _dataDone && !_navigated && mounted) {
+      _navigated = true;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const MainScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          transitionDuration: const Duration(milliseconds: 800),
+        ),
+      );
+    }
   }
 
   @override

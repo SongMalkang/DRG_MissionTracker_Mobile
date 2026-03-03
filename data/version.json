@@ -1,11 +1,11 @@
 {
-  "latest_version": "1.1.0",
+  "latest_version": "1.2.0",
   "min_required": "1.0.0",
   "force_update": false,
   "store_url": "https://play.google.com/store/apps/details?id=com.songmalkang.drg_mission_tracker",
   "changelog": {
-    "KR": "• 이중 주의보 카드 표시 개선\n• BOSCO 테마 알림 문구 추가\n• PWA 캐시 버그 수정\n• APK 크래시(MainActivity) 수정\n• Trivia 데이터 정확도 개선",
-    "EN": "• Dual warning icons on mission cards\n• BOSCO-themed notification messages\n• PWA cache bug fix\n• APK crash (MainActivity) fix\n• Trivia accuracy improvements",
-    "CN": "• 任务卡片双重警告图标显示\n• BOSCO主题通知消息\n• PWA缓存错误修复\n• APK崩溃(MainActivity)修复\n• Trivia数据准确性改进"
+    "KR": "• Pull-to-Refresh 지원\n• 미션 카드에서 버프/디버프 아이콘 탭으로 직접 Trivia 확인\n• 스플래시 화면 데이터 프리로딩으로 로딩 속도 개선\n• 알림 메시지 5종 변형 추가\n• 오프라인 캐싱 강화",
+    "EN": "• Pull-to-Refresh support\n• Tap buff/debuff icons on mission cards to view Trivia directly\n• Splash screen data preloading for faster startup\n• 5 BOSCO notification message variants\n• Enhanced offline caching",
+    "CN": "• 下拉刷新支持\n• 点击任务卡片上的增益/减益图标直接查看Trivia\n• 启动画面数据预加载，加快启动速度\n• 5种BOSCO通知消息变体\n• 增强离线缓存"
   }
 }

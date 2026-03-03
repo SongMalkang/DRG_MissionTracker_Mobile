@@ -75,10 +75,10 @@ class UpdateService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(_lastCheckKey, DateTime.now().millisecondsSinceEpoch);
 
-      final hasUpdate = _compareVersions(latestVersion, currentVersion) > 0;
+      final hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
       // 강제 업데이트: version.json에서 force_update=true이거나, 앱 버전이 min_required 미만
       final isForced =
-          forceUpdate || _compareVersions(currentVersion, minRequired) < 0;
+          forceUpdate || compareVersions(currentVersion, minRequired) < 0;
 
       if (!hasUpdate && !isForced) return null;
 
@@ -96,7 +96,7 @@ class UpdateService {
   }
 
   /// 버전 문자열 비교 (양수: v1 > v2, 0: 동일, 음수: v1 < v2)
-  static int _compareVersions(String v1, String v2) {
+  static int compareVersions(String v1, String v2) {
     final p1 = v1.split('.').map((s) => int.tryParse(s) ?? 0).toList();
     final p2 = v2.split('.').map((s) => int.tryParse(s) ?? 0).toList();
     for (int i = 0; i < 3; i++) {

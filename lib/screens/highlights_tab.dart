@@ -141,19 +141,28 @@ class _HighlightsTabState extends State<HighlightsTab> {
         ),
 
         Expanded(
-          child: _slots.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.auto_awesome,
-                          size: 56,
-                          color: Colors.orange.withValues(alpha: 0.2)),
-                      const SizedBox(height: 12),
-                      Text(i18n[widget.lang]!['no_highlights']!,
-                          style: const TextStyle(color: Colors.grey)),
-                    ],
-                  ),
+          child: RefreshIndicator(
+            color: Colors.orange,
+            backgroundColor: const Color(0xFF1E1E1E),
+            onRefresh: () => MissionService().forceRefresh(),
+            child: _slots.isEmpty
+              ? ListView(
+                  children: [
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.5,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.auto_awesome,
+                              size: 56,
+                              color: Colors.orange.withValues(alpha: 0.2)),
+                          const SizedBox(height: 12),
+                          Text(i18n[widget.lang]!['no_highlights']!,
+                              style: const TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ],
                 )
               : ListView.builder(
                   padding: const EdgeInsets.only(top: 8, bottom: 24),
@@ -197,6 +206,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
                     );
                   },
                 ),
+          ),
         ),
       ],
     );
