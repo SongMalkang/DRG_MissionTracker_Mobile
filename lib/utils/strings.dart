@@ -10,8 +10,6 @@ const Map<String, Map<String, String>> i18n = {
     'season_note': '데이터 소스에서 제공하는 모든 시즌 정보를 제공합니다.',
     'standard': '표준 (Standard)',
     'show_warnings': '미션 주의사항 표시',
-    'donation': '개발자 후원',
-    'donate_note': '후원금은 Apple Store 등록비 및 서버 유지비로 사용됩니다.',
     'disclaimer_title': '면책 조항 및 권리 고지',
     'disclaimer_body': '본 앱은 Ghost Ship Games와 관련이 없는 비공식 팬 프로젝트입니다. DRG의 모든 자산 및 상표권은 원작자에게 있습니다. 실시간 데이터는 doublexp.net에서 제공되며, 게임 데이터 분석을 공유해주신 rolfosian님과 고품질 에셋을 제공하는 deeprockgalactic.wiki.gg 커뮤니티에 깊은 감사를 표합니다.',
     'current': '현재 진행 중',
@@ -178,6 +176,10 @@ const Map<String, Map<String, String>> i18n = {
     'minigame_back': '뒤로',
     'minigame_tap_to_start': '탭하여 시작',
     'minigame_score': '점수',
+    // Home Widget
+    'widget_title': 'BOSCO TERMINAL',
+    'widget_no_xp': 'Double XP 없음',
+    'widget_xp_count': '{n}개 Double XP 미션',
   },
 
   'EN': {
@@ -191,8 +193,6 @@ const Map<String, Map<String, String>> i18n = {
     'season_note': 'Providing all season data from the source.',
     'standard': 'Standard',
     'show_warnings': 'Show Mission Warnings',
-    'donation': 'Support Developer',
-    'donate_note': 'Used for Store fees and maintenance.',
     'disclaimer_title': 'Legal Disclaimer',
     'disclaimer_body': 'This app is an unofficial fan project and is not affiliated with Ghost Ship Games. All game assets and trademarks belong to their respective owners. Real-time data is sourced from doublexp.net. Special thanks to rolfosian for sharing game data analysis and the deeprockgalactic.wiki.gg community for providing high-quality assets.',
     'current': 'CURRENT',
@@ -350,6 +350,10 @@ const Map<String, Map<String, String>> i18n = {
     'minigame_back': 'BACK',
     'minigame_tap_to_start': 'TAP TO START',
     'minigame_score': 'SCORE',
+    // Home Widget
+    'widget_title': 'BOSCO TERMINAL',
+    'widget_no_xp': 'No Double XP',
+    'widget_xp_count': '{n} Double XP missions',
   },
   'CN': {
     'title': '博斯科终端',
@@ -362,8 +366,6 @@ const Map<String, Map<String, String>> i18n = {
     'season_note': '提供来自数据源的所有赛季数据。',
     'standard': '标准 (Standard)',
     'show_warnings': '显示任务提示',
-    'donation': '赞助开发人员',
-    'donate_note': '捐赠将用于 Store 费用和维护。',
     'disclaimer_title': '免责声明与权利声明',
     'disclaimer_body': '本程序是与 Ghost Ship Games 无关的非官方粉丝项目。DRG 的所有资产和商标均归原作者所有。实时数据来自 doublexp.net。特别感谢分享游戏数据分析的 rolfosian 以及提供高质量资产的 deeprockgalactic.wiki.gg 社区。',
     'current': '当前',
@@ -521,6 +523,10 @@ const Map<String, Map<String, String>> i18n = {
     'minigame_back': '返回',
     'minigame_tap_to_start': '点击开始',
     'minigame_score': '分数',
+    // Home Widget
+    'widget_title': '博斯科终端',
+    'widget_no_xp': '无双倍经验',
+    'widget_xp_count': '{n}个双倍经验任务',
   }
 };
 

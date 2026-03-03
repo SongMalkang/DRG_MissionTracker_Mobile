@@ -43,6 +43,14 @@ class AppConstants {
   // ── Assets ──────────────────────────────────────────────────────────────
   static const String boscoImage = 'assets/images/bosco.png';
 
+  // ── Home Widget ─────────────────────────────────────────────────────
+  static const String widgetDoubleXpCount = 'widget_double_xp_count';
+  static const String widgetMissionSummary = 'widget_mission_summary';
+  static const String widgetNextRotation = 'widget_next_rotation';
+  static const String widgetLastUpdate = 'widget_last_update';
+  static const String widgetNoDoubleXp = 'widget_no_double_xp';
+  static const String widgetTitle = 'widget_title';
+
   // ── External Links ────────────────────────────────────────────────────
   static const String privacyPolicyUrl =
       'https://songmalkang.github.io/DRG_MissionTracker_Mobile/privacy.html';

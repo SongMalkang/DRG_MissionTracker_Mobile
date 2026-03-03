@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Header row: title + rotation -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="BOSCO TERMINAL"
+            android:textColor="#FFFC9800"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.1" />
+
+        <TextView
+            android:id="@+id/widget_rotation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="--:--"
+            android:textColor="#FFFC9800"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- XP status line -->
+    <TextView
+        android:id="@+id/widget_xp_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No Double XP"
+        android:textColor="#FFFFFFFF"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:layout_marginTop="4dp" />
+
+    <!-- Mission list (up to 3 lines) -->
+    <TextView
+        android:id="@+id/widget_mission_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text=""
+        android:textColor="#CCFFFFFF"
+        android:textSize="12sp"
+        android:layout_marginTop="4dp"
+        android:maxLines="4"
+        android:ellipsize="end" />
+
+</LinearLayout>

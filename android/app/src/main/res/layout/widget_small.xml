@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="BOSCO TERMINAL"
+        android:textColor="#FFFC9800"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.1" />
+
+    <TextView
+        android:id="@+id/widget_xp_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No Double XP"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginTop="2dp" />
+
+    <TextView
+        android:id="@+id/widget_rotation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="--:--"
+        android:textColor="#FFFC9800"
+        android:textSize="11sp"
+        android:layout_marginTop="2dp" />
+
+</LinearLayout>

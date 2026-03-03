@@ -140,7 +140,7 @@ class NotificationService {
           dt,
           id,
           alarmCallback,
-          exact: true,
+          exact: false,
           wakeup: true,
           rescheduleOnReboot: true,
         );
@@ -361,7 +361,7 @@ Future<void> alarmCallback(int alarmId) async {
       nextOccurrence,
       alarmId,
       alarmCallback,
-      exact: true,
+      exact: false,
       wakeup: true,
       rescheduleOnReboot: true,
     );

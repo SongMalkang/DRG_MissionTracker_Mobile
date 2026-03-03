@@ -11,6 +11,10 @@ import '../utils/constants.dart';
 import '../platform/file_cache_stub.dart'
     if (dart.library.io) '../platform/file_cache_native.dart';
 
+// 조건부 임포트: 홈 위젯 (웹에서는 no-op)
+import '../platform/home_widget_stub.dart'
+    if (dart.library.io) '../services/home_widget_service.dart';
+
 enum DataStatus { online, offline, outdated, refreshing }
 
 class MissionService {
@@ -104,6 +108,9 @@ class MissionService {
       _status = DataStatus.online;
       _isInitialized = true;
       _notifyListeners();
+
+      // 홈 위젯 데이터 갱신
+      HomeWidgetService.updateWidget();
     } catch (e) {
       debugPrint("Background refresh failed: $e");
       _status = previousStatus == DataStatus.refreshing
