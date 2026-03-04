@@ -70,6 +70,9 @@ class GameEngine {
   // Pending level ups (if multiple levels gained)
   int _pendingLevelUps = 0;
 
+  // Burst fire queue (for weapons like double-barrel Boomstick)
+  final List<_BurstEntry> _burstQueue = [];
+
   GameEngine({WeaponId primaryWeapon = WeaponId.gk2})
       : player = Player(primaryWeapon: primaryWeapon) {
     _startNextWave();
@@ -97,6 +100,7 @@ class GameEngine {
 
     // Auto-fire weapons
     _fireWeapons();
+    _processBurstQueue(dt);
 
     // Spawn enemies for current wave
     _spawnEnemies(dt);
@@ -228,8 +232,54 @@ class GameEngine {
       final weapon = secondaryWeapons[player.secondaryWeapon]!;
       final effectiveFireRate = weapon.fireRate * player.fireRateMultiplier;
       player.secondaryFireTimer = 1.0 / effectiveFireRate;
-      _fireAt(weapon, _findNearestEnemy());
+
+      // Boltshark targets highest-HP enemy; others target nearest
+      final target = weapon.id == WeaponId.boltshark
+          ? _findHighestHpEnemy(weapon.range)
+          : _findNearestEnemy();
+
+      // First shot
+      _fireAt(weapon, target);
+
+      // Queue remaining burst shots (e.g. double barrel)
+      for (int b = 1; b < weapon.burstCount; b++) {
+        _burstQueue.add(_BurstEntry(
+          weapon: weapon,
+          delay: weapon.burstDelay * b,
+        ));
+      }
     }
+  }
+
+  void _processBurstQueue(double dt) {
+    for (final entry in _burstQueue) {
+      entry.delay -= dt;
+    }
+    final ready = _burstQueue.where((e) => e.delay <= 0).toList();
+    for (final entry in ready) {
+      final target = entry.weapon.id == WeaponId.boltshark
+          ? _findHighestHpEnemy(entry.weapon.range)
+          : _findNearestEnemy();
+      _fireAt(entry.weapon, target);
+    }
+    _burstQueue.removeWhere((e) => e.delay <= 0);
+  }
+
+  Enemy? _findHighestHpEnemy(double range) {
+    Enemy? best;
+    double bestHp = 0;
+    final rangeSq = range * range * 2.25; // 1.5x range tolerance squared
+    for (final e in enemies) {
+      if (e.isDead) continue;
+      final dx = e.x - player.x;
+      final dy = e.y - player.y;
+      if (dx * dx + dy * dy > rangeSq) continue;
+      if (e.hp > bestHp) {
+        bestHp = e.hp;
+        best = e;
+      }
+    }
+    return best;
   }
 
   Enemy? _findNearestEnemy() {
@@ -258,12 +308,19 @@ class GameEngine {
 
     final baseAngle = atan2(dy, dx);
     final count = weapon.projectileCount + player.extraProjectiles;
+    final halfSpread = weapon.spread / 2;
 
     for (int i = 0; i < count; i++) {
       double angle = baseAngle;
-      if (count > 1) {
-        final offset = (i - (count - 1) / 2) * weapon.spread;
-        angle += offset;
+
+      if (weapon.projectileCount >= 5) {
+        if (count > 1) {
+          final t = (i / (count - 1)) * 2 - 1;
+          angle += t * halfSpread;
+        }
+        angle += (_rng.nextDouble() - 0.5) * 0.06;
+      } else if (weapon.spread > 0) {
+        angle += (_rng.nextDouble() - 0.5) * weapon.spread;
       }
 
       projectiles.add(Projectile(
@@ -451,7 +508,23 @@ class GameEngine {
     }
 
     pool.shuffle(_rng);
-    return pool.take(3).toList();
+    final result = pool.take(3).toList();
+
+    // First level-up without secondary: guarantee at least one weapon choice
+    if (player.secondaryWeapon == null) {
+      final hasWeapon = result.any((c) => c.type == LevelUpChoiceType.secondaryWeapon);
+      if (!hasWeapon) {
+        final weaponChoices = pool
+            .where((c) => c.type == LevelUpChoiceType.secondaryWeapon)
+            .toList();
+        if (weaponChoices.isNotEmpty) {
+          weaponChoices.shuffle(_rng);
+          result[_rng.nextInt(result.length)] = weaponChoices.first;
+        }
+      }
+    }
+
+    return result;
   }
 
   /// Apply a level-up choice
@@ -491,4 +564,10 @@ class GameEngine {
   double get finalScore {
     return score + killCount * 5 + gameTimer * 2;
   }
+}
+
+class _BurstEntry {
+  final WeaponData weapon;
+  double delay;
+  _BurstEntry({required this.weapon, required this.delay});
 }

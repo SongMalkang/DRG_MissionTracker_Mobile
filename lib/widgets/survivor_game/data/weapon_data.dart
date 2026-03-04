@@ -11,8 +11,10 @@ class WeaponData {
   final double projectileSpeed;
   final double range;
   final int projectileCount;
-  final double spread; // radians
+  final double spread; // total cone angle (radians)
   final bool piercing;
+  final int burstCount; // consecutive shots per trigger (e.g. double barrel)
+  final double burstDelay; // seconds between burst shots
 
   const WeaponData({
     required this.id,
@@ -25,6 +27,8 @@ class WeaponData {
     this.projectileCount = 1,
     this.spread = 0.0,
     this.piercing = false,
+    this.burstCount = 1,
+    this.burstDelay = 0.0,
   });
 }
 
@@ -58,7 +62,7 @@ const Map<WeaponId, WeaponData> primaryWeapons = {
     projectileSpeed: 350,
     range: 200,
     projectileCount: 2,
-    spread: 0.15,
+    spread: 0.25, // random deviation per bullet
   ),
 };
 
@@ -73,18 +77,20 @@ const Map<WeaponId, WeaponData> secondaryWeapons = {
     projectileSpeed: 280,
     range: 110,
     projectileCount: 7,
-    spread: 0.7,
+    spread: 0.35, // total cone ~20 degrees, tight cluster
+    burstCount: 2, // double barrel — fires twice
+    burstDelay: 0.12, // 120ms between barrels
   ),
   WeaponId.zhukov: WeaponData(
     id: WeaponId.zhukov,
     name: 'Zhukov NUK17',
     slot: WeaponSlot.secondary,
     damage: 6,
-    fireRate: 8.0,
+    fireRate: 12.0, // shorter cycle — rapid spray
     projectileSpeed: 400,
     range: 180,
     projectileCount: 2,
-    spread: 0.35,
+    spread: 0.5, // random deviation per bullet, sprays wide
   ),
   WeaponId.boltshark: WeaponData(
     id: WeaponId.boltshark,

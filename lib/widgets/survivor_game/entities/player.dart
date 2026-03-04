@@ -29,7 +29,7 @@ class Player {
   double dashDirX = 0;
   double dashDirY = 0;
   static const double dashDuration = 0.2;
-  static const double dashSpeed = 500;
+  static const double dashSpeed = 750;
   static const double dashCooldownTime = 1.5;
 
   // Invincibility after hit
@@ -39,7 +39,7 @@ class Player {
   // Stats (upgradeable)
   double damageMultiplier = 1.0;
   double fireRateMultiplier = 1.0;
-  double collectionRadius = 40;
+  double collectionRadius = 52; // base 40 + 1 magnet upgrade (40 * 1.3)
   int extraProjectiles = 0;
 
   // Facing direction (for rendering)
@@ -50,7 +50,7 @@ class Player {
     this.y = 0,
     this.maxHp = 100,
     this.primaryWeapon = WeaponId.gk2,
-    this.baseSpeed = 120,
+    this.baseSpeed = 180,
   })  : hp = maxHp,
         level = 1,
         xp = 0,

@@ -6,6 +6,7 @@ import 'entities/enemy.dart';
 import 'entities/projectile.dart';
 import 'entities/pickup.dart';
 import 'data/enemy_data.dart';
+import 'data/sprite_data.dart';
 import 'ui/game_hud.dart';
 import 'ui/levelup_modal.dart';
 import 'ui/game_over_screen.dart';
@@ -509,73 +510,43 @@ class _GamePainter extends CustomPainter {
     }
   }
 
+  void _drawAsciiSprite(Canvas canvas, List<String> lines, double sx, double sy,
+      Color color, {double? fontSize, double? fitRadius}) {
+    double size;
+    if (fontSize != null) {
+      size = fontSize;
+    } else if (fitRadius != null) {
+      final maxW = lines.fold<int>(0, (m, l) => l.length > m ? l.length : m);
+      final byW = (2 * fitRadius) / (maxW * 0.55);
+      final byH = (2 * fitRadius) / (lines.length * 1.1);
+      size = (byW < byH ? byW : byH).clamp(4.0, 16.0);
+    } else {
+      size = 8.0;
+    }
+    final text = lines.join('\n');
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: size,
+          color: color,
+          height: 1.1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+    tp.layout();
+    tp.paint(canvas, Offset(sx - tp.width / 2, sy - tp.height / 2));
+  }
+
   void _drawPlayer(Canvas canvas, double screenX, double screenY) {
     final p = engine.player;
     // Invincibility blink
     if (p.isInvincible && blinkCounter % 6 < 3) return;
 
     final color = p.isDashing ? _termAmber : _termGreen;
-
-    // Scout wireframe: helmet arc + headlamp + body + arms + legs
-    final headY = screenY - 12;
-    final bodyTop = screenY - 6;
-    final bodyBottom = screenY + 6;
-
-    // Helmet (semicircle)
-    canvas.drawArc(
-      Rect.fromCenter(center: Offset(screenX, headY), width: 16, height: 16),
-      pi, pi, false,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
-
-    // Headlamp
-    final lampColor =
-        (blinkCounter % 30 < 15) ? _termAmber : _termAmber.withValues(alpha: 0.3);
-    canvas.drawCircle(
-      Offset(screenX, headY - 2),
-      2.5,
-      Paint()..color = lampColor,
-    );
-
-    // Body
-    canvas.drawRect(
-      Rect.fromCenter(center: Offset(screenX, screenY), width: 10, height: 12),
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2,
-    );
-
-    // Arms
-    final armPaint = Paint()
-      ..color = color
-      ..strokeWidth = 1.2;
-    final armAngle = (blinkCounter % 20) * 0.1;
-    canvas.drawLine(
-      Offset(screenX - 5, bodyTop + 2),
-      Offset(screenX - 10, bodyTop + 4 + sin(armAngle) * 2),
-      armPaint,
-    );
-    canvas.drawLine(
-      Offset(screenX + 5, bodyTop + 2),
-      Offset(screenX + 10, bodyTop + 4 - sin(armAngle) * 2),
-      armPaint,
-    );
-
-    // Legs
-    canvas.drawLine(
-      Offset(screenX - 3, bodyBottom),
-      Offset(screenX - 6, bodyBottom + 8),
-      armPaint,
-    );
-    canvas.drawLine(
-      Offset(screenX + 3, bodyBottom),
-      Offset(screenX + 6, bodyBottom + 8),
-      armPaint,
-    );
 
     // Dash trail
     if (p.isDashing) {
@@ -588,7 +559,11 @@ class _GamePainter extends CustomPainter {
       );
     }
 
-    // Facing direction indicator (small line showing where player aims)
+    // ASCII scout sprite with headlamp blink
+    final sprite = (blinkCounter % 30 < 15) ? scoutSprite : scoutLampOffSprite;
+    _drawAsciiSprite(canvas, sprite, screenX, screenY, color, fontSize: 9.0);
+
+    // Facing direction indicator
     final fx = cos(p.facingAngle) * 18;
     final fy = sin(p.facingAngle) * 18;
     canvas.drawLine(
@@ -605,110 +580,22 @@ class _GamePainter extends CustomPainter {
     final sy = e.y - camY;
 
     // Culling: skip if off-screen
-    if (sx < -30 || sx > size.width + 30 || sy < -30 || sy > size.height + 30) {
+    if (sx < -40 || sx > size.width + 40 || sy < -40 || sy > size.height + 40) {
       return;
     }
 
     final color = e.hitFlashTimer > 0 ? Colors.white : _getEnemyColor(e.type);
-    final r = e.radius;
 
-    if (e.isBoss) {
-      _drawBossEnemy(canvas, e, sx, sy, color);
-    } else {
-      _drawGruntEnemy(canvas, e, sx, sy, color, r);
-    }
+    // Bulk Detonator glow pulse
+    final pulse = e.type == EnemyType.bulkDetonator && blinkCounter % 20 < 10;
+    final sprite = getEnemySprite(e.type, pulse: pulse);
 
-    // HP bar for enemies with > base HP or bosses
+    _drawAsciiSprite(canvas, sprite, sx, sy, color, fitRadius: e.radius);
+
+    // HP bar for bosses or tough enemies
     if (e.isBoss || e.maxHp > 50) {
       _drawEnemyHpBar(canvas, e, sx, sy);
     }
-  }
-
-  void _drawGruntEnemy(Canvas canvas, Enemy e, double sx, double sy,
-      Color color, double r) {
-    // Triangle pointing toward facing direction
-    final angle = e.facingAngle;
-    final path = Path();
-    path.moveTo(
-      sx + cos(angle) * r,
-      sy + sin(angle) * r,
-    );
-    path.lineTo(
-      sx + cos(angle + 2.5) * r * 0.7,
-      sy + sin(angle + 2.5) * r * 0.7,
-    );
-    path.lineTo(
-      sx + cos(angle - 2.5) * r * 0.7,
-      sy + sin(angle - 2.5) * r * 0.7,
-    );
-    path.close();
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color.withValues(alpha: 0.3)
-        ..style = PaintingStyle.fill,
-    );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
-
-    // Guard front armor indicator
-    if (e.frontArmor) {
-      canvas.drawLine(
-        Offset(sx + cos(angle + 0.8) * r, sy + sin(angle + 0.8) * r),
-        Offset(sx + cos(angle - 0.8) * r, sy + sin(angle - 0.8) * r),
-        Paint()
-          ..color = _termAmber
-          ..strokeWidth = 2,
-      );
-    }
-  }
-
-  void _drawBossEnemy(Canvas canvas, Enemy e, double sx, double sy, Color color) {
-    final r = e.radius;
-
-    // Boss: larger hexagonal shape
-    final path = Path();
-    for (int i = 0; i < 6; i++) {
-      final angle = (i * pi / 3) + e.facingAngle;
-      final px = sx + cos(angle) * r;
-      final py = sy + sin(angle) * r;
-      if (i == 0) {
-        path.moveTo(px, py);
-      } else {
-        path.lineTo(px, py);
-      }
-    }
-    path.close();
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color.withValues(alpha: 0.2)
-        ..style = PaintingStyle.fill,
-    );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
-
-    // Inner detail
-    canvas.drawCircle(
-      Offset(sx, sy),
-      r * 0.4,
-      Paint()
-        ..color = color.withValues(alpha: 0.5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
   }
 
   void _drawEnemyHpBar(Canvas canvas, Enemy e, double sx, double sy) {
@@ -775,19 +662,26 @@ class _GamePainter extends CustomPainter {
     final sy = p.displayY - camY;
 
     final color = p.type == PickupType.xp ? _xpColor : _goldColor;
-    final r = p.type == PickupType.xp ? 3.0 : 4.0;
+    final symbol = p.type == PickupType.xp ? '\u25C7' : '\u25CF';
 
-    // Diamond shape
-    final path = Path()
-      ..moveTo(sx, sy - r)
-      ..lineTo(sx + r, sy)
-      ..lineTo(sx, sy + r)
-      ..lineTo(sx - r, sy)
-      ..close();
+    final tp = TextPainter(
+      text: TextSpan(
+        text: symbol,
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: p.type == PickupType.xp ? 8.0 : 10.0,
+          color: color,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    tp.layout();
+    tp.paint(canvas, Offset(sx - tp.width / 2, sy - tp.height / 2));
 
-    canvas.drawPath(path, Paint()..color = color.withValues(alpha: 0.8));
-    canvas.drawPath(
-      path,
+    // Glow
+    canvas.drawCircle(
+      Offset(sx, sy),
+      4,
       Paint()
         ..color = color.withValues(alpha: 0.3)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
@@ -885,7 +779,6 @@ class _ScanlinePainter extends CustomPainter {
 class _ScoutPreviewPainter extends CustomPainter {
   final int blinkCounter;
   static const Color _termGreen = Color(0xFF00FF41);
-  static const Color _termAmber = Color(0xFFFFB000);
 
   _ScoutPreviewPainter({required this.blinkCounter});
 
@@ -893,46 +786,28 @@ class _ScoutPreviewPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cx = size.width / 2;
     final cy = size.height / 2;
-    final color = _termGreen;
 
-    // Helmet
-    canvas.drawArc(
-      Rect.fromCenter(center: Offset(cx, cy - 18), width: 28, height: 28),
-      pi, pi, false,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
+    // Headlamp blink
+    final sprite = (blinkCounter % 40 < 30)
+        ? scoutPreviewSprite
+        : scoutPreviewLampOffSprite;
+
+    final text = sprite.join('\n');
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 14,
+          color: _termGreen,
+          height: 1.1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
     );
-
-    // Headlamp
-    final lampOn = blinkCounter % 40 < 30;
-    canvas.drawCircle(
-      Offset(cx, cy - 22),
-      4,
-      Paint()..color = lampOn ? _termAmber : _termAmber.withValues(alpha: 0.2),
-    );
-
-    // Body
-    canvas.drawRect(
-      Rect.fromCenter(center: Offset(cx, cy), width: 18, height: 20),
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
-    );
-
-    final limbPaint = Paint()
-      ..color = color
-      ..strokeWidth = 2;
-
-    // Arms
-    canvas.drawLine(Offset(cx - 9, cy - 6), Offset(cx - 18, cy - 2), limbPaint);
-    canvas.drawLine(Offset(cx + 9, cy - 6), Offset(cx + 18, cy - 2), limbPaint);
-
-    // Legs
-    canvas.drawLine(Offset(cx - 5, cy + 10), Offset(cx - 10, cy + 24), limbPaint);
-    canvas.drawLine(Offset(cx + 5, cy + 10), Offset(cx + 10, cy + 24), limbPaint);
+    tp.layout();
+    tp.paint(canvas, Offset(cx - tp.width / 2, cy - tp.height / 2));
   }
 
   @override
