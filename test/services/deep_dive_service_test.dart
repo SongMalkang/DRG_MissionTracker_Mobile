@@ -17,7 +17,8 @@ void main() {
       expect(stage.num, 1);
       expect(stage.primary, 'Mining Expedition');
       expect(stage.secondary, 'Fossils');
-      expect(stage.warning, 'Cave Leech Cluster');
+      expect(stage.warnings, ['Cave Leech Cluster']);
+      expect(stage.warning, 'Cave Leech Cluster'); // 하위 호환 getter
       expect(stage.complexity, 2);
       expect(stage.length, 3);
     });
@@ -33,6 +34,7 @@ void main() {
 
       final stage = DeepDiveStage.fromJson(2, json);
 
+      expect(stage.warnings, isEmpty);
       expect(stage.warning, isNull);
       expect(stage.secondary, isNull);
     });
@@ -45,7 +47,21 @@ void main() {
       };
 
       final stage = DeepDiveStage.fromJson(3, json);
+      expect(stage.warnings, isEmpty);
       expect(stage.warning, isNull);
+    });
+
+    test('다중 경고 파싱', () {
+      final json = {
+        'PrimaryObjective': 'Mining Expedition',
+        'MissionWarnings': ['Cave Leech Cluster', 'Exploder Infestation'],
+        'Complexity': '2',
+        'Length': '2',
+      };
+
+      final stage = DeepDiveStage.fromJson(1, json);
+      expect(stage.warnings, ['Cave Leech Cluster', 'Exploder Infestation']);
+      expect(stage.warning, 'Cave Leech Cluster'); // 첫 번째만
     });
 
     test('기본값 처리 (비어있는 JSON)', () {
@@ -53,6 +69,7 @@ void main() {
       final stage = DeepDiveStage.fromJson(1, json);
 
       expect(stage.primary, '');
+      expect(stage.warnings, isEmpty);
       expect(stage.complexity, 1);
       expect(stage.length, 1);
     });
@@ -117,12 +134,12 @@ void main() {
       expect(dives[0].codeName, 'Test Dive');
       expect(dives[0].stages.length, 2);
       expect(dives[0].stages[0].primary, 'Mining Expedition');
-      expect(dives[0].stages[1].warning, isNull);
+      expect(dives[0].stages[1].warnings, isEmpty);
 
       // Elite dive
       expect(dives[1].isElite, true);
       expect(dives[1].biome, 'Magma Core');
-      expect(dives[1].stages[0].warning, 'Swarmageddon');
+      expect(dives[1].stages[0].warnings, ['Swarmageddon']);
     });
 
     test('parseDiveData - Deep Dives 키 없으면 예외', () {
@@ -161,7 +178,7 @@ void main() {
       expect(dives[0].biome, 'Crystalline Caverns');
       expect(dives[0].stages.length, 1);
       expect(dives[0].stages[0].primary, 'Point Extraction');
-      expect(dives[0].stages[0].warning, 'Exploder Infestation');
+      expect(dives[0].stages[0].warnings, ['Exploder Infestation']);
     });
 
     test('parseDiveData - Elite만 있는 JSON', () {

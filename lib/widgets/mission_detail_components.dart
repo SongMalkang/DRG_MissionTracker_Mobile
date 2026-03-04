@@ -1,5 +1,79 @@
 import 'package:flutter/material.dart';
 
+// ── 시즌별 테마 색상 ──────────────────────────────────────────────────────────
+const Map<String, Color> seasonColors = {
+  's0': Color(0xFF9E9E9E),
+  's1': Color(0xFF42A5F5),
+  's2': Color(0xFFFFA726),
+  's3': Color(0xFF66BB6A),
+  's4': Color(0xFFCD7F32),
+  's5': Color(0xFF90CAF9),
+  's6': Color(0xFFCE93D8),
+};
+
+const Map<String, String> seasonLabels = {
+  's0': 'S0',
+  's1': 'S1',
+  's2': 'S2',
+  's3': 'S3',
+  's4': 'S4',
+  's5': 'S5',
+  's6': 'S6',
+};
+
+// ── 시즌 뱃지 (공유 위젯) ────────────────────────────────────────────────────
+class SeasonBadge extends StatelessWidget {
+  final List<String> seasons;
+  final bool isExclusive;
+  const SeasonBadge({super.key, required this.seasons, this.isExclusive = false});
+
+  @override
+  Widget build(BuildContext context) {
+    if (seasons.isEmpty) return const SizedBox.shrink();
+
+    if (isExclusive || seasons.length == 1) {
+      final s = seasons.first;
+      final color = seasonColors[s] ?? Colors.white38;
+      final label = seasonLabels[s] ?? s.toUpperCase();
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.22),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withValues(alpha: 0.8), width: 1.5),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+          ),
+        ),
+      );
+    }
+
+    // 다중 시즌: 작은 점들로 표시 (최대 4개)
+    final shown = seasons.take(4).toList();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: shown.map((s) {
+        final color = seasonColors[s] ?? Colors.white24;
+        return Container(
+          margin: const EdgeInsets.only(left: 2),
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
 // ── 섹션 레이블 ────────────────────────────────────────────────────────────────
 class SectionLabel extends StatelessWidget {
   final String text;

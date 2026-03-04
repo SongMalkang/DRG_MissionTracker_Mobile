@@ -27,6 +27,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
   String _currentLang = 'KR';
   String _currentSeason = 's0';
+  bool _showWarnings = true;
   final SettingsService _settingsService = SettingsService();
   final MissionService _missionService = MissionService();
 
@@ -62,12 +63,14 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Future<void> _loadSettings() async {
     final lang = await _settingsService.getLanguage();
     final season = await _settingsService.getSeason();
+    final showWarnings = await _settingsService.getShowWarnings();
     await _missionService.initialize();
 
     if (mounted) {
       setState(() {
         _currentLang = lang;
         _currentSeason = season;
+        _showWarnings = showWarnings;
       });
       // 언어 로드 완료 후 업데이트 확인 (비동기, UI 블로킹 없음)
       unawaited(_checkForUpdate());
@@ -110,8 +113,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         lang: _currentLang,
         currentSeason: _currentSeason,
         onSeasonChange: _onSeasonChange,
+        showWarnings: _showWarnings,
       ),
-      HighlightsTab(lang: _currentLang),
+      HighlightsTab(lang: _currentLang, showWarnings: _showWarnings),
       DeepDivesTab(lang: _currentLang),
       DwarfVoiceTab(lang: _currentLang), // kIsWeb 필터 해제 (GSG 데모용 — 복원: if (!kIsWeb) 추가)
     ];
@@ -146,8 +150,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               actions: [
                 IconButton(
                   icon: const Icon(Icons.settings),
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => SettingsScreen(
@@ -158,6 +162,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         ),
                       ),
                     );
+                    // Reload show_warnings setting when returning from settings
+                    final showWarnings = await _settingsService.getShowWarnings();
+                    if (mounted && showWarnings != _showWarnings) {
+                      setState(() {
+                        _showWarnings = showWarnings;
+                      });
+                    }
                   },
                 ),
               ],

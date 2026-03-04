@@ -75,18 +75,6 @@ void main() {
   });
 
   group('Mission properties', () {
-    test('default timeWindow and isPast', () {
-      final mission = Mission(
-        biome: 'test',
-        missionType: 'test',
-        length: 1,
-        complexity: 1,
-      );
-
-      expect(mission.timeWindow, '');
-      expect(mission.isPast, false);
-    });
-
     test('Double XP detection via buff field', () {
       final dxp = Mission(
         biome: 'test',

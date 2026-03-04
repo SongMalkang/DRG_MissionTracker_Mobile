@@ -546,29 +546,238 @@ MiniGameItem(
 - [x] 카메라 시스템 (플레이어 중심 추적)
 - [x] 디버그 오버레이 (타이틀 더블탭 토글)
 
-### Phase 2: DRG 시스템
-- [ ] 인트로 씬 (이미지 에셋 기반)
-- [ ] 장비 커스텀 화면 (Primary 무기 선택, Secondary는 인게임 랜덤)
-- [ ] 무기 해금 시스템 (SharedPreferences 저장)
-- [ ] Nitra 채굴 포인트 & 채굴 메카닉 (SFX 포함)
-- [ ] 필살기 시스템 (Supply Drop — Nitra 소모)
-- [ ] 적 처치 시 재화 드롭 (이미지 아이콘)
+### Phase 2-4: 상세 구현 계획 (5 Batch)
 
-### Phase 3: 위험 & 보스
-- [ ] Pit Jaw 환경 위험 (은신 + 접근 시 데미지)
-- [ ] 중간보스 등장 (Praetorian, Oppressor)
-- [ ] 보스 컷씬 (이미지 에셋 기반 경고 연출)
-- [ ] 최종보스 (Dreadnought — 15웨이브)
-- [ ] Bulk Detonator (랜덤 스폰, 자폭 메카닉)
-- [ ] Hazard Level 선택 (난이도)
+Phase 1(MVP)이 완료된 상태에서 4가지 개선을 동시 진행: 비주얼/사운드 폴리시, 보스 패턴, 나이트라/환경, 무기/레벨업 확장. 5개 배치로 나누어 **각 배치 후 완전히 플레이 가능한 상태를 유지**한다.
 
-### Phase 4: Polish & 완성
-- [ ] 효과음 (곡괭이, 무기 발사, 보스 경고, 피격 등)
-- [ ] 점수 & 로컬 리더보드
-- [ ] 밸런스 조정 (무기, 적, 웨이브 간격)
-- [ ] 성능 최적화 (오브젝트 풀링, 컬링)
-- [ ] i18n (KR, EN, ZH)
-- [ ] 조명탄 시스템 (Pit Jaw 사전 탐지 연계)
+**배치 의존성**: `BATCH 1 (VFX) → BATCH 2 (보스) → BATCH 3 (나이트라) → BATCH 4 (무기) → BATCH 5 (사운드)`
+
+---
+
+#### BATCH 1: 비주얼 이펙트 & 화면 흔들림
+
+**목표**: 게임 로직 변경 없이 렌더링만으로 체감 대폭 향상
+
+##### 1a. 파티클 시스템
+- [ ] **Create** `effects/particles.dart` — `Particle` + `ParticleSystem` 클래스
+  - 적 사망: 6-10개 적 색상 파티클 폭발 (0.3s)
+  - 피격 스파크: 3-4개 흰색/앰버 파티클 (충돌 지점)
+  - 머즐 플래시: 2-3개 앰버 파티클 (플레이어 위치, 빠른 페이드)
+  - 픽업 수집: 3-4개 픽업 색상 파티클
+  - 폭발 이펙트: 15-25개 파티클 (Bulk Detonator, 수류탄 등)
+
+##### 1b. 화면 흔들림
+- [ ] **Modify** `survivor_game.dart` — `_shakeIntensity`, `_shakeDecay` 추가
+  - 플레이어 피격: intensity 4, 보스 처치: 6, Bulk 폭발: 10
+  - 카메라 오프셋에 랜덤 진동 적용 (`_GamePainter`에서 camX/camY에 shake 합산)
+
+##### 1c. 적 사망 애니메이션
+- [ ] **Modify** `entities/enemy.dart` — `deathTimer`, `deathScale`, `deathAlpha` 추가
+  - 사망 시 즉시 제거 대신 축소+페이드 아웃 (0.3s) 후 제거
+- [ ] **Modify** `game_engine.dart` — `_cleanup()`에서 `deathTimer <= 0`인 것만 제거
+
+##### 1d. 통합
+- [ ] **Modify** `game_engine.dart` — `ParticleSystem` 인스턴스 소유, `_onEnemyKilled`/충돌/발사 시 emit
+- [ ] **Modify** `survivor_game.dart` — `_GamePainter`에서 파티클 렌더링
+
+| 파일 | 액션 |
+|------|------|
+| `effects/particles.dart` | Create |
+| `entities/enemy.dart` | Modify — deathTimer, deathScale, deathAlpha |
+| `game_engine.dart` | Modify — ParticleSystem, emit 호출, cleanup 변경 |
+| `survivor_game.dart` | Modify — 파티클 렌더, 화면 흔들림 |
+
+**검증**: 적 처치 시 파티클 폭발, 피격 시 화면 흔들림, 적 사망 시 축소+페이드 아웃
+
+---
+
+#### BATCH 2: 보스 패턴 & 적 강화
+
+**목표**: 보스별 고유 능력, Bulk Detonator 자폭, 보스 경고, Hazard Level
+
+##### 2a. 보스 능력
+- [ ] **Create** `systems/boss_abilities.dart` — 능력 정의 + AbilityState
+
+| 보스 | 능력 | 구현 |
+|------|------|------|
+| Praetorian | 독 오라 | 반경 60 내 3 DPS, 녹색 원 렌더링 |
+| Oppressor | 넉백 슬램 | 4초마다, 반경 80 내 플레이어 밀어냄 |
+| Dreadnought | 2페이즈 | HP 50% 이하 시 속도 1.5x + 적 탄환 5발 확산 |
+| Bulk Detonator | 자폭 | 사망→빨간 원(1.5초 팽창)→80데미지 광역 |
+
+##### 2b. 적 탄환
+- [ ] **Modify** `entities/projectile.dart` — `isEnemyProjectile` 플래그
+- [ ] **Modify** `game_engine.dart` — `_checkEnemyProjectilePlayerCollisions()` 추가
+
+##### 2c. 보스 경고 오버레이
+- [ ] `game_engine.dart`에 `bossWarningTimer`, `bossWarningName` 추가
+- [ ] 보스 스폰 시 1.5초간 "WARNING: [BOSS] INCOMING" 텍스트 오버레이 (게임 계속 진행)
+- [ ] `survivor_game.dart`에서 경고 텍스트 렌더링
+
+##### 2d. Hazard Level
+- [ ] 시작 화면에 1~5 선택기 추가 (`survivor_game.dart`)
+- [ ] `GameEngine` 생성자에 `hazardLevel` 파라미터
+- [ ] 배율 적용: 적 HP (0.7x~1.5x), 속도 (0.8x~1.2x), 점수 (0.5x~2.5x)
+
+##### 2e. Player 넉백
+- [ ] **Modify** `entities/player.dart` — `knockbackVx/Vy`, `knockbackTimer`
+- [ ] `player.update()`에서 넉백 벡터 적용 (감쇠)
+
+| 파일 | 액션 |
+|------|------|
+| `systems/boss_abilities.dart` | Create |
+| `entities/enemy.dart` | Modify — AbilityState, explodingTimer |
+| `entities/projectile.dart` | Modify — isEnemyProjectile |
+| `entities/player.dart` | Modify — knockback 필드 |
+| `game_engine.dart` | Modify — 보스 능력 업데이트, 경고, Hazard, 적 탄환 충돌 |
+| `survivor_game.dart` | Modify — 보스 이펙트 렌더, 경고 오버레이, Hazard 선택기 |
+
+**검증**: 각 보스 능력 동작, Bulk 자폭 폭발, Hazard 선택 가능, 보스 경고 표시
+
+---
+
+#### BATCH 3: 나이트라 채굴 & 환경 시스템
+
+**목표**: 나이트라 자원 루프 (채굴→수류탄) + Pit Jaw 위험 + 조명탄
+
+##### 3a. 나이트라 노드
+- [ ] **Create** `entities/nitra_node.dart` — 접근 시 자동 채굴 (1.5초), 진행률 바
+  - 웨이브당 2-3개 스폰, 노드당 10-20 나이트라
+  - **빨간색 결정** 스프라이트 (터미널 레드 색상으로 렌더링)
+
+##### 3b. 수류탄 시스템
+- [ ] **Create** `entities/aoe_effect.dart` — AoE 데미지 영역
+  - 40 나이트라: 일반 수류탄 (반경 80, 100 데미지)
+  - 80 나이트라: 클러스터 수류탄 (3개 소형 AoE)
+  - 적 밀집 지역 자동 타겟팅
+
+##### 3c. Pit Jaw
+- [ ] **Create** `entities/pit_jaw.dart` — 은신 상태, 접근 시 20 데미지
+  - Wave 3부터 1-2개 스폰
+  - 2단계 가시성: 기본(미세한 힌트), 조명탄 범위 내(명확한 경고)
+
+##### 3d. 조명탄
+- [ ] **Create** `entities/flare.dart` — 자동 발사 (45초마다), 30초 지속, 반경 120
+  - Pit Jaw 탐지 + 밝은 노란/흰색 광원 렌더링
+
+##### 3e. UI & 스프라이트
+- [ ] HUD에 나이트라 바 + 수류탄 버튼 (우하단) — `game_hud.dart`
+- [ ] `sprite_data.dart`에 나이트라 결정, Pit Jaw 스프라이트 추가
+
+| 파일 | 액션 |
+|------|------|
+| `entities/nitra_node.dart` | Create |
+| `entities/aoe_effect.dart` | Create |
+| `entities/pit_jaw.dart` | Create |
+| `entities/flare.dart` | Create |
+| `entities/player.dart` | Modify — nitra, flareTimer |
+| `game_engine.dart` | Modify — 스폰/업데이트/수류탄 로직 |
+| `survivor_game.dart` | Modify — 렌더링, 수류탄 버튼 |
+| `data/sprite_data.dart` | Modify — 나이트라/PitJaw 스프라이트 |
+| `ui/game_hud.dart` | Modify — 나이트라 바, 수류탄 인디케이터 |
+
+**검증**: 나이트라 노드 채굴, 수류탄 발사, Pit Jaw 피격, 조명탄 자동 발사 확인
+
+---
+
+#### BATCH 4: 무기 & 레벨업 확장
+
+**목표**: 장비 선택 화면, 무기 해금 시스템, 레벨업 선택지 확장
+
+##### 4a. 해금 매니저
+- [ ] **Create** `systems/unlock_manager.dart` — SharedPreferences 기반
+  - GK2: 기본, M1000: 500킬, DRAK-25: 보스킬 or 2000킬
+  - 누적 킬/보스킬 추적
+
+##### 4b. 장비 선택 화면
+- [ ] **Create** `ui/loadout_screen.dart` — 터미널 스타일 무기 선택 UI
+  - 3개 Primary 무기 표시 (잠긴 것은 회색 + 해금 조건 텍스트)
+  - 선택한 무기 스탯 미리보기
+  - "DEPLOY" 버튼
+
+##### 4c. DRAK-25 밸런스 조정
+- [ ] `data/weapon_data.dart` 수정
+  - 현재: damage 8, fireRate 7.0, range 200, 2발 → DPS 112 (과도)
+  - 변경: damage 6, fireRate 5.5, range 250, 2발 → DPS 66 (GK2 48보다 조금 높은 수준)
+
+##### 4d. 레벨업 선택지 추가
+- [ ] `game_engine.dart` — LevelUpChoiceType에 추가:
+  - `pierceUp` — 관통 +1
+  - `dashCooldownDown` — 대시 쿨다운 -0.3초
+  - `nitraEfficiency` — 나이트라 채굴량 +25%
+  - `grenadeRadius` — 수류탄 반경 +20%
+
+##### 4e. 게임 흐름 변경
+- [ ] 시작→로드아웃→플레이 3단계 흐름 (`survivor_game.dart`)
+- [ ] 게임 오버 시 해금 상태 업데이트 + 새 해금 알림 (`game_over_screen.dart`)
+
+| 파일 | 액션 |
+|------|------|
+| `systems/unlock_manager.dart` | Create |
+| `ui/loadout_screen.dart` | Create |
+| `data/weapon_data.dart` | Modify — DRAK-25 밸런스 |
+| `game_engine.dart` | Modify — 새 LevelUpChoiceType, applyChoice |
+| `survivor_game.dart` | Modify — 로드아웃 흐름, 해금 알림 |
+| `ui/game_over_screen.dart` | Modify — 해금 알림 표시 |
+
+**검증**: 로드아웃 화면에서 무기 선택, 해금 진행, 새 레벨업 선택지 동작 확인
+
+---
+
+#### BATCH 5: 사운드 이펙트
+
+**목표**: 전체 게임에 오디오 피드백 추가
+
+##### 5a. 사운드 매니저
+- [ ] **Create** `systems/sound_manager.dart` — AudioPlayer 풀 (4개) + 라운드 로빈
+  - 무기 발사, 피격, 적 사망, 보스 경고, 레벨업, 곡괭이, 수류탄, 게임오버
+
+##### 5b. 콜백 패턴 (엔진 독립성 유지)
+- [ ] `game_engine.dart`에 이벤트 콜백 추가:
+  ```dart
+  void Function()? onWeaponFire, onEnemyHit, onEnemyKilled, onPlayerHit,
+                    onLevelUp, onNitraMined, onGrenadeUsed;
+  void Function(String)? onBossWarning;
+  ```
+- [ ] `survivor_game.dart`에서 콜백을 SoundManager에 연결
+
+##### 5c. 음소거 토글
+- [ ] 상단 바에 `[SND]`/`[---]` 토글 추가 (`survivor_game.dart`)
+
+| 파일 | 액션 |
+|------|------|
+| `systems/sound_manager.dart` | Create |
+| `game_engine.dart` | Modify — 이벤트 콜백 |
+| `survivor_game.dart` | Modify — SoundManager 연결, 음소거 토글 |
+
+**검증**: 각 이벤트에서 사운드 재생, 음소거 토글 확인
+
+---
+
+#### 전체 파일 변경 요약
+
+| 파일 | Batch 1 | Batch 2 | Batch 3 | Batch 4 | Batch 5 |
+|------|---------|---------|---------|---------|---------|
+| `effects/particles.dart` | **Create** | | | | |
+| `systems/boss_abilities.dart` | | **Create** | | | |
+| `systems/unlock_manager.dart` | | | | **Create** | |
+| `systems/sound_manager.dart` | | | | | **Create** |
+| `entities/nitra_node.dart` | | | **Create** | | |
+| `entities/aoe_effect.dart` | | | **Create** | | |
+| `entities/pit_jaw.dart` | | | **Create** | | |
+| `entities/flare.dart` | | | **Create** | | |
+| `ui/loadout_screen.dart` | | | | **Create** | |
+| `entities/enemy.dart` | Modify | Modify | | | |
+| `entities/player.dart` | | Modify | Modify | | |
+| `entities/projectile.dart` | | Modify | | | |
+| `game_engine.dart` | Modify | Modify | Modify | Modify | Modify |
+| `survivor_game.dart` | Modify | Modify | Modify | Modify | Modify |
+| `data/sprite_data.dart` | | | Modify | | |
+| `data/weapon_data.dart` | | | | Modify | |
+| `ui/game_hud.dart` | | | Modify | | |
+| `ui/game_over_screen.dart` | | | | Modify | |
+
+**총 새 파일**: 9개 / **수정 파일**: 10개
 
 ---
 

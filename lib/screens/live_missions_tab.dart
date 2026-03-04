@@ -9,12 +9,14 @@ class LiveMissionsTab extends StatefulWidget {
   final String lang;
   final String currentSeason;
   final Function(String) onSeasonChange;
+  final bool showWarnings;
 
   const LiveMissionsTab({
     super.key,
     required this.lang,
     required this.currentSeason,
     required this.onSeasonChange,
+    this.showWarnings = true,
   });
 
   @override
@@ -212,7 +214,32 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
                   '${i18n[widget.lang]!['time_left']} $minutes:$seconds',
                   style: const TextStyle(fontSize: 12, color: Colors.orangeAccent),
                 ),
-              ]
+              ],
+              if (_missionService.hasClockDrift)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.access_time, color: Colors.amber, size: 14),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            t('clock_drift', widget.lang),
+                            style: const TextStyle(color: Colors.amber, fontSize: 10),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -235,7 +262,7 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
                               const Icon(Icons.search_off, size: 48, color: Colors.grey),
                               const SizedBox(height: 16),
                               Text(
-                                "No missions found for $seasonLabel\nat this time.",
+                                t('no_missions', widget.lang).replaceAll('{season}', seasonLabel),
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(color: Colors.grey),
                               ),
@@ -248,7 +275,7 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
                       key: ValueKey('missions_${targetUtc.toIso8601String()}_${widget.currentSeason}'),
                       itemCount: filteredList.length,
                       itemBuilder: (context, index) {
-                        return MissionCard(mission: filteredList[index], lang: widget.lang);
+                        return MissionCard(mission: filteredList[index], lang: widget.lang, showWarnings: widget.showWarnings);
                       },
                     ),
             ),

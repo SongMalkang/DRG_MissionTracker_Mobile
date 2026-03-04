@@ -285,7 +285,7 @@ Future<void> alarmCallback(int alarmId) async {
     // Double XP(buff != null) + 제외 타입 필터
     final missions = missionList
         .map((m) => Mission.fromJson(m as Map<String, dynamic>))
-        .where((m) => m.buff != null && m.buff!.isNotEmpty)
+        .where((m) => m.buff == 'Double XP')
         .where((m) => !excludedTypes.contains(m.missionType))
         .toList();
 

@@ -37,6 +37,7 @@ class MissionDetailDialog extends StatelessWidget {
             .where((w) => w.isNotEmpty)
             .toList() ??
         [];
+    final isDoubleXp = mission.buff == 'Double XP';
 
     return Center(
       child: ConstrainedBox(
@@ -53,8 +54,10 @@ class MissionDetailDialog extends StatelessWidget {
               color: const Color(0xFF141414),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: Colors.orange.withValues(alpha: 0.6),
-                width: 1.5,
+                color: isDoubleXp
+                    ? Colors.amber.withValues(alpha: 0.8)
+                    : Colors.orange.withValues(alpha: 0.6),
+                width: isDoubleXp ? 2.0 : 1.5,
               ),
               boxShadow: [
                 BoxShadow(
@@ -270,6 +273,39 @@ class _ModalHeader extends StatelessWidget {
                   stops: const [0.3, 1.0],
                 ),
               ),
+            ),
+          ),
+          // 시즌 뱃지 + Double XP 뱃지 (우상단)
+          Positioned(
+            top: 10,
+            right: 12,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (mission.buff == 'Double XP')
+                  Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.8), width: 1.5),
+                    ),
+                    child: const Text(
+                      '2x XP',
+                      style: TextStyle(
+                        color: Colors.amber,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                SeasonBadge(
+                  seasons: mission.seasons,
+                  isExclusive: mission.seasons.length == 1,
+                ),
+              ],
             ),
           ),
           Positioned(

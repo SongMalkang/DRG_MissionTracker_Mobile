@@ -13,8 +13,9 @@ export 'mission_detail_dialog.dart' show showMissionModal;
 class MissionCard extends StatelessWidget {
   final Mission mission;
   final String lang;
+  final bool showWarnings;
 
-  const MissionCard({super.key, required this.mission, required this.lang});
+  const MissionCard({super.key, required this.mission, required this.lang, this.showWarnings = true});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +26,7 @@ class MissionCard extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 600),
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-          height: 88,
+          height: 94,
           decoration: BoxDecoration(
             color: Colors.grey[900],
             borderRadius: BorderRadius.circular(8),
@@ -113,6 +114,16 @@ class MissionCard extends StatelessWidget {
                                   ],
                                 ),
                               ),
+                              if (mission.codeName != null && mission.codeName!.isNotEmpty)
+                                Text(
+                                  mission.codeName!,
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.white38,
+                                    shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                                  ),
+                                ),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
@@ -160,7 +171,7 @@ class MissionCard extends StatelessWidget {
                           ),
                         ),
 
-                        // 버프 / 디버프 아이콘 (우측, 탭 → Trivia)
+                        // 버프 / 디버프 아이콘 + 시즌 뱃지 (우측, 탭 → Trivia)
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -188,9 +199,9 @@ class MissionCard extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                            if (mission.buff != null && mission.debuff != null)
+                            if (mission.buff != null && mission.debuff != null && showWarnings)
                               const SizedBox(height: 4),
-                            if (mission.debuff != null)
+                            if (mission.debuff != null && showWarnings)
                               Builder(
                                 builder: (_) {
                                   final ws = mission.debuff!
@@ -235,6 +246,11 @@ class MissionCard extends StatelessWidget {
                                   );
                                 },
                               ),
+                            const SizedBox(height: 4),
+                            SeasonBadge(
+                              seasons: mission.seasons,
+                              isExclusive: mission.seasons.length == 1,
+                            ),
                           ],
                         ),
                       ],

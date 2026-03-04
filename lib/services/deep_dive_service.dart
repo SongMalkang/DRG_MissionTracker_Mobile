@@ -16,7 +16,7 @@ class DeepDiveStage {
   final int num;
   final String primary;
   final String? secondary;
-  final String? warning;
+  final List<String> warnings;
   final int complexity;
   final int length;
 
@@ -24,20 +24,23 @@ class DeepDiveStage {
     required this.num,
     required this.primary,
     this.secondary,
-    this.warning,
+    this.warnings = const [],
     required this.complexity,
     required this.length,
   });
 
+  /// 하위 호환: 첫 번째 경고 또는 null
+  String? get warning => warnings.isNotEmpty ? warnings.first : null;
+
   factory DeepDiveStage.fromJson(int num, Map<String, dynamic> j) {
-    final warnings = j['MissionWarnings'] as List?;
     return DeepDiveStage(
       num: num,
       primary: j['PrimaryObjective'] as String? ?? '',
       secondary: j['SecondaryObjective'] as String?,
-      warning: (warnings != null && warnings.isNotEmpty)
-          ? warnings.first as String
-          : null,
+      warnings: (j['MissionWarnings'] as List?)
+              ?.whereType<String>()
+              .toList() ??
+          [],
       complexity: int.tryParse(j['Complexity']?.toString() ?? '1') ?? 1,
       length: int.tryParse(j['Length']?.toString() ?? '1') ?? 1,
     );

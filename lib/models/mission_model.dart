@@ -8,8 +8,6 @@ class Mission {
   final String? buff;
   final String? debuff;
   final List<String> seasons;
-  final String timeWindow;
-  final bool isPast;
 
   Mission({
     required this.biome,
@@ -21,8 +19,6 @@ class Mission {
     this.buff,
     this.debuff,
     this.seasons = const [],
-    this.timeWindow = "",
-    this.isPast = false,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) {

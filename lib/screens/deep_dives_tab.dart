@@ -464,7 +464,7 @@ class _StageRow extends StatelessWidget {
                         ),
                       ),
                       // 구분자
-                      if (stage.warning != null)
+                      if (stage.warnings.isNotEmpty)
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Text(
@@ -476,31 +476,53 @@ class _StageRow extends StatelessWidget {
                           ),
                         ),
                     ],
-                    // 경고
-                    if (stage.warning != null) ...[
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: Image.asset(
-                          AssetHelper.getWarningIcon(stage.warning!),
-                          errorBuilder: (ctx, e, st) => const Icon(
-                            Icons.warning_amber_rounded,
-                            color: Colors.redAccent,
-                            size: 10,
+                    // 경고 (다중 지원)
+                    if (stage.warnings.isNotEmpty) ...[
+                      if (stage.warnings.length == 1) ...[
+                        SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: Image.asset(
+                            AssetHelper.getWarningIcon(stage.warnings.first),
+                            errorBuilder: (ctx, e, st) => const Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.redAccent,
+                              size: 10,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 3),
-                      Flexible(
-                        child: Text(
-                          t(stage.warning, lang),
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontSize: 11,
+                        const SizedBox(width: 3),
+                        Flexible(
+                          child: Text(
+                            t(stage.warnings.first, lang),
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 11,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
+                      ] else ...[
+                        // 다중 경고: 아이콘 Row
+                        for (int wi = 0; wi < stage.warnings.length; wi++) ...[
+                          if (wi > 0) const SizedBox(width: 3),
+                          Tooltip(
+                            message: t(stage.warnings[wi], lang),
+                            child: SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: Image.asset(
+                                AssetHelper.getWarningIcon(stage.warnings[wi]),
+                                errorBuilder: (ctx, e, st) => const Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.redAccent,
+                                  size: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ] else if (stage.secondary == null) ...[
                       // secondary도 없고 warning도 없는 경우
                       Text(

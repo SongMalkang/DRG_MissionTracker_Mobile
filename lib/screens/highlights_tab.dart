@@ -6,31 +6,12 @@ import '../utils/strings.dart';
 import '../services/mission_service.dart';
 import '../utils/asset_helper.dart';
 import '../widgets/mission_card.dart' show showMissionModal;
-
-// ── 시즌별 테마 색상 ──────────────────────────────────────────────────────────
-const Map<String, Color> _seasonColors = {
-  's0': Color(0xFF9E9E9E), // 회색: 기본/전시즌
-  's1': Color(0xFF42A5F5), // 파랑: S01 철의 의지
-  's2': Color(0xFFFFA726), // 주황: S02 경고! 경보!
-  's3': Color(0xFF66BB6A), // 초록: S03 리소파지 습격
-  's4': Color(0xFFCD7F32), // 브론즈: S04 청동기 시대
-  's5': Color(0xFF90CAF9), // 연파랑: S05 의무 절차
-  's6': Color(0xFFCE93D8), // 보라: S06 혹시스의 유물
-};
-
-const Map<String, String> _seasonLabels = {
-  's0': 'S0',
-  's1': 'S1',
-  's2': 'S2',
-  's3': 'S3',
-  's4': 'S4',
-  's5': 'S5',
-  's6': 'S6',
-};
+import '../widgets/mission_detail_components.dart' show SeasonBadge;
 
 class HighlightsTab extends StatefulWidget {
   final String lang;
-  const HighlightsTab({super.key, required this.lang});
+  final bool showWarnings;
+  const HighlightsTab({super.key, required this.lang, this.showWarnings = true});
 
   @override
   State<HighlightsTab> createState() => _HighlightsTabState();
@@ -200,6 +181,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
                             isCurrent: isCurrent,
                             isTomorrow: isTomorrow,
                             lang: widget.lang,
+                            showWarnings: widget.showWarnings,
                           ),
                         ),
                       ],
@@ -306,6 +288,7 @@ class _TimeSlotBlock extends StatelessWidget {
   final bool isCurrent;
   final bool isTomorrow;
   final String lang;
+  final bool showWarnings;
 
   const _TimeSlotBlock({
     required this.timeStr,
@@ -313,6 +296,7 @@ class _TimeSlotBlock extends StatelessWidget {
     required this.isCurrent,
     required this.isTomorrow,
     required this.lang,
+    this.showWarnings = true,
   });
 
   @override
@@ -368,7 +352,7 @@ class _TimeSlotBlock extends StatelessWidget {
           Expanded(
             child: Column(
               children: missions
-                  .map((m) => _HighlightMissionRow(mission: m, lang: lang))
+                  .map((m) => _HighlightMissionRow(mission: m, lang: lang, showWarnings: showWarnings))
                   .toList(),
             ),
           ),
@@ -383,7 +367,8 @@ class _TimeSlotBlock extends StatelessWidget {
 class _HighlightMissionRow extends StatelessWidget {
   final Mission mission;
   final String lang;
-  const _HighlightMissionRow({required this.mission, required this.lang});
+  final bool showWarnings;
+  const _HighlightMissionRow({required this.mission, required this.lang, this.showWarnings = true});
 
   @override
   Widget build(BuildContext context) {
@@ -438,7 +423,7 @@ class _HighlightMissionRow extends StatelessWidget {
             ),
 
             // 시즌 뱃지
-            _SeasonBadge(seasons: mission.seasons, isExclusive: isExclusive),
+            SeasonBadge(seasons: mission.seasons, isExclusive: isExclusive),
 
             const SizedBox(width: 6),
 
@@ -454,19 +439,29 @@ class _HighlightMissionRow extends StatelessWidget {
                         color: Colors.amber, size: 20),
                   ),
                 ),
-                if (mission.debuff != null) ...[
+                if (mission.debuff != null && showWarnings) ...[
                   const SizedBox(height: 2),
-                  SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: Image.asset(
-                      AssetHelper.getWarningIcon(
-                          mission.debuff!.split(',').first.trim()),
-                      errorBuilder: (ctx, e, st) => const Icon(
-                          Icons.warning_amber_rounded,
-                          color: Colors.redAccent,
-                          size: 16),
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: mission.debuff!
+                        .split(',')
+                        .map((e) => e.trim())
+                        .where((e) => e.isNotEmpty)
+                        .map((w) => Padding(
+                              padding: const EdgeInsets.only(left: 2),
+                              child: SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: Image.asset(
+                                  AssetHelper.getWarningIcon(w),
+                                  errorBuilder: (ctx, e, st) => const Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.redAccent,
+                                      size: 16),
+                                ),
+                              ),
+                            ))
+                        .toList(),
                   ),
                 ],
               ],
@@ -482,57 +477,3 @@ class _HighlightMissionRow extends StatelessWidget {
   }
 }
 
-// ── 시즌 뱃지 ─────────────────────────────────────────────────────────────────
-
-class _SeasonBadge extends StatelessWidget {
-  final List<String> seasons;
-  final bool isExclusive;
-  const _SeasonBadge({required this.seasons, required this.isExclusive});
-
-  @override
-  Widget build(BuildContext context) {
-    if (seasons.isEmpty) return const SizedBox.shrink();
-
-    if (isExclusive) {
-      // 단일 시즌 전용 → 강조 뱃지
-      final s = seasons.first;
-      final color = _seasonColors[s] ?? Colors.white38;
-      final label = _seasonLabels[s] ?? s.toUpperCase();
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.22),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: color.withValues(alpha: 0.8), width: 1.5),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 11,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.5,
-          ),
-        ),
-      );
-    }
-
-    // 다중 시즌: 작은 점들로 표시 (최대 4개)
-    final shown = seasons.take(4).toList();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: shown.map((s) {
-        final color = _seasonColors[s] ?? Colors.white24;
-        return Container(
-          margin: const EdgeInsets.only(left: 2),
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
