@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -127,7 +128,7 @@ class DeepDiveService {
         _isLoading = false;
         _notifyListeners();
         // 백그라운드에서 GitHub도 확인 (silent refresh)
-        _silentRefresh(thu);
+        unawaited(_silentRefresh(thu));
         return;
       }
     }
@@ -240,30 +241,41 @@ class DeepDiveService {
   List<DeepDive> _parseDiveData(String body) => _parseDiveDataImpl(body);
 
   static List<DeepDive> _parseDiveDataImpl(String body) {
-    final jsonData = jsonDecode(body) as Map<String, dynamic>;
-    final ddMap = jsonData['Deep Dives'] as Map<String, dynamic>?;
-    if (ddMap == null) throw const FormatException('Missing "Deep Dives" key');
+    try {
+      final jsonData = jsonDecode(body) as Map<String, dynamic>;
+      final ddMap = jsonData['Deep Dives'] as Map<String, dynamic>?;
+      if (ddMap == null) throw const FormatException('Missing "Deep Dives" key');
 
-    final dives = <DeepDive>[];
-    for (final key in ['Deep Dive Normal', 'Deep Dive Elite']) {
-      final dd = ddMap[key] as Map<String, dynamic>?;
-      if (dd == null) continue;
-      final stagesRaw = dd['Stages'] as List?;
-      if (stagesRaw == null) continue;
-      final stages = stagesRaw
-          .asMap()
-          .entries
-          .map((e) => DeepDiveStage.fromJson(
-              e.key + 1, e.value as Map<String, dynamic>))
-          .toList();
-      dives.add(DeepDive(
-        isElite: key.contains('Elite'),
-        biome: dd['Biome'] as String? ?? '',
-        codeName: dd['CodeName'] as String? ?? '',
-        stages: stages,
-      ));
+      final dives = <DeepDive>[];
+      for (final key in ['Deep Dive Normal', 'Deep Dive Elite']) {
+        try {
+          final dd = ddMap[key] as Map<String, dynamic>?;
+          if (dd == null) continue;
+          final stagesRaw = dd['Stages'] as List?;
+          if (stagesRaw == null) continue;
+          final stages = stagesRaw
+              .asMap()
+              .entries
+              .map((e) => DeepDiveStage.fromJson(
+                  e.key + 1, e.value as Map<String, dynamic>))
+              .toList();
+          dives.add(DeepDive(
+            isElite: key.contains('Elite'),
+            biome: dd['Biome'] as String? ?? '',
+            codeName: dd['CodeName'] as String? ?? '',
+            stages: stages,
+          ));
+        } catch (e) {
+          debugPrint('Failed to parse deep dive "$key": $e');
+          continue;
+        }
+      }
+      return dives;
+    } on FormatException {
+      rethrow;
+    } catch (e) {
+      throw FormatException('Deep Dive JSON parsing failed: $e');
     }
-    return dives;
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────

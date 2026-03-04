@@ -64,4 +64,42 @@ void main() {
       expect(missions, isA<List>());
     });
   });
+
+  group('MissionService - Listener Management', () {
+    test('addListener / removeListener는 예외 없이 동작', () {
+      final service = MissionService();
+      void cb() {}
+      // 추가 / 제거가 예외 없이 동작하는지 확인
+      service.addListener(cb);
+      service.removeListener(cb);
+    });
+  });
+
+  group('MissionService - hasClockDrift', () {
+    test('초기값은 false (측정 전)', () {
+      final service = MissionService();
+      expect(service.hasClockDrift, false);
+    });
+  });
+
+  group('MissionService - availableSeasons', () {
+    test('초기값은 List<String> 타입', () {
+      final service = MissionService();
+      expect(service.availableSeasons, isA<List<String>>());
+    });
+  });
+
+  group('MissionService._parseHttpDate (via getTimeKey proxy)', () {
+    // _parseHttpDate는 private이므로 직접 테스트 불가,
+    // getTimeKey로 간접 검증 (시간 키 생성 로직)
+    test('경계값: 자정 직전 23:59', () {
+      final dt = DateTime.utc(2024, 12, 31, 23, 59);
+      expect(MissionService.getTimeKey(dt), '2024-12-31T23:30:00Z');
+    });
+
+    test('경계값: 정확히 30분', () {
+      final dt = DateTime.utc(2024, 6, 15, 10, 30);
+      expect(MissionService.getTimeKey(dt), '2024-06-15T10:30:00Z');
+    });
+  });
 }

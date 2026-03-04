@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../widgets/mission_card.dart';
 import '../models/mission_model.dart';
+import '../widgets/mission_card.dart';
 import '../utils/strings.dart';
 import '../services/mission_service.dart';
 
@@ -28,6 +28,14 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
 
   final MissionService _missionService = MissionService();
 
+  // ── 캐시: filter+sort 결과를 매 build()마다 재계산하지 않음 ──
+  List<Mission> _cachedFiltered = [];
+  DateTime _cachedTargetUtc = DateTime.utc(2000);
+  String _cachedSeason = '';
+  // 캐시 무효화 트리거용 (데이터 변경 시 증가)
+  int _dataVersion = 0;
+  int _cachedDataVersion = -1;
+
   @override
   void initState() {
     super.initState();
@@ -39,19 +47,21 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
   }
 
   void _onDataChanged() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {
+        _dataVersion++;
+      });
+    }
   }
 
   void _calculateTimeLeft() {
     final now = DateTime.now();
     final next30 = (now.minute < 30) ? 30 : 60;
     final target = DateTime(now.year, now.month, now.day, now.hour, next30, 0);
+    final diff = target.difference(now).inSeconds;
     if (mounted) {
       setState(() {
-        _secondsUntilNext = target.difference(now).inSeconds;
-        if (_secondsUntilNext <= 0) {
-          _calculateTimeLeft();
-        }
+        _secondsUntilNext = diff.clamp(0, 1800);
       });
     }
   }
@@ -86,38 +96,29 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
   DateTime _getTargetUtcTime() {
     final now = DateTime.now().toUtc();
     final int minutes = (now.minute < 30) ? 0 : 30;
-    DateTime base = DateTime.utc(now.year, now.month, now.day, now.hour, minutes);
+    final base = DateTime.utc(now.year, now.month, now.day, now.hour, minutes);
     return base.add(Duration(minutes: _timeOffset * 30));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (!_missionService.isInitialized) {
-      return const Center(child: CircularProgressIndicator(color: Colors.orange));
+  /// 캐시된 필터+정렬 결과 반환. targetUtc/season/dataVersion 변경 시만 재계산.
+  List<Mission> _getFilteredMissions(DateTime targetUtc) {
+    if (targetUtc == _cachedTargetUtc &&
+        widget.currentSeason == _cachedSeason &&
+        _dataVersion == _cachedDataVersion) {
+      return _cachedFiltered;
     }
 
-    String statusText;
-    if (_timeOffset == -1) {
-      statusText = i18n[widget.lang]!['past']!;
-    } else if (_timeOffset == 1) {
-      statusText = i18n[widget.lang]!['upcoming']!;
-    } else {
-      statusText = i18n[widget.lang]!['current']!;
-    }
-
-    DateTime targetUtc = _getTargetUtcTime();
-    DateTime localDisplayTime = targetUtc.toLocal();
-    List<Mission> sourceList = _missionService.getMissionsForTime(targetUtc);
+    final sourceList = _missionService.getMissionsForTime(targetUtc);
 
     // 시즌 필터링
-    List<Mission> filteredList = sourceList
+    final filteredList = sourceList
         .where((m) => m.seasons.contains(widget.currentSeason))
         .toList();
 
     // Double XP 상단 고정 정렬 (가장 높은 우선순위)
     filteredList.sort((a, b) {
-      bool aIsDouble = (a.buff == "Double XP");
-      bool bIsDouble = (b.buff == "Double XP");
+      final aIsDouble = (a.buff == "Double XP");
+      final bIsDouble = (b.buff == "Double XP");
 
       if (aIsDouble && !bIsDouble) return -1;
       if (!aIsDouble && bIsDouble) return 1;
@@ -126,10 +127,37 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
       return a.biome.compareTo(b.biome);
     });
 
+    _cachedFiltered = filteredList;
+    _cachedTargetUtc = targetUtc;
+    _cachedSeason = widget.currentSeason;
+    _cachedDataVersion = _dataVersion;
+
+    return filteredList;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_missionService.isInitialized) {
+      return const Center(child: CircularProgressIndicator(color: Colors.orange));
+    }
+
+    final String statusText;
+    if (_timeOffset == -1) {
+      statusText = i18n[widget.lang]!['past']!;
+    } else if (_timeOffset == 1) {
+      statusText = i18n[widget.lang]!['upcoming']!;
+    } else {
+      statusText = i18n[widget.lang]!['current']!;
+    }
+
+    final targetUtc = _getTargetUtcTime();
+    final localDisplayTime = targetUtc.toLocal();
+    final filteredList = _getFilteredMissions(targetUtc);
+
     final minutes = (_secondsUntilNext ~/ 60).toString().padLeft(2, '0');
     final seconds = (_secondsUntilNext % 60).toString().padLeft(2, '0');
 
-    String seasonLabel = widget.currentSeason == "s0"
+    final seasonLabel = widget.currentSeason == "s0"
         ? i18n[widget.lang]!['standard']!
         : "SEASON ${widget.currentSeason.replaceAll('s', '')}";
 

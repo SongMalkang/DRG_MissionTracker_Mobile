@@ -3,7 +3,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/strings.dart';
+import '../../utils/game_colors.dart';
+import '../../utils/strings.dart';
+import 'slit_data.dart';
+import 'painters/background_painters.dart';
+import 'painters/boot_painter.dart';
+import 'painters/pillar_painter.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  DRG 스타일 "JET BOOT SAFTY PROTOCOL" 미니게임
@@ -13,12 +18,11 @@ import '../utils/strings.dart';
 //  ─ 점진적 난이도 + 사운드 + 로컬 리더보드
 // ═══════════════════════════════════════════════════════════════════════════
 
-// 터미널 녹색 색상 팔레트
-const _termGreen = Color(0xFF39FF14);
-const _termGreenDim = Color(0xFF1A8A0A);
-const _termGreenFaint = Color(0xFF0D4D06);
-const _termBg = Color(0xFF040A04);
-const _termSurface = Color(0xFF081208);
+// 터미널 녹색 색상 팔레트 (GameColors에서 참조)
+const _termGreen = GameColors.termGreen;
+const _termGreenDim = GameColors.termGreenDim;
+const _termBg = GameColors.termBg;
+const _termSurface = GameColors.termSurface;
 
 class JetBootsGame extends StatefulWidget {
   final String lang;
@@ -50,7 +54,7 @@ class _JetBootsGameState extends State<JetBootsGame>
   bool _stageFlash = false;
 
   // 장애물: 좌우 벽에서 뻗어나온 기둥 + 슬릿
-  final List<_Slit> _slits = [];
+  final List<Slit> _slits = [];
   final Random _random = Random();
 
   // 캐릭터 위치 (화면 비율)
@@ -104,7 +108,7 @@ class _JetBootsGameState extends State<JetBootsGame>
   void _initSlits() {
     _slits.clear();
     for (int i = 0; i < 3; i++) {
-      _slits.add(_Slit(
+      _slits.add(Slit(
         x: 0.7 + i * 0.5,
         gapCenter: 0.25 + _random.nextDouble() * 0.5,
         fromLeft: _random.nextBool(),
@@ -174,7 +178,7 @@ class _JetBootsGameState extends State<JetBootsGame>
     return max(1.1, maxX + _currentSpacing);
   }
 
-  bool _checkCollision(_Slit slit) {
+  bool _checkCollision(Slit slit) {
     // 캐릭터가 슬릿의 x 범위 안에 있는지
     const charWidth = 0.06;
     final slitLeft = slit.x - 0.03;
@@ -360,7 +364,7 @@ class _JetBootsGameState extends State<JetBootsGame>
                         // 배경: CRT 스캔라인 + 그리드
                         Positioned.fill(
                           child: CustomPaint(
-                            painter: _CrtBackgroundPainter(),
+                            painter: CrtBackgroundPainter(),
                           ),
                         ),
 
@@ -395,7 +399,7 @@ class _JetBootsGameState extends State<JetBootsGame>
                         Positioned.fill(
                           child: IgnorePointer(
                             child: CustomPaint(
-                              painter: _ScanlinePainter(),
+                              painter: ScanlinePainter(),
                             ),
                           ),
                         ),
@@ -411,7 +415,7 @@ class _JetBootsGameState extends State<JetBootsGame>
                     );
                   },
                 ),
-              ),
+            ),
             ),
 
             // ── 하단: HACK 버튼 영역 ──────────────────────────
@@ -524,7 +528,7 @@ class _JetBootsGameState extends State<JetBootsGame>
         width: 28,
         height: 36,
         child: CustomPaint(
-          painter: _BootPainter(
+          painter: BootPainter(
             isThrusting: isThrusting,
             thrustPhase: _blinkCounter % 4,
           ),
@@ -533,7 +537,7 @@ class _JetBootsGameState extends State<JetBootsGame>
     );
   }
 
-  Widget _buildSlit(_Slit slit, double screenW, double screenH) {
+  Widget _buildSlit(Slit slit, double screenW, double screenH) {
     final x = slit.x * screenW;
     const pillarWidth = 28.0;
     final gapSize = _currentGapSize;
@@ -555,7 +559,7 @@ class _JetBootsGameState extends State<JetBootsGame>
               right: 0,
               height: gapTop,
               child: CustomPaint(
-                painter: _TerminalPillarPainter(),
+                painter: TerminalPillarPainter(),
               ),
             ),
             // 슬릿 가장자리 밝은 라인 (상단)
@@ -573,7 +577,7 @@ class _JetBootsGameState extends State<JetBootsGame>
               right: 0,
               bottom: 0,
               child: CustomPaint(
-                painter: _TerminalPillarPainter(),
+                painter: TerminalPillarPainter(),
               ),
             ),
             // 슬릿 가장자리 밝은 라인 (하단)
@@ -829,206 +833,4 @@ class _JetBootsGameState extends State<JetBootsGame>
       ),
     );
   }
-}
-
-// ─── 슬릿 데이터 ────────────────────────────────────────────────────────────
-
-class _Slit {
-  double x; // 화면 비율 X 위치
-  double gapCenter; // 슬릿 중심 (0.0~1.0)
-  bool fromLeft; // 기둥이 왼쪽에서 뻗는지 (현재 미사용, 확장용)
-  bool passed = false; // 통과 여부
-
-  _Slit({
-    required this.x,
-    required this.gapCenter,
-    required this.fromLeft,
-  });
-}
-
-// ─── CRT 배경 페인터 (그리드 + 미세한 녹색 노이즈) ───────────────────────────
-
-class _CrtBackgroundPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 미세한 그리드 라인 (가로)
-    final gridPaint = Paint()
-      ..color = _termGreenFaint.withValues(alpha: 0.15);
-    for (double y = 0; y < size.height; y += 40) {
-      canvas.drawRect(Rect.fromLTWH(0, y, size.width, 0.5), gridPaint);
-    }
-    // 세로
-    for (double x = 0; x < size.width; x += 40) {
-      canvas.drawRect(Rect.fromLTWH(x, 0, 0.5, size.height), gridPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// ─── CRT 스캔라인 오버레이 ──────────────────────────────────────────────────
-
-class _ScanlinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.black.withValues(alpha: 0.08);
-    for (double y = 0; y < size.height; y += 3) {
-      canvas.drawRect(Rect.fromLTWH(0, y, size.width, 1), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// ─── 부츠 캐릭터 페인터 (픽셀 부츠 + 제트 분사) ─────────────────────────────
-
-class _BootPainter extends CustomPainter {
-  final bool isThrusting;
-  final int thrustPhase;
-
-  _BootPainter({required this.isThrusting, required this.thrustPhase});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // 부츠 본체 영역 (하단 제트 분사 공간 확보)
-    final bootH = h * 0.7;
-    final bootTop = 0.0;
-
-    final fillPaint = Paint()..color = _termGreen;
-    final dimPaint = Paint()..color = _termGreenDim;
-    final borderPaint = Paint()
-      ..color = _termGreen
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    final glowPaint = Paint()
-      ..color = _termGreen.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.outer, 6);
-
-    // ── 발목 (상단 좁은 부분) ──
-    final ankleW = w * 0.5;
-    final ankleH = bootH * 0.45;
-    final ankleL = (w - ankleW) / 2;
-    final ankleRect = Rect.fromLTWH(ankleL, bootTop, ankleW, ankleH);
-    canvas.drawRect(ankleRect, fillPaint);
-    canvas.drawRect(ankleRect, borderPaint);
-
-    // 발목 내부 가로줄 패턴
-    final linePaint = Paint()..color = _termGreenDim.withValues(alpha: 0.5);
-    for (double y = bootTop + 4; y < bootTop + ankleH - 2; y += 4) {
-      canvas.drawLine(
-        Offset(ankleL + 2, y),
-        Offset(ankleL + ankleW - 2, y),
-        linePaint,
-      );
-    }
-
-    // ── 발 (하단 넓은 부분, 앞쪽 돌출) ──
-    final footTop = bootTop + ankleH;
-    final footH = bootH * 0.4;
-    final footL = w * 0.1;
-    final footW = w * 0.85; // 앞쪽(우측)으로 돌출
-    final footRect = Rect.fromLTWH(footL, footTop, footW, footH);
-    canvas.drawRect(footRect, fillPaint);
-    canvas.drawRect(footRect, borderPaint);
-
-    // ── 밑창 (밝은 라인) ──
-    final soleTop = footTop + footH;
-    final soleH = bootH * 0.15;
-    final soleRect = Rect.fromLTWH(footL - 1, soleTop, footW + 2, soleH);
-    canvas.drawRect(soleRect, dimPaint);
-    canvas.drawRect(soleRect, borderPaint);
-
-    // 글로우 효과
-    final bootBounds = Rect.fromLTWH(footL - 1, bootTop, footW + 2, bootH);
-    canvas.drawRect(bootBounds, glowPaint);
-
-    // ── 제트 분사 (점프 시에만) ──
-    if (isThrusting) {
-      final thrustTop = soleTop + soleH;
-      final centerX = ankleL + ankleW / 2;
-
-      // 메인 불꽃 (삼각형)
-      final flameLen = h * 0.28 + (thrustPhase % 3) * 2.0;
-      final flamePath = Path()
-        ..moveTo(centerX - 5, thrustTop)
-        ..lineTo(centerX + 5, thrustTop)
-        ..lineTo(centerX, thrustTop + flameLen)
-        ..close();
-
-      final flamePaint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            _termGreen,
-            _termGreen.withValues(alpha: 0.6),
-            _termGreenDim.withValues(alpha: 0.0),
-          ],
-        ).createShader(Rect.fromLTWH(
-            centerX - 5, thrustTop, 10, flameLen));
-      canvas.drawPath(flamePath, flamePaint);
-
-      // 사이드 불꽃 (작은 삼각형)
-      final sideLen = flameLen * 0.6;
-      for (final dx in [-6.0, 6.0]) {
-        final sidePath = Path()
-          ..moveTo(centerX + dx - 2, thrustTop + 2)
-          ..lineTo(centerX + dx + 2, thrustTop + 2)
-          ..lineTo(centerX + dx, thrustTop + sideLen)
-          ..close();
-        final sidePaint = Paint()
-          ..color = _termGreen.withValues(alpha: 0.4);
-        canvas.drawPath(sidePath, sidePaint);
-      }
-
-      // 불꽃 글로우
-      canvas.drawCircle(
-        Offset(centerX, thrustTop + 4),
-        8,
-        Paint()
-          ..color = _termGreen.withValues(alpha: 0.25)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_BootPainter oldDelegate) =>
-      oldDelegate.isThrusting != isThrusting ||
-      oldDelegate.thrustPhase != thrustPhase;
-}
-
-// ─── 터미널 기둥 페인터 (녹색 + 내부 패턴) ──────────────────────────────────
-
-class _TerminalPillarPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    // 기둥 본체 (반투명 녹색)
-    final bodyPaint = Paint()..color = _termGreenFaint.withValues(alpha: 0.6);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bodyPaint);
-
-    // 테두리 (밝은 녹색)
-    final borderPaint = Paint()
-      ..color = _termGreenDim
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), borderPaint);
-
-    // 내부 수평 라인 패턴
-    final linePaint = Paint()..color = _termGreenDim.withValues(alpha: 0.3);
-    for (double y = 6; y < size.height; y += 8) {
-      canvas.drawRect(
-        Rect.fromLTWH(3, y, size.width - 6, 1),
-        linePaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

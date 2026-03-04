@@ -398,7 +398,7 @@ class _HighlightMissionRow extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: Colors.grey[900],
-          border: Border(
+          border: const Border(
             left: BorderSide(color: Colors.amber, width: 3),
           ),
         ),

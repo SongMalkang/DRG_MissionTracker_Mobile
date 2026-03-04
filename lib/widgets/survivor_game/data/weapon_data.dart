@@ -75,7 +75,7 @@ const Map<WeaponId, WeaponData> secondaryWeapons = {
     damage: 25,
     fireRate: 0.4,
     projectileSpeed: 280,
-    range: 110,
+    range: 165, // 1.5x buff (was 110)
     projectileCount: 7,
     spread: 0.35, // total cone ~20 degrees, tight cluster
     burstCount: 2, // double barrel — fires twice
@@ -85,7 +85,7 @@ const Map<WeaponId, WeaponData> secondaryWeapons = {
     id: WeaponId.zhukov,
     name: 'Zhukov NUK17',
     slot: WeaponSlot.secondary,
-    damage: 6,
+    damage: 3, // 50% nerf (was 6)
     fireRate: 12.0, // shorter cycle — rapid spray
     projectileSpeed: 400,
     range: 180,
@@ -96,7 +96,7 @@ const Map<WeaponId, WeaponData> secondaryWeapons = {
     id: WeaponId.boltshark,
     name: 'Boltshark X-80',
     slot: WeaponSlot.secondary,
-    damage: 70,
+    damage: 52.5, // 75% nerf (was 70)
     fireRate: 0.8,
     projectileSpeed: 500,
     range: 350,

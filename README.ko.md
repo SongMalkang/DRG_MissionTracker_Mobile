@@ -49,7 +49,7 @@ BOSCO가 Double XP 미션이 등장하면 직접 알려줍니다.
 이 프로젝트는 **[rolfosian](https://github.com/rolfosian)** 님 덕분에 존재할 수 있었습니다.
 
 - 본 앱의 모든 실시간 미션 데이터는 **[doublexp.net](https://doublexp.net)** 에서 제공됩니다.
-- **데이터 정책**: 원본 서버 부하(Leeching) 방지를 위해, 앱은 매일 00:05 UTC에 단 한 번 데이터를 갱신하여 본 저장소에 캐싱합니다. 앱은 doublexp.net에 직접 접근하지 않습니다.
+- **데이터 정책**: 원본 서버 부하(Leeching) 방지를 위해, GitHub Actions 워크플로우가 매일 00:05 UTC에 단 한 번 데이터를 가져와 본 저장소에 JSON으로 캐싱합니다. 앱은 캐싱된 JSON만 읽으며, doublexp.net에 직접 접근하지 않습니다.
 - 복잡한 게임 내 데이터를 스크래핑하여 커뮤니티와 공유해주신 `rolfosian` 님과 고품질 게임 에셋을 제공하는 **[Deep Rock Galactic Wiki](https://deeprockgalactic.wiki.gg/)** 커뮤니티에 깊은 감사를 표합니다. **Rock and Stone!** ⛏️
 
 ---

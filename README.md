@@ -49,7 +49,7 @@ Bosco will personally alert you when a Double XP mission appears.
 This project would not be possible without **[rolfosian](https://github.com/rolfosian)**.
 
 - All real-time mission data originates from **[doublexp.net](https://doublexp.net)**.
-- **Data Policy**: To avoid server overload (leeching), this app fetches data once per day at 00:05 UTC and serves it from this repository's cached JSON. The app never contacts doublexp.net directly.
+- **Data Policy**: To avoid server overload (leeching), a GitHub Actions workflow fetches data once per day at 00:05 UTC and caches it as JSON in this repository. The app only reads from the cached JSON and never contacts doublexp.net directly.
 - Huge respect to `rolfosian` for scraping Hoxxes' data and the **[Deep Rock Galactic Wiki](https://deeprockgalactic.wiki.gg/)** community for providing high-quality game assets. **Rock and Stone!** ⛏️
 
 ---

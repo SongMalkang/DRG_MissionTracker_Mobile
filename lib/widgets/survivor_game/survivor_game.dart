@@ -10,6 +10,7 @@ import 'data/sprite_data.dart';
 import 'ui/game_hud.dart';
 import 'ui/levelup_modal.dart';
 import 'ui/game_over_screen.dart';
+import '../../utils/game_colors.dart';
 
 class SurvivorGame extends StatefulWidget {
   final String lang;
@@ -27,9 +28,9 @@ class SurvivorGame extends StatefulWidget {
 
 class _SurvivorGameState extends State<SurvivorGame>
     with TickerProviderStateMixin {
-  // Terminal colors
-  static const Color _termGreen = Color(0xFF00FF41);
-  static const Color _termBg = Color(0xFF0A0E0A);
+  // Terminal colors (GameColors에서 참조)
+  static const Color _termGreen = GameColors.survivorGreen;
+  static const Color _termBg = GameColors.survivorBg;
 
   // Game engine
   late GameEngine _engine;
@@ -235,7 +236,7 @@ class _SurvivorGameState extends State<SurvivorGame>
           const Spacer(),
           GestureDetector(
             onDoubleTap: () => setState(() => _showDebug = !_showDebug),
-            child: Text(
+            child: const Text(
               'HOXXES SURVIVAL',
               style: TextStyle(
                 fontFamily: 'monospace',
@@ -271,7 +272,7 @@ class _SurvivorGameState extends State<SurvivorGame>
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
+              const Text(
                 'HOXXES SURVIVAL',
                 style: TextStyle(
                   fontFamily: 'monospace',
@@ -637,13 +638,16 @@ class _GamePainter extends CustomPainter {
     final sx = p.x - camX;
     final sy = p.y - camY;
 
+    // Boltshark projectiles are white; others are amber
+    final color = p.weaponId == 'boltshark' ? Colors.white : _termAmber;
+
     // Small bright line in direction of travel
     const len = 6.0;
     canvas.drawLine(
       Offset(sx - cos(p.angle) * len, sy - sin(p.angle) * len),
       Offset(sx, sy),
       Paint()
-        ..color = _termAmber
+        ..color = color
         ..strokeWidth = 1.5,
     );
 
@@ -652,7 +656,7 @@ class _GamePainter extends CustomPainter {
       Offset(sx, sy),
       2,
       Paint()
-        ..color = _termAmber.withValues(alpha: 0.3)
+        ..color = color.withValues(alpha: 0.3)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
   }
@@ -796,7 +800,7 @@ class _ScoutPreviewPainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(
+        style: const TextStyle(
           fontFamily: 'monospace',
           fontSize: 14,
           color: _termGreen,

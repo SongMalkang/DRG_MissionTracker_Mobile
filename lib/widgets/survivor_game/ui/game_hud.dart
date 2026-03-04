@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../utils/game_colors.dart';
 
 /// HUD overlay painter — HP, XP, wave, timer, kill count
 class GameHudPainter extends CustomPainter {
@@ -12,10 +13,10 @@ class GameHudPainter extends CustomPainter {
   final int killCount;
   final bool dashReady;
 
-  static const Color _termGreen = Color(0xFF00FF41);
-  static const Color _termAmber = Color(0xFFFFB000);
-  static const Color _termRed = Color(0xFFFF3333);
-  static const Color _termBg = Color(0xFF0A0E0A);
+  static const Color _termGreen = GameColors.survivorGreen;
+  static const Color _termAmber = GameColors.survivorAmber;
+  static const Color _termRed = GameColors.survivorRed;
+  static const Color _termBg = GameColors.survivorBg;
 
   GameHudPainter({
     required this.hp,

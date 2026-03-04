@@ -59,7 +59,7 @@ class UpdateService {
 
       final resp = await http
           .get(Uri.parse(AppConstants.versionJsonUrl))
-          .timeout(Duration(seconds: AppConstants.networkTimeoutSeconds));
+          .timeout(const Duration(seconds: AppConstants.networkTimeoutSeconds));
 
       if (resp.statusCode != 200) return null;
 

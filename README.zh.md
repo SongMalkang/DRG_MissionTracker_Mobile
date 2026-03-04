@@ -49,7 +49,7 @@
 本项目的实现离不开 **[rolfosian](https://github.com/rolfosian)** 的杰출贡献。
 
 - 所有实时任务数据均来源于 **[doublexp.net](https://doublexp.net)**。
-- **数据政策**: 为避免对原始服务器造成负担（防止滥用），本应用每日 00:05 UTC 仅更新一次数据，并使用本仓库中的缓存 JSON。应用不会直接访问 doublexp.net。
+- **数据政策**: 为避免对原始服务器造成负担（防止滥用），GitHub Actions 工作流每日 00:05 UTC 仅获取一次数据，并将其缓存为本仓库中的 JSON。应用仅读取缓存的 JSON，不会直接访问 doublexp.net。
 - 衷心感谢 `rolfosian` 为社区提供数据抓取工作，以及 **[Deep Rock Galactic Wiki](https://deeprockgalactic.wiki.gg/)** 社区提供高质量的游戏资产。**岩石与泥土！** ⛏️
 
 ---

@@ -133,5 +133,89 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test('parseDiveData - Normal만 있는 JSON', () {
+      const jsonBody = '''
+{
+  "Deep Dives": {
+    "Deep Dive Normal": {
+      "Biome": "Crystalline Caverns",
+      "CodeName": "Solo Normal",
+      "Stages": [
+        {
+          "PrimaryObjective": "Point Extraction",
+          "SecondaryObjective": "Dystrum",
+          "MissionWarnings": ["Exploder Infestation"],
+          "Complexity": "1",
+          "Length": "2"
+        }
+      ]
+    }
+  }
+}''';
+
+      final dives = DeepDiveService.parseDiveDataPublic(jsonBody);
+
+      expect(dives.length, 1);
+      expect(dives[0].isElite, false);
+      expect(dives[0].biome, 'Crystalline Caverns');
+      expect(dives[0].stages.length, 1);
+      expect(dives[0].stages[0].primary, 'Point Extraction');
+      expect(dives[0].stages[0].warning, 'Exploder Infestation');
+    });
+
+    test('parseDiveData - Elite만 있는 JSON', () {
+      const jsonBody = '''
+{
+  "Deep Dives": {
+    "Deep Dive Elite": {
+      "Biome": "Fungus Bogs",
+      "CodeName": "Elite Only",
+      "Stages": [
+        {
+          "PrimaryObjective": "Salvage Operation",
+          "SecondaryObjective": null,
+          "MissionWarnings": [],
+          "Complexity": "3",
+          "Length": "3"
+        }
+      ]
+    }
+  }
+}''';
+
+      final dives = DeepDiveService.parseDiveDataPublic(jsonBody);
+
+      expect(dives.length, 1);
+      expect(dives[0].isElite, true);
+      expect(dives[0].biome, 'Fungus Bogs');
+    });
+
+    test('parseDiveData - 빈 Stages 배열', () {
+      const jsonBody = '''
+{
+  "Deep Dives": {
+    "Deep Dive Normal": {
+      "Biome": "Hollow Bough",
+      "CodeName": "Empty",
+      "Stages": []
+    }
+  }
+}''';
+
+      final dives = DeepDiveService.parseDiveDataPublic(jsonBody);
+
+      expect(dives.length, 1);
+      expect(dives[0].stages, isEmpty);
+    });
+
+    test('parseDiveData - invalid JSON은 예외', () {
+      const jsonBody = 'not valid json{{{';
+
+      expect(
+        () => DeepDiveService.parseDiveDataPublic(jsonBody),
+        throwsA(isA<FormatException>()),
+      );
+    });
   });
 }

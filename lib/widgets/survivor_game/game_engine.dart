@@ -332,6 +332,7 @@ class GameEngine {
         lifetime: weapon.range / weapon.projectileSpeed,
         angle: angle,
         piercing: weapon.piercing,
+        weaponId: weapon.id.name,
       ));
     }
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../utils/game_colors.dart';
 
 class GameOverScreen extends StatefulWidget {
   final int killCount;
@@ -27,10 +28,10 @@ class GameOverScreen extends StatefulWidget {
 }
 
 class _GameOverScreenState extends State<GameOverScreen> {
-  static const Color _termGreen = Color(0xFF00FF41);
-  static const Color _termAmber = Color(0xFFFFB000);
-  static const Color _termRed = Color(0xFFFF3333);
-  static const Color _termBg = Color(0xFF0A0E0A);
+  static const Color _termGreen = GameColors.survivorGreen;
+  static const Color _termAmber = GameColors.survivorAmber;
+  static const Color _termRed = GameColors.survivorRed;
+  static const Color _termBg = GameColors.survivorBg;
 
   int _visibleLines = 0;
   bool _showButtons = false;
@@ -69,7 +70,7 @@ class _GameOverScreenState extends State<GameOverScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'MISSION FAILED',
                 style: TextStyle(
                   fontFamily: 'monospace',

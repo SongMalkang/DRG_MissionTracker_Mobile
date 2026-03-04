@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -34,11 +35,11 @@ class StringsService {
       debugPrint('StringsService: 캐시 로드 실패: $e');
     }
     // 2. 캐시가 오래됐으면 백그라운드에서 갱신 (비동기, await 없음)
-    _refreshIfStale();
+    unawaited(_refreshIfStale());
   }
 
   /// 캐시 만료 여부 확인 후 백그라운드 갱신
-  void _refreshIfStale() async {
+  Future<void> _refreshIfStale() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ts = prefs.getInt(_cacheTimestampKey) ?? 0;
@@ -79,7 +80,7 @@ class StringsService {
             Uri.parse(AppConstants.stringsJsonUrl),
             headers: {'Cache-Control': 'no-cache'},
           )
-          .timeout(Duration(seconds: AppConstants.networkTimeoutSeconds));
+          .timeout(const Duration(seconds: AppConstants.networkTimeoutSeconds));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
         if (data is Map<String, dynamic>) return data;

@@ -31,7 +31,14 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
-      - run: flutter test
+      - run: flutter test --coverage
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/lcov.info
+          retention-days: 7
 
   build:
     name: Build Check (verification only)

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,11 +11,10 @@ import '../utils/constants.dart';
 import '../utils/strings.dart';
 import '../services/settings_service.dart';
 import '../services/mission_service.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import '../services/notification_service.dart';
 import '../services/update_service.dart';
 import '../widgets/changelog_dialog.dart';
 import '../widgets/update_dialog.dart';
+import '../widgets/debug_menu.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -23,7 +23,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
   String _currentLang = 'KR';
   String _currentSeason = 's0';
@@ -33,14 +33,26 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _missionService.addListener(_onDataChanged);
     _loadSettings();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _missionService.removeListener(_onDataChanged);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _missionService.pausePeriodicRefresh();
+    } else if (state == AppLifecycleState.resumed) {
+      _missionService.resumePeriodicRefresh();
+    }
   }
 
   void _onDataChanged() {
@@ -58,7 +70,7 @@ class _MainScreenState extends State<MainScreen> {
         _currentSeason = season;
       });
       // 언어 로드 완료 후 업데이트 확인 (비동기, UI 블로킹 없음)
-      _checkForUpdate();
+      unawaited(_checkForUpdate());
     }
   }
 
@@ -91,144 +103,13 @@ class _MainScreenState extends State<MainScreen> {
     _settingsService.saveSeason(season);
   }
 
-  // ── 디버그 액션 메뉴 (보스코 롱프레스) ───────────────────────────────────
-  void _showDebugMenu() {
-    if (!kDebugMode) return;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                '🛠 DEBUG MENU',
-                style: TextStyle(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ),
-            const Divider(color: Colors.white10, height: 1),
-            ListTile(
-              leading: const Icon(Icons.notifications_active, color: Colors.orange),
-              title: const Text('테스트 Push 알림 발송',
-                  style: TextStyle(color: Colors.white70)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _testPushAlarm();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.auto_awesome, color: Colors.orange),
-              title: const Text('Changelog 팝업 표시',
-                  style: TextStyle(color: Colors.white70)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                final info = await PackageInfo.fromPlatform();
-                if (mounted) {
-                  showChangelogDialog(context, _currentLang, info.version);
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.sync, color: Colors.orange),
-              title: const Text('DataStatus 순환',
-                  style: TextStyle(color: Colors.white70)),
-              onTap: () {
-                Navigator.pop(ctx);
-                _cycleDebugStatus();
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _testPushAlarm() async {
-    try {
-      final notifService = NotificationService();
-
-      // 알림 권한 확인 → 미부여 시 요청
-      if (!await notifService.hasPermission()) {
-        final granted = await notifService.requestPermission();
-        if (!granted && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Debug: 알림 권한이 필요합니다 🔒'),
-              duration: Duration(seconds: 2),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-          return;
-        }
-      }
-
-      await notifService.showTestNotification(_currentLang);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Debug: 테스트 알림 발송 완료 📡'),
-            duration: Duration(seconds: 1),
-            backgroundColor: Colors.blueGrey,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Debug: 알림 실패 — $e'),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    }
-  }
-
-  void _cycleDebugStatus() {
-    final current = _missionService.status;
-    DataStatus next;
-
-    if (current == DataStatus.online) {
-      next = DataStatus.offline;
-    } else if (current == DataStatus.offline) {
-      next = DataStatus.outdated;
-    } else if (current == DataStatus.outdated) {
-      next = DataStatus.refreshing;
-    } else {
-      next = DataStatus.online;
-    }
-
-    _missionService.debugSetStatus(next);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Debug: DataStatus → ${next.name.toUpperCase()}"),
-        duration: const Duration(seconds: 1),
-        backgroundColor: Colors.blueGrey,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final List<Widget> tabs = [
       LiveMissionsTab(
         lang: _currentLang,
         currentSeason: _currentSeason,
-        onSeasonChange: _onSeasonChange
+        onSeasonChange: _onSeasonChange,
       ),
       HighlightsTab(lang: _currentLang),
       DeepDivesTab(lang: _currentLang),
@@ -245,7 +126,15 @@ class _MainScreenState extends State<MainScreen> {
               centerTitle: true,
               leading: Padding(
                 padding: const EdgeInsets.only(left: 12.0),
-                child: AnimatedBosco(onLongPress: kDebugMode ? _showDebugMenu : null),
+                child: AnimatedBosco(
+                  onLongPress: kDebugMode
+                      ? () => showDebugMenu(
+                            context: context,
+                            currentLang: _currentLang,
+                            missionService: _missionService,
+                          )
+                      : null,
+                ),
               ),
               title: Text(
                 i18n[_currentLang]!['title']!,
@@ -327,7 +216,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildOfflineWarning() {
-    bool isOutdated = _missionService.status == DataStatus.outdated;
+    final isOutdated = _missionService.status == DataStatus.outdated;
 
     return Container(
       padding: const EdgeInsets.all(12),

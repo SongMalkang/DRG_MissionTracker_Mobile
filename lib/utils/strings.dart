@@ -89,7 +89,7 @@ const Map<String, Map<String, String>> i18n = {
     'Critical Weakness': '치명적 약점',
     'Golden Bugs': '황금 벌레',
     'Volatile Guts': '휘발성 내장',
-    'Blood Sugar': '혈당',
+    'Blood Sugar': '블러드 슈거',
     'Secret Secondary': '비밀 보조 목표',
     'ApocaBlooms': '아포카 꽃', // 데이터 키가 CamelCase로 올 때 대응
     'Shield Disruption': '보호막 없음',

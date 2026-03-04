@@ -3,6 +3,23 @@
 // key: pubspec.yaml의 version (예: '1.1.0')
 
 const Map<String, Map<String, String>> changelogData = {
+  '1.4.0': {
+    'KR': '• 코드 품질 개선: Lint 규칙 확장 및 버그 수정.\n'
+        '• 미션 리스트 성능 최적화 (캐싱 적용).\n'
+        '• 대형 파일 분해로 유지보수성 향상.\n'
+        '• 서비스 에러 핸들링 강화.\n'
+        '• 테스트 커버리지 대폭 확대 (84→109개).',
+    'EN': '• Code quality: expanded lint rules and bug fixes.\n'
+        '• Mission list performance optimization (caching).\n'
+        '• Large files decomposed for better maintainability.\n'
+        '• Improved service error handling.\n'
+        '• Test coverage expanded significantly (84→109).',
+    'CN': '• 代码质量改进：扩展 Lint 规则并修复 Bug。\n'
+        '• 任务列表性能优化（缓存）。\n'
+        '• 大文件拆分，提升可维护性。\n'
+        '• 增强服务错误处理。\n'
+        '• 测试覆盖率大幅提升（84→109）。',
+  },
   '1.3.0': {
     'KR':'• 밈, 미니게임 기능을 웹에서도 이용할 수 있습니다.\n'
         '• Play Store 출시 준비를 위한 안정성 개선.\n'

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'data/trivia_data.dart';
 import 'screens/splash_screen.dart';
 import 'services/strings_service.dart';
 
@@ -15,6 +16,10 @@ void main() async {
 
   // 번역 캐시 로드 (빠름) + 백그라운드 갱신 예약
   await StringsService().initialize();
+
+  // 트리비아 데이터 로드 (번들 JSON)
+  await loadTriviaData();
+
   runApp(const DRGMissionTrackerApp());
 }
 

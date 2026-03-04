@@ -17,6 +17,9 @@ import '../platform/home_widget_stub.dart'
 
 enum DataStatus { online, offline, outdated, refreshing }
 
+/// 디바이스 시계가 서버 시간과 5분 이상 차이 날 때 경고
+const int _clockDriftThresholdMinutes = 5;
+
 class MissionService {
   static final MissionService _instance = MissionService._internal();
   factory MissionService() => _instance;
@@ -29,6 +32,12 @@ class MissionService {
   DataStatus _status = DataStatus.offline;
   Timer? _refreshTimer;
 
+  /// 서버-디바이스 시간 차이 (분). null이면 측정되지 않은 상태.
+  int? _clockDriftMinutes;
+
+  /// 원시 JSON 데이터 (지연 파싱용, 초기 로드 후 나머지 파싱 완료 시 null)
+  Map<String, dynamic>? _rawJsonData;
+
   // ── Listeners ───────────────────────────────────────────────────────────
   final List<VoidCallback> _listeners = [];
 
@@ -37,6 +46,11 @@ class MissionService {
   List<String> get availableSeasons => _availableSeasons;
   bool get isInitialized => _isInitialized;
   DataStatus get status => _status;
+
+  /// 서버-디바이스 시간 차이가 임계값 이상인 경우 true
+  bool get hasClockDrift =>
+      _clockDriftMinutes != null &&
+      _clockDriftMinutes!.abs() >= _clockDriftThresholdMinutes;
 
   // ── Listener Management ─────────────────────────────────────────────────
   void addListener(VoidCallback listener) => _listeners.add(listener);
@@ -52,7 +66,7 @@ class MissionService {
   Future<void> initialize() async {
     if (_isInitialized) {
       // 이미 초기화됨: 백그라운드 갱신만 시도
-      _backgroundRefresh();
+      unawaited(_backgroundRefresh());
       return;
     }
 
@@ -80,7 +94,7 @@ class MissionService {
       }
 
       // Tier 3: GitHub Raw 비동기 fetch (논블로킹)
-      _backgroundRefresh();
+      unawaited(_backgroundRefresh());
 
       // 주기적 백그라운드 갱신 시작
       _startPeriodicRefresh();
@@ -100,6 +114,7 @@ class MissionService {
     try {
       final response = await _fetchWithRetry(AppConstants.missionDataUrl);
       _parseJson(response.body);
+      _checkClockDrift(response);
 
       // 캐시 저장
       await saveCacheString(AppConstants.cachedMissionFile, response.body);
@@ -110,7 +125,7 @@ class MissionService {
       _notifyListeners();
 
       // 홈 위젯 데이터 갱신
-      HomeWidgetService.updateWidget();
+      unawaited(HomeWidgetService.updateWidget());
     } catch (e) {
       debugPrint("Background refresh failed: $e");
       _status = previousStatus == DataStatus.refreshing
@@ -135,6 +150,18 @@ class MissionService {
     );
   }
 
+  /// 백그라운드 전환 시 타이머 정지
+  void pausePeriodicRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
+
+  /// 포그라운드 복귀 시 타이머 재개 + 즉시 갱신 시도
+  void resumePeriodicRefresh() {
+    _startPeriodicRefresh();
+    _backgroundRefresh();
+  }
+
   // ── Cache Timestamp ─────────────────────────────────────────────────────
   Future<void> _saveCacheTimestamp() async {
     final prefs = await SharedPreferences.getInstance();
@@ -144,13 +171,74 @@ class MissionService {
     );
   }
 
-  // ── JSON Parsing (압축 포맷) ────────────────────────────────────────────
+  // ── Clock Drift Detection ──────────────────────────────────────────────────
+  void _checkClockDrift(http.Response response) {
+    final dateHeader = response.headers['date'];
+    if (dateHeader == null) return;
+
+    try {
+      // HTTP date format: "Tue, 04 Mar 2026 12:00:00 GMT"
+      final serverTime = _parseHttpDate(dateHeader);
+      if (serverTime == null) return;
+      final localTime = DateTime.now().toUtc();
+      final diff = localTime.difference(serverTime).inMinutes;
+      _clockDriftMinutes = diff;
+      if (diff.abs() >= _clockDriftThresholdMinutes) {
+        debugPrint(
+          'Clock drift detected: device is ${diff}m '
+          '${diff > 0 ? "ahead of" : "behind"} server time',
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to parse server date header: $e');
+    }
+  }
+
+  static DateTime? _parseHttpDate(String dateStr) {
+    // RFC 7231: "Tue, 04 Mar 2026 12:00:00 GMT"
+    const months = {
+      'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+      'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12,
+    };
+    try {
+      final parts = dateStr.split(' ');
+      if (parts.length < 6) return null;
+      final day = int.parse(parts[1]);
+      final month = months[parts[2]];
+      if (month == null) return null;
+      final year = int.parse(parts[3]);
+      final timeParts = parts[4].split(':');
+      return DateTime.utc(
+        year, month, day,
+        int.parse(timeParts[0]),
+        int.parse(timeParts[1]),
+        int.parse(timeParts[2]),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── JSON Parsing (지연 파싱: 현재 시간대 우선) ──────────────────────────────
   void _parseJson(String jsonString) {
     final Map<String, dynamic> data = json.decode(jsonString);
-    Map<String, List<Mission>> tempMap = {};
-    Set<String> seasons = {};
 
-    data.forEach((key, value) {
+    final now = DateTime.now().toUtc();
+    final currentKey = getTimeKey(now);
+
+    // 현재 ±1 슬롯 (현재 + 다음 30분) 우선 파싱
+    final priorityKeys = <String>{
+      currentKey,
+      getTimeKey(now.subtract(const Duration(minutes: 30))),
+      getTimeKey(now.add(const Duration(minutes: 30))),
+    };
+
+    final Map<String, List<Mission>> tempMap = {};
+    final Set<String> seasons = {};
+
+    // 1단계: 우선 슬롯만 즉시 파싱
+    for (final key in priorityKeys) {
+      final value = data[key];
       if (value is List) {
         final missions = value.map((m) => Mission.fromJson(m)).toList();
         tempMap[key] = missions;
@@ -158,11 +246,41 @@ class MissionService {
           seasons.addAll(m.seasons);
         }
       }
-    });
+    }
 
     _allMissions = tempMap;
     _availableSeasons = seasons.toList()..sort();
     _checkDataValidity();
+
+    // 2단계: 나머지 슬롯은 마이크로태스크로 지연 파싱
+    _rawJsonData = data;
+    Future.microtask(() => _parseDeferredSlots(priorityKeys));
+  }
+
+  /// 우선 파싱된 슬롯 외 나머지를 백그라운드에서 파싱
+  void _parseDeferredSlots(Set<String> alreadyParsed) {
+    final data = _rawJsonData;
+    if (data == null) return;
+
+    final Set<String> seasons = {};
+    for (final s in _availableSeasons) {
+      seasons.add(s);
+    }
+
+    data.forEach((key, value) {
+      if (!alreadyParsed.contains(key) && value is List) {
+        final missions = value.map((m) => Mission.fromJson(m)).toList();
+        _allMissions[key] = missions;
+        for (var m in missions) {
+          seasons.addAll(m.seasons);
+        }
+      }
+    });
+
+    _availableSeasons = seasons.toList()..sort();
+    _rawJsonData = null; // 원시 데이터 해제
+    _checkDataValidity();
+    _notifyListeners();
   }
 
   // ── Data Validity Check ─────────────────────────────────────────────────
@@ -195,11 +313,11 @@ class MissionService {
 
   // ── Helpers ─────────────────────────────────────────────────────────────
   static String getTimeKey(DateTime utcTime) {
-    String y = utcTime.year.toString();
-    String m = utcTime.month.toString().padLeft(2, '0');
-    String d = utcTime.day.toString().padLeft(2, '0');
-    String h = utcTime.hour.toString().padLeft(2, '0');
-    String min = (utcTime.minute < 30 ? "00" : "30");
+    final y = utcTime.year.toString();
+    final m = utcTime.month.toString().padLeft(2, '0');
+    final d = utcTime.day.toString().padLeft(2, '0');
+    final h = utcTime.hour.toString().padLeft(2, '0');
+    final min = (utcTime.minute < 30 ? "00" : "30");
     return "$y-$m-${d}T$h:$min:00Z";
   }
 

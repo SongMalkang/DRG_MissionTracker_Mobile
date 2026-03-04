@@ -1,4 +1,19 @@
+import 'package:flutter/material.dart';
+
 class AssetHelper {
+  /// Image.asset의 errorBuilder에서 사용할 공통 fallback + debugPrint 경고
+  static Widget assetErrorBuilder(
+    BuildContext context,
+    Object error,
+    StackTrace? stackTrace, {
+    IconData fallbackIcon = Icons.help_outline,
+    Color fallbackColor = Colors.white24,
+    double size = 24,
+  }) {
+    debugPrint('Missing asset: $error');
+    return Icon(fallbackIcon, color: fallbackColor, size: size);
+  }
+
   static String _toSnakeCase(String text) {
     // CamelCase → snake_case 처리 (예: 'ApocaBlooms' → 'apoca_blooms')
     // 소문자 뒤에 대문자가 오면 사이에 '_' 삽입
@@ -27,7 +42,7 @@ class AssetHelper {
 
   static String getWarningIcon(String warning) {
     // warning is usually a comma separated string if multiple, but here we expect single key for icon
-    String key = warning.contains(',') ? warning.split(',')[0].trim() : warning;
+    final key = warning.contains(',') ? warning.split(',')[0].trim() : warning;
     return 'assets/icons/warnings/${_toSnakeCase(key)}.png';
   }
 

@@ -61,10 +61,10 @@
 - **Scout 단일 주인공** — 4클래스 선택 방식이 아님
 - DRG에서 가장 기동력이 높은 클래스로, 서바이버류의 회피 플레이와 잘 맞음
 - 그래플링 훅, 조명탄 등 Scout 고유 장비 활용
-- **인게임 디자인**: Pit Jaw Rescue 인트로의 `_ScoutPainter` 디자인을 그대로 계승
+- **인게임 디자인**: Pit Jaw Rescue 인트로의 `ScoutPainter` 디자인을 그대로 계승
   - 반원 헬멧 + 상단 헤드램프(발광 원) + 네모 몸통(`drawRect`) + 짧은 팔/다리 라인
   - 터미널 스타일 와이어프레임 유지, 피격 시 빨간색 전환 (`surprised` 상태와 동일)
-  - 참고: `lib/widgets/whack_a_mole_game.dart` — `_ScoutPainter` (line 1297~1375)
+  - 참고: `lib/widgets/whack_a_mole/painters/intro_painters.dart` — `ScoutPainter`
 
 ### 핵심 루프
 ```
@@ -292,10 +292,10 @@ Nitra 채굴 시퀀스:
 - **Pit Jaw**가 맵 곳곳에 **낮은 확률**로 숨어 있음
 - 플레이어가 **가까이 접근하면 공격** → 체력 감소
 - Pit Jaw와의 조우는 **순간적** (물려서 HP 감소 후 바로 해제)
-- **인게임 디자인**: Pit Jaw Rescue 인트로의 `_PitJawPainter` 디자인을 축소 적용
+- **인게임 디자인**: Pit Jaw Rescue 인트로의 `PitJawPainter` 디자인을 축소 적용
   - 기본 상태(은신): **V자 이빨(윗주둥이)만 지면 위로 노출** — 작은 사이즈로 렌더링
   - 공격 상태: 역삼각형 몸체가 지면 위로 올라오며 물기 연출
-  - 참고: `lib/widgets/whack_a_mole_game.dart` — `_PitJawPainter` (line 1225~1294)
+  - 참고: `lib/widgets/whack_a_mole/painters/intro_painters.dart` — `PitJawPainter`
 
 #### 가시성: 2단계 시스템 (불쾌하지 않은 설계)
 불쾌한 경험(보이지 않는 것에 당하는 느낌)을 방지하기 위해, **조명탄 없이도 어느 정도 관측 가능**.
@@ -592,4 +592,4 @@ MiniGameItem(
 - [Magic Survival](https://play.google.com/store/apps/details?id=com.vkslr.survival) — 장르 원조
 - [DRG Wiki - Enemies](https://deeprockgalactic.wiki.gg/wiki/Creatures) — 적 데이터
 - [DRG Wiki - Weapons](https://deeprockgalactic.wiki.gg/wiki/Equipment) — 무기 데이터
-- 기존 미니게임 구현: `lib/widgets/jet_boots_game.dart`, `lib/widgets/whack_a_mole_game.dart`
+- 기존 미니게임 구현: `lib/widgets/jet_boots/`, `lib/widgets/whack_a_mole/`, `lib/widgets/survivor_game/`

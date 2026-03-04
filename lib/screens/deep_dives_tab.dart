@@ -383,7 +383,7 @@ class _StageRow extends StatelessWidget {
               height: 30,
               child: Image.asset(
                 AssetHelper.getMissionIcon(stage.primary),
-                errorBuilder: (ctx, e, st) => Icon(
+                errorBuilder: (ctx, e, st) => const Icon(
                   Icons.assignment,
                   color: Colors.white24,
                   size: 24,
@@ -465,8 +465,8 @@ class _StageRow extends StatelessWidget {
                       ),
                       // 구분자
                       if (stage.warning != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 5),
                           child: Text(
                             '·',
                             style: TextStyle(
