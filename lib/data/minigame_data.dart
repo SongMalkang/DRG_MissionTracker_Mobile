@@ -34,6 +34,13 @@ const List<MiniGameItem> miniGameItems = [
     icon: Icons.pest_control,
   ),
   MiniGameItem(
+    id: 'survivor',
+    titleKey: 'minigame_survivor_title',
+    descriptionKey: 'minigame_survivor_desc',
+    isAvailable: true,
+    icon: Icons.shield,
+  ),
+  MiniGameItem(
     id: 'coming_soon',
     titleKey: 'minigame_coming_soon_title',
     descriptionKey: 'minigame_coming_soon_desc',

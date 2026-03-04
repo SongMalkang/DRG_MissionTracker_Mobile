@@ -7,6 +7,7 @@ import '../widgets/minigame_banner.dart';
 import '../widgets/minigame_list.dart';
 import '../widgets/jet_boots_game.dart';
 import '../widgets/whack_a_mole_game.dart';
+import '../widgets/survivor_game/survivor_game.dart';
 
 // ─── 서브 페이지 enum ───────────────────────────────────────────────────────
 
@@ -110,6 +111,12 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
       case 'whack_a_mole':
         return WhackAMoleGame(
           key: const ValueKey('whackAMoleGame'),
+          lang: widget.lang,
+          onBack: _goBackToList,
+        );
+      case 'survivor':
+        return SurvivorGame(
+          key: const ValueKey('survivorGame'),
           lang: widget.lang,
           onBack: _goBackToList,
         );
