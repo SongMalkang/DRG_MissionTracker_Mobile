@@ -1,6 +1,14 @@
-# Survivor 미니게임 기획서
+# Hoxxes Survival 미니게임 기획서
 
 > DRG Mission Tracker 앱의 미니게임 탭에 추가할 뱀파이어 서바이버 스타일 게임 기획.
+
+### 개발 진행 상태
+| Phase | 상태 | 내용 |
+|-------|------|------|
+| **Phase 1: Core Engine (MVP)** | **완료** | 게임 루프, 조이스틱, 적 스폰/AI, 자동공격, 충돌, HP, 레벨업, HUD, 리더보드 |
+| Phase 2: DRG 시스템 | 미착수 | 인트로, 장비 커스텀, Nitra 채굴, 필살기, 해금 |
+| Phase 3: 위험 & 보스 | 미착수 | Pit Jaw, 보스 컷씬, Bulk Detonator, Hazard Level |
+| Phase 4: Polish | 미착수 | SFX, 밸런스, 최적화, i18n, 조명탄 |
 
 ---
 
@@ -45,9 +53,9 @@
 ## 2. 게임 컨셉
 
 ### 제목안
-- **"Swarm Survival"** (군체 생존) — DRG의 Swarm 이벤트에서 착안
-- **"Hold the Line"** (방어선 사수)
-- **"Bug Hunt"** (벌레 사냥)
+- ~~"Swarm Survival"~~ → **"Hoxxes Survival"** (확정) — DRG의 행성 Hoxxes에서 착안
+- ~~"Hold the Line"~~
+- ~~"Bug Hunt"~~
 
 ### 주인공: Scout (스카웃)
 - **Scout 단일 주인공** — 4클래스 선택 방식이 아님
@@ -182,11 +190,11 @@
 | 3차 | DRAK-25 Plasma Carbine (플라즈마) | 보스 처치 or 누적 2000킬 |
 
 #### Secondary 무기 목록 (인게임 레벨업 시 랜덤 등장)
-| Secondary | 특성 |
-|-----------|------|
-| Jury-Rigged Boomstick (산탄총) | 근거리 광역, 넉백 |
-| Zhukov NUK17 (듀얼 SMG) | 고속 연사, 다수 타격 |
-| Nishanka Boltshark X-80 (석궁) | 관통, 고데미지 단발 |
+| Secondary | 특성 | 스탯 |
+|-----------|------|------|
+| Jury-Rigged Boomstick (산탄총) | 근거리 광역 산탄, 강력하지만 느림 | DMG 25, FR 0.4, 7발 산탄, spread 0.7 |
+| Zhukov NUK17 (듀얼 SMG) | 고속 연사, 낮은 정확도 | DMG 6, FR 8.0, 2발 동시, spread 0.35 |
+| Nishanka Boltshark X-80 (석궁) | 관통, 고데미지 단발 | DMG 70, FR 0.8, 관통 |
 
 > Secondary는 레벨업 선택지에서 무작위로 제시됨 (Overclock과 동일 풀).
 > Primary 선택 + Secondary 랜덤 조합 = 매 판 다른 빌드 경험.
@@ -350,22 +358,21 @@ Pit Jaw 가시성 비교:
 
 밸런싱의 기준점이 되는 난이도 곡선 테이블. Hazard 레벨에 따라 배율 적용.
 
-#### 웨이브별 적 스폰 테이블
+#### 웨이브별 적 스폰 테이블 (v2 — 압축 난이도, 25초/웨이브)
 | 웨이브 | 시간 (초) | Grunt 수 | Grunt HP | Grunt 속도 | 특수 적 | 비고 |
 |--------|-----------|----------|----------|------------|---------|------|
-| 1 | 0~30 | 8 | 30 | 1.0x | - | 적응 구간 |
-| 2 | 30~60 | 12 | 30 | 1.0x | - | |
-| 3 | 60~90 | 16 | 35 | 1.1x | Swarmer x3 | 소형 적 등장 |
-| 4 | 90~120 | 20 | 40 | 1.1x | Swarmer x5 | |
-| **5** | **120~150** | **24** | **45** | **1.2x** | **Praetorian x1** | **첫 보스** |
-| 6 | 150~180 | 20 | 50 | 1.2x | Guard x2 | 보스 후 소강 |
-| 7 | 180~210 | 28 | 55 | 1.3x | Swarmer x8 | |
-| 8 | 210~240 | 32 | 60 | 1.3x | Guard x3 | |
-| 9 | 240~270 | 36 | 65 | 1.4x | Swarmer x10, Guard x2 | 고밀도 구간 |
-| **10** | **270~300** | **40** | **70** | **1.4x** | **Oppressor x1** | **두 번째 보스** |
-| 11~14 | 300~420 | 40~55 | 75~90 | 1.5x | 혼합 | 후반 러시 |
-| **15** | **420~450** | **60** | **100** | **1.6x** | **Dreadnought x1** | **최종 보스** |
+| 1 | 0~25 | 20 | 40 | 1.1x | Swarmer x5 | 즉시 전투 시작 |
+| 2 | 25~50 | 24 | 45 | 1.2x | Guard x2, Swarmer x4 | Guard 등장 |
+| **3** | **50~75** | **28** | **50** | **1.2x** | **Praetorian x1**, Swarmer x6 | **첫 보스** |
+| 4 | 75~100 | 24 | 55 | 1.3x | Guard x3 | 보스 후 소강 |
+| 5 | 100~125 | 32 | 60 | 1.3x | Swarmer x10, Guard x2 | 고밀도 |
+| **6** | **125~150** | **36** | **65** | **1.4x** | **Oppressor x1**, Guard x2 | **두 번째 보스** |
+| 7 | 150~175 | 40 | 70 | 1.4x | Swarmer x14, Guard x3 | Swarm 러시 |
+| 8 | 175~200 | 44 | 80 | 1.5x | Guard x4, Praetorian x1 | 복합 엘리트 |
+| 9 | 200~225 | 50 | 90 | 1.5x | Guard x5, Swarmer x12 | 최종 에스컬레이션 |
+| **10** | **225~250** | **55** | **100** | **1.6x** | **Dreadnought x1**, Guard x3 | **최종 보스** |
 
+> 웨이브 10 이후 무한 스케일링 (x0.12/웨이브).
 > **Bulk Detonator**: 웨이브 8 이후 각 웨이브에서 5% 확률로 랜덤 스폰.
 
 #### Hazard 배율
@@ -505,15 +512,15 @@ MiniGameItem(
 ### strings.dart i18n 추가
 ```dart
 // KR
-'minigame_survivor_title': 'SWARM SURVIVAL',
+'minigame_survivor_title': 'HOXXES SURVIVAL',
 'minigame_survivor_desc': 'Glyphid 군체에서 살아남아라!',
 
 // EN
-'minigame_survivor_title': 'SWARM SURVIVAL',
+'minigame_survivor_title': 'HOXXES SURVIVAL',
 'minigame_survivor_desc': 'Survive the Glyphid swarm!',
 
 // ZH
-'minigame_survivor_title': 'SWARM SURVIVAL',
+'minigame_survivor_title': 'HOXXES SURVIVAL',
 'minigame_survivor_desc': '从Glyphid虫群中生存下来！',
 ```
 
@@ -525,15 +532,19 @@ MiniGameItem(
 
 ## 7. 개발 로드맵
 
-### Phase 1: Core Engine (MVP)
-- [ ] 게임 루프 & 렌더링 엔진 (CustomPainter + Ticker)
-- [ ] Scout 플레이어 이동 (가상 조이스틱)
-- [ ] 기본 적 (Glyphid Grunt) 스폰 & AI (플레이어를 향해 이동)
-- [ ] 기본 자동 공격 (Deepcore GK2 — 기본 무기 1개)
-- [ ] 충돌 감지 & 데미지
-- [ ] HP 시스템 & 게임 오버 화면
-- [ ] 경험치 드롭 & 레벨업 (3개 선택지)
-- [ ] HUD (HP, 타이머, 킬 카운트, 레벨)
+### Phase 1: Core Engine (MVP) — **완료**
+- [x] 게임 루프 & 렌더링 엔진 (CustomPainter + AnimationController)
+- [x] Scout 플레이어 이동 (가상 조이스틱 + 플릭 대시)
+- [x] 기본 적 (Glyphid Grunt, Swarmer, Guard) 스폰 & AI
+- [x] 기본 자동 공격 (Deepcore GK2 + Secondary 무기 인게임 획득)
+- [x] 충돌 감지 & 데미지 (AABB, 전면 장갑, 관통)
+- [x] HP 시스템 & 게임 오버 화면 (순차 리빌 + 리더보드)
+- [x] 경험치 드롭 & 레벨업 (7종 스탯업 + Secondary 무기 3종)
+- [x] HUD (HP바, XP바, 타이머, 웨이브, 킬 카운트, 레벨)
+- [x] 보스 등장 (Praetorian W3, Oppressor W6, Dreadnought W10)
+- [x] CRT 터미널 스타일 렌더링 (그리드, 스캔라인)
+- [x] 카메라 시스템 (플레이어 중심 추적)
+- [x] 디버그 오버레이 (타이틀 더블탭 토글)
 
 ### Phase 2: DRG 시스템
 - [ ] 인트로 씬 (이미지 에셋 기반)
