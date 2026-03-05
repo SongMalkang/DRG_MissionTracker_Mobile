@@ -1,6 +1,9 @@
 // ── 게임 페이즈 ──
 enum GamePhase { intro, ready, playing, gameOver }
 
+// ── 몰 타입 (4-1: 디코이/나이트라, 4-2: 골든) ──
+enum MoleType { normal, decoy, golden }
+
 // ── 구멍 데이터 ──
 class MoleHole {
   bool isActive = false;
@@ -18,6 +21,21 @@ class MoleHole {
   // "RESCUED!" 텍스트 떠오르기
   double textFloatProgress = 0.0;
 
+  // ── 몰 타입 ──
+  MoleType moleType = MoleType.normal;
+
+  // ── 멀티탭 강화 몰 ──
+  int hitsRequired = 1;
+  int hitsTaken = 0;
+
+  // ── 등장 예고 (개미지옥) ──
+  double warningTimer = 0.0; // >0이면 예고 중 (흔들림), 0이면 팝업 시작
+  double warningDuration = 0.0; // 원래 예고 시간
+
+  // ── 스냅 애니메이션 (타임아웃 시 턱이 닫힘) ──
+  double snapProgress = 0.0; // 0=시작, 1=완료
+  bool isSnapping = false;
+
   void reset() {
     isActive = false;
     popProgress = 0.0;
@@ -29,5 +47,12 @@ class MoleHole {
     hitFlashProgress = 0.0;
     rescueAnimProgress = 0.0;
     textFloatProgress = 0.0;
+    moleType = MoleType.normal;
+    hitsRequired = 1;
+    hitsTaken = 0;
+    warningTimer = 0.0;
+    warningDuration = 0.0;
+    snapProgress = 0.0;
+    isSnapping = false;
   }
 }

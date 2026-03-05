@@ -63,7 +63,14 @@
       "Bash(flutter build web --release --pwa-strategy=none --base-href \"/\")",
       "Bash(MSYS_NO_PATHCONV=1 flutter build web --release --pwa-strategy=none --base-href \"/\")",
       "Bash(flutter analyze)",
-      "Bash(flutter analyze lib/widgets/whack_a_mole_game.dart)"
+      "Bash(flutter analyze lib/widgets/whack_a_mole_game.dart)",
+      "Bash(flutter config --list)",
+      "Bash(flutter pub get --dry-run)",
+      "Bash(flutter doctor -v)",
+      "mcp__filesystem__list_directory",
+      "Bash(python3 -c \"import json; data = json.load\\(open\\(''data/deep_dive.json''\\)\\); print\\(''Deep Dives keys:'', list\\(data.get\\(''Deep Dives'', {}\\).keys\\(\\)\\)\\)\")",
+      "Bash(python3:*)",
+      "Bash(gh run list --workflow=update_data.yml --limit 10)"
     ]
   }
 }

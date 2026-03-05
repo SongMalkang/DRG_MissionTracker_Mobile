@@ -24,6 +24,18 @@ class Enemy {
   double attackCooldown = 0;
   static const double attackInterval = 0.5;
 
+  // Boss ability fields
+  double poisonAuraRadius = 0;
+  double poisonDps = 0;
+  double slamCooldown = 0;
+  double slamCooldownMax = 4.0;
+  double slamRange = 40;
+  double slamForce = 300;
+  int phase = 1;
+  double shootCooldown = 0;
+  bool wantsToShoot = false;
+  bool explodeOnDeath = false;
+
   Enemy({
     required this.x,
     required this.y,
@@ -40,7 +52,7 @@ class Enemy {
 
   factory Enemy.fromData(EnemyData data, double x, double y,
       {double hpMultiplier = 1.0, double speedMultiplier = 1.0}) {
-    return Enemy(
+    final enemy = Enemy(
       x: x,
       y: y,
       type: data.type,
@@ -53,12 +65,46 @@ class Enemy {
       xpDrop: data.xpDrop,
       goldDrop: data.goldDrop,
     );
+    // Boss-specific ability init
+    switch (data.type) {
+      case EnemyType.praetorian:
+        enemy.poisonAuraRadius = 60;
+        enemy.poisonDps = 3;
+      case EnemyType.oppressor:
+        enemy.slamCooldown = 2.0; // initial delay before first slam
+      case EnemyType.dreadnought:
+        enemy.phase = 1;
+        enemy.shootCooldown = 2.0;
+      case EnemyType.bulkDetonator:
+        enemy.explodeOnDeath = true;
+      default:
+        break;
+    }
+    return enemy;
   }
 
   void update(double dt, double playerX, double playerY) {
     if (isDead) return;
     if (hitFlashTimer > 0) hitFlashTimer -= dt;
     if (attackCooldown > 0) attackCooldown -= dt;
+
+    // Boss ability timers
+    if (slamCooldown > 0) slamCooldown -= dt;
+
+    // Dreadnought phase transition: HP <= 50% → phase 2
+    if (type == EnemyType.dreadnought && phase == 1 && hp <= maxHp * 0.5) {
+      phase = 2;
+      speed *= 1.5;
+    }
+
+    // Dreadnought phase 2: shoot cooldown
+    if (type == EnemyType.dreadnought && phase == 2) {
+      shootCooldown -= dt;
+      if (shootCooldown <= 0) {
+        wantsToShoot = true;
+        shootCooldown = 2.0;
+      }
+    }
 
     // Move toward player
     final dx = playerX - x;

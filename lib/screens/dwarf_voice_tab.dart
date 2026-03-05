@@ -53,10 +53,23 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
   Future<void> _playRandomSound(ShoutItem item) async {
     if (item.sounds.isEmpty) return;
     final index = _random.nextInt(item.sounds.length);
-    await _audioPlayer.stop();
-    await _audioPlayer.play(
-      AssetSource(item.sounds[index].replaceFirst('assets/', '')),
-    );
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(
+        AssetSource(item.sounds[index].replaceFirst('assets/', '')),
+      );
+    } catch (e) {
+      debugPrint('Audio playback failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Audio playback failed'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
   }
 
   void _navigateTo(_DwarfPage page) {
@@ -68,7 +81,18 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSwitcher(
+    return PopScope(
+      canPop: _dwarfPage == _DwarfPage.shouts,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          if (_dwarfPage == _DwarfPage.miniGame) {
+            _navigateTo(_DwarfPage.miniGameList);
+          } else if (_dwarfPage == _DwarfPage.miniGameList) {
+            _navigateTo(_DwarfPage.shouts);
+          }
+        }
+      },
+      child: AnimatedSwitcher(
       duration: const Duration(milliseconds: 250),
       transitionBuilder: (child, animation) {
         final offset = _isForward
@@ -82,6 +106,7 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
         );
       },
       child: _buildCurrentPage(),
+    ),
     );
   }
 

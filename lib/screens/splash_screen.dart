@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'main_screen.dart';
+import '../utils/constants.dart';
 import '../services/mission_service.dart';
 import '../services/deep_dive_service.dart';
 
@@ -58,18 +59,23 @@ class _CustomSplashScreenState extends State<CustomSplashScreen> with TickerProv
     // 데이터 프리로딩 (병렬 실행)
     _preloadData();
 
-    // 최소 애니메이션 시간 보장 (2.5초)
-    Timer(const Duration(milliseconds: 2500), () {
+    // 최소 애니메이션 시간 보장
+    Timer(const Duration(milliseconds: AppConstants.splashMinDurationMs), () {
       _animationDone = true;
       _tryNavigate();
     });
   }
 
   Future<void> _preloadData() async {
-    await Future.wait([
-      MissionService().initialize(),
-      DeepDiveService().loadDeepDives(),
-    ]);
+    try {
+      await Future.wait([
+        MissionService().initialize(),
+        DeepDiveService().loadDeepDives(),
+      ]);
+    } catch (e) {
+      // 초기화 실패해도 앱 진입 허용 (캐시/오프라인 모드로 동작)
+      debugPrint('Splash preload error: $e');
+    }
     _dataDone = true;
     _tryNavigate();
   }

@@ -97,6 +97,18 @@ const List<String> bulkDetonatorPulseSprite = [
   ' ╚╦══╦╝ ',
 ];
 
+// ═══════════════ ENVIRONMENT ═══════════════
+
+const List<String> pitJawRevealedSprite = [
+  '\\▼▼/',
+  ' ▓▓ ',
+  '/▲▲\\',
+];
+
+const List<String> pitJawHiddenSprite = [
+  ' · ',
+];
+
 /// Get ASCII sprite for an enemy type
 List<String> getEnemySprite(EnemyType type, {bool pulse = false}) {
   switch (type) {

@@ -1,3 +1,31 @@
+class HazardConfig {
+  final int level;
+  final String name;
+  final double hpMultiplier;
+  final double speedMultiplier;
+  final double spawnMultiplier;
+  final double playerDamageMultiplier;
+  final double scoreMultiplier;
+
+  const HazardConfig({
+    required this.level,
+    required this.name,
+    required this.hpMultiplier,
+    required this.speedMultiplier,
+    required this.spawnMultiplier,
+    required this.playerDamageMultiplier,
+    required this.scoreMultiplier,
+  });
+}
+
+const List<HazardConfig> hazardLevels = [
+  HazardConfig(level: 1, name: 'Low Risk', hpMultiplier: 0.6, speedMultiplier: 0.8, spawnMultiplier: 0.7, playerDamageMultiplier: 0.7, scoreMultiplier: 0.5),
+  HazardConfig(level: 2, name: 'Moderate', hpMultiplier: 0.8, speedMultiplier: 0.9, spawnMultiplier: 0.85, playerDamageMultiplier: 0.85, scoreMultiplier: 0.75),
+  HazardConfig(level: 3, name: 'Dangerous', hpMultiplier: 1.0, speedMultiplier: 1.0, spawnMultiplier: 1.0, playerDamageMultiplier: 1.0, scoreMultiplier: 1.0),
+  HazardConfig(level: 4, name: 'Extreme', hpMultiplier: 1.3, speedMultiplier: 1.15, spawnMultiplier: 1.25, playerDamageMultiplier: 1.3, scoreMultiplier: 1.5),
+  HazardConfig(level: 5, name: 'Lethal', hpMultiplier: 1.7, speedMultiplier: 1.3, spawnMultiplier: 1.5, playerDamageMultiplier: 1.6, scoreMultiplier: 2.0),
+];
+
 enum EnemyType { grunt, swarmer, guard, praetorian, oppressor, dreadnought, bulkDetonator }
 
 class EnemyData {

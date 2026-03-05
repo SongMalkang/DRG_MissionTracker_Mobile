@@ -41,12 +41,94 @@ class DamageNumber {
   DamageNumber(this.x, this.y, this.damage, {this.isCrit = false}) : timer = 0.6;
 }
 
+class PitJaw {
+  double x, y;
+  double detectRadius;
+  double damageRadius;
+  double damage;
+  bool revealed = false;
+  double revealTimer = 0;
+  double attackCooldown = 0;
+
+  // ── 예고(warning) 페이즈 ──
+  double warningTimer = 0; // >0이면 예고 중 (흔들림)
+  double warningDuration = 0;
+  bool warningTriggered = false; // 한 번만 예고
+
+  // ── 스냅 애니메이션 ──
+  bool isSnapping = false;
+  double snapProgress = 0; // 0~1
+  double snapStunTimer = 0; // >0이면 플레이어 스턴 중
+
+  // ── 데미지 너프: 스냅 카운트 ──
+  int snapCount = 0; // 2번째마다 실제 데미지
+
+  PitJaw({
+    required this.x,
+    required this.y,
+    this.detectRadius = 80,
+    this.damageRadius = 25,
+    this.damage = 20,
+  });
+}
+
+class NitraNode {
+  double x, y;
+  double nitraRemaining;
+  double maxNitra;
+  double mineRadius;
+  bool depleted = false;
+  NitraNode({
+    required this.x,
+    required this.y,
+    this.nitraRemaining = 15,
+    this.mineRadius = 30,
+  }) : maxNitra = nitraRemaining;
+}
+
+class RedSugarNode {
+  double x, y;
+  double healAmount;
+  bool consumed = false;
+  double collectRadius;
+  RedSugarNode({
+    required this.x,
+    required this.y,
+    this.healAmount = 30,
+    this.collectRadius = 20,
+  });
+}
+
+class PendingExplosion {
+  double x, y;
+  double radius;
+  double damage;
+  double delay;
+  double maxDelay;
+  bool damagesPlayer;
+  bool triggered = false;
+  PendingExplosion({
+    required this.x,
+    required this.y,
+    required this.radius,
+    required this.damage,
+    required this.delay,
+    this.damagesPlayer = true,
+  }) : maxDelay = delay;
+}
+
 class GameEngine {
   final Player player;
   final List<Enemy> enemies = [];
   final List<Projectile> projectiles = [];
   final List<Pickup> pickups = [];
   final List<DamageNumber> damageNumbers = [];
+  final List<PendingExplosion> pendingExplosions = [];
+  final List<NitraNode> nitraNodes = [];
+  final List<PitJaw> pitJaws = [];
+  final List<RedSugarNode> redSugarNodes = [];
+  double nitra = 0;
+  double _scannerTimer = 10;
   final Random _rng = Random();
 
   GamePhase phase = GamePhase.playing;
@@ -73,8 +155,12 @@ class GameEngine {
   // Burst fire queue (for weapons like double-barrel Boomstick)
   final List<_BurstEntry> _burstQueue = [];
 
-  GameEngine({WeaponId primaryWeapon = WeaponId.gk2})
-      : player = Player(primaryWeapon: primaryWeapon) {
+  // Hazard difficulty
+  final HazardConfig hazard;
+
+  GameEngine({WeaponId primaryWeapon = WeaponId.gk2, HazardConfig? hazard})
+      : player = Player(primaryWeapon: primaryWeapon),
+        hazard = hazard ?? hazardLevels[2] {
     _startNextWave();
   }
 
@@ -96,7 +182,10 @@ class GameEngine {
 
     // Update player
     player.update(dt);
-    player.move(joystickX, joystickY, dt);
+    // 스냅 스턴 중이면 이동 차단
+    if (!isPlayerSnapped) {
+      player.move(joystickX, joystickY, dt);
+    }
 
     // Auto-fire weapons
     _fireWeapons();
@@ -107,12 +196,19 @@ class GameEngine {
 
     // Update entities
     _updateEnemies(dt);
+    _updateBossAbilities(dt);
     _updateProjectiles(dt);
     _updatePickups(dt);
     _updateDamageNumbers(dt);
+    _updateNitraNodes(dt);
+    _updatePitJaws(dt);
+    _updateRedSugar(dt);
+    _updateScanner(dt);
+    _updateExplosions(dt);
 
     // Check collisions
     _checkProjectileEnemyCollisions();
+    _checkEnemyProjectilePlayerCollisions();
     _checkEnemyPlayerCollisions();
 
     // Clean up dead entities
@@ -129,10 +225,44 @@ class GameEngine {
     waveTimer = 0;
 
     final config = _getWaveConfig(wave);
-    _enemiesToSpawnThisWave = config.gruntCount;
+    _enemiesToSpawnThisWave = (config.gruntCount * hazard.spawnMultiplier).round();
     _enemiesSpawnedThisWave = 0;
     _specialsToSpawn = List.from(config.specials);
     _spawnTimer = 0;
+
+    // Spawn Pit Jaws (wave 3+)
+    if (wave >= 3) {
+      final jawCount = 1 + _rng.nextInt(3);
+      for (int i = 0; i < jawCount; i++) {
+        final angle = _rng.nextDouble() * 2 * pi;
+        final dist = 100 + _rng.nextDouble() * 200;
+        pitJaws.add(PitJaw(
+          x: player.x + cos(angle) * dist,
+          y: player.y + sin(angle) * dist,
+        ));
+      }
+    }
+
+    // Spawn Red Sugar (낮은 확률: ~20% per wave)
+    if (_rng.nextDouble() < 0.2) {
+      final angle = _rng.nextDouble() * 2 * pi;
+      final dist = 80 + _rng.nextDouble() * 180;
+      redSugarNodes.add(RedSugarNode(
+        x: player.x + cos(angle) * dist,
+        y: player.y + sin(angle) * dist,
+      ));
+    }
+
+    // Spawn 2~4 Nitra nodes per wave
+    final nitraCount = 2 + _rng.nextInt(3);
+    for (int i = 0; i < nitraCount; i++) {
+      final angle = _rng.nextDouble() * 2 * pi;
+      final dist = 100 + _rng.nextDouble() * 200;
+      nitraNodes.add(NitraNode(
+        x: player.x + cos(angle) * dist,
+        y: player.y + sin(angle) * dist,
+      ));
+    }
   }
 
   WaveConfig _getWaveConfig(int w) {
@@ -166,8 +296,8 @@ class GameEngine {
       final pos = _randomSpawnPosition();
       final gruntData = enemyDataTable[EnemyType.grunt]!;
       final enemy = Enemy.fromData(gruntData, pos.x, pos.y,
-          hpMultiplier: config.gruntHp / 30.0,
-          speedMultiplier: config.speedMultiplier);
+          hpMultiplier: config.gruntHp / 30.0 * hazard.hpMultiplier,
+          speedMultiplier: config.speedMultiplier * hazard.speedMultiplier);
       enemies.add(enemy);
     }
 
@@ -178,7 +308,8 @@ class GameEngine {
         for (int i = 0; i < entry.count; i++) {
           final pos = _randomSpawnPosition();
           enemies.add(Enemy.fromData(data, pos.x, pos.y,
-              speedMultiplier: config.speedMultiplier));
+              hpMultiplier: hazard.hpMultiplier,
+              speedMultiplier: config.speedMultiplier * hazard.speedMultiplier));
         }
       }
       _specialsToSpawn.clear();
@@ -363,6 +494,10 @@ class GameEngine {
             }
           case PickupType.gold:
             score += p.value;
+          case PickupType.nitra:
+            nitra += p.value;
+          case PickupType.redSugar:
+            player.heal(p.value);
         }
       }
     }
@@ -420,9 +555,276 @@ class GameEngine {
       final dist = sqrt(dx * dx + dy * dy);
 
       if (dist < e.radius + 12) {
-        player.takeDamage(e.damage);
+        player.takeDamage(e.damage * hazard.playerDamageMultiplier);
         e.onAttack();
         break;
+      }
+    }
+  }
+
+  void _updatePitJaws(double dt) {
+    for (final jaw in pitJaws) {
+      final dx = player.x - jaw.x;
+      final dy = player.y - jaw.y;
+      final distSq = dx * dx + dy * dy;
+
+      // ── 스냅 스턴 처리 (플레이어 이동불가) ──
+      if (jaw.snapStunTimer > 0) {
+        jaw.snapStunTimer -= dt;
+        if (jaw.snapStunTimer <= 0) {
+          jaw.snapStunTimer = 0;
+        }
+      }
+
+      // ── 스냅 애니메이션 진행 ──
+      if (jaw.isSnapping) {
+        jaw.snapProgress = (jaw.snapProgress + dt * 3.5).clamp(0.0, 1.0);
+        if (jaw.snapProgress >= 1.0) {
+          // 스냅 완료 → 플레이어를 핏죠 중심으로 끌어당김 + 스턴
+          jaw.isSnapping = false;
+          jaw.snapCount++;
+          jaw.snapStunTimer = 1.0; // 1초 이동불가
+          jaw.attackCooldown = 3.0; // 재공격 쿨다운
+
+          // 플레이어를 핏죠 한가운데로 강제 이동 (물림 연출)
+          player.x = jaw.x;
+          player.y = jaw.y;
+
+          // 데미지 너프: 2번째 스냅마다만 실제 데미지
+          if (jaw.snapCount % 2 == 0 && !player.isInvincible) {
+            player.takeDamage(jaw.damage);
+          }
+        }
+        continue;
+      }
+
+      // ── 예고(warning) 페이즈 ──
+      if (jaw.warningTimer > 0) {
+        jaw.warningTimer -= dt;
+        if (jaw.warningTimer <= 0) {
+          // 예고 종료 → 스냅 시작!
+          jaw.warningTimer = 0;
+          jaw.isSnapping = true;
+          jaw.snapProgress = 0;
+          jaw.revealed = true;
+          jaw.revealTimer = 15.0;
+        }
+        continue;
+      }
+
+      // Proximity detection: reveal if player within detect radius
+      if (distSq < jaw.detectRadius * jaw.detectRadius && !jaw.revealed) {
+        jaw.revealed = true;
+        jaw.revealTimer = 15.0;
+      }
+
+      // Reveal countdown
+      if (jaw.revealed) {
+        jaw.revealTimer -= dt;
+        if (jaw.revealTimer <= 0) {
+          jaw.revealed = false;
+        }
+      }
+
+      // Attack cooldown
+      if (jaw.attackCooldown > 0) jaw.attackCooldown -= dt;
+
+      // ── 감지 반경 내 진입 → 예고 시작 (즉시 데미지 X) ──
+      if (distSq < jaw.damageRadius * jaw.damageRadius &&
+          jaw.attackCooldown <= 0 &&
+          !jaw.warningTriggered &&
+          !player.isInvincible) {
+        jaw.warningTriggered = true;
+        jaw.warningTimer = 0.6; // 0.6초 예고
+        jaw.warningDuration = 0.6;
+        jaw.revealed = true;
+        jaw.revealTimer = 15.0;
+      }
+
+      // 플레이어가 멀어지면 예고 리셋 (다음에 다시 트리거 가능)
+      if (distSq > jaw.detectRadius * jaw.detectRadius) {
+        jaw.warningTriggered = false;
+      }
+    }
+  }
+
+  /// 현재 스냅 스턴 상태인 핏죠가 있는지 (플레이어 이동 차단용)
+  bool get isPlayerSnapped {
+    for (final jaw in pitJaws) {
+      if (jaw.snapStunTimer > 0) return true;
+    }
+    return false;
+  }
+
+  /// 현재 예고 중인 핏죠가 있는지 (경고 표시용)
+  bool get isPitJawWarning {
+    for (final jaw in pitJaws) {
+      if (jaw.warningTimer > 0) return true;
+    }
+    return false;
+  }
+
+  void _updateScanner(double dt) {
+    _scannerTimer -= dt;
+    if (_scannerTimer <= 0) {
+      _scannerTimer = 10.0;
+      // Reveal pit jaws within 200 range of player
+      for (final jaw in pitJaws) {
+        final dx = player.x - jaw.x;
+        final dy = player.y - jaw.y;
+        if (dx * dx + dy * dy < 200 * 200) {
+          jaw.revealed = true;
+          jaw.revealTimer = 8.0;
+        }
+      }
+    }
+  }
+
+  void _updateNitraNodes(double dt) {
+    for (final node in nitraNodes) {
+      if (node.depleted) continue;
+      final dx = player.x - node.x;
+      final dy = player.y - node.y;
+      if (dx * dx + dy * dy < node.mineRadius * node.mineRadius) {
+        final mined = 8.0 * dt;
+        if (node.nitraRemaining <= mined) {
+          nitra += node.nitraRemaining;
+          node.nitraRemaining = 0;
+          node.depleted = true;
+        } else {
+          node.nitraRemaining -= mined;
+          nitra += mined;
+        }
+      }
+    }
+    nitraNodes.removeWhere((n) => n.depleted);
+  }
+
+  void _updateRedSugar(double dt) {
+    for (final node in redSugarNodes) {
+      if (node.consumed) continue;
+      final dx = player.x - node.x;
+      final dy = player.y - node.y;
+      if (dx * dx + dy * dy < node.collectRadius * node.collectRadius) {
+        node.consumed = true;
+        player.heal(node.healAmount);
+      }
+    }
+    redSugarNodes.removeWhere((n) => n.consumed);
+  }
+
+  void throwGrenade() {
+    if (nitra < 40) return;
+    nitra -= 40;
+    final target = _findNearestEnemy();
+    if (target == null) return;
+    pendingExplosions.add(PendingExplosion(
+      x: target.x,
+      y: target.y,
+      radius: 70,
+      damage: 60,
+      delay: 0.5,
+      damagesPlayer: false,
+    ));
+  }
+
+  void throwSuperGrenade() {
+    if (nitra < 80) return;
+    nitra -= 80;
+    final target = _findNearestEnemy();
+    if (target == null) return;
+    pendingExplosions.add(PendingExplosion(
+      x: target.x,
+      y: target.y,
+      radius: 120,
+      damage: 120,
+      delay: 0.8,
+      damagesPlayer: false,
+    ));
+  }
+
+  void _updateBossAbilities(double dt) {
+    for (final e in enemies) {
+      if (e.isDead) continue;
+
+      final dx = player.x - e.x;
+      final dy = player.y - e.y;
+      final dist = sqrt(dx * dx + dy * dy);
+
+      // Praetorian: Poison Aura — 3 DPS within radius 60
+      if (e.type == EnemyType.praetorian && e.poisonAuraRadius > 0) {
+        if (dist < e.poisonAuraRadius && !player.isInvincible) {
+          player.takeDamage(e.poisonDps * dt);
+        }
+      }
+
+      // Oppressor: Knockback Slam — 4s cooldown, range 40
+      if (e.type == EnemyType.oppressor && e.slamCooldown <= 0) {
+        if (dist < e.slamRange) {
+          player.applyKnockback(dx, dy, e.slamForce);
+          e.slamCooldown = e.slamCooldownMax;
+        }
+      }
+
+      // Dreadnought: Phase 2 projectile — fires toward player
+      if (e.type == EnemyType.dreadnought && e.wantsToShoot) {
+        e.wantsToShoot = false;
+        if (dist > 1) {
+          final nx = dx / dist;
+          final ny = dy / dist;
+          projectiles.add(Projectile(
+            x: e.x,
+            y: e.y,
+            vx: nx * 200,
+            vy: ny * 200,
+            damage: 25,
+            lifetime: 3.0,
+            angle: atan2(ny, nx),
+            isEnemyProjectile: true,
+          ));
+        }
+      }
+    }
+  }
+
+  void _updateExplosions(double dt) {
+    for (final exp in pendingExplosions) {
+      if (exp.triggered) continue;
+      exp.delay -= dt;
+      if (exp.delay <= 0) {
+        exp.triggered = true;
+        // Damage enemies in range
+        for (final e in enemies) {
+          if (e.isDead) continue;
+          final dx = e.x - exp.x;
+          final dy = e.y - exp.y;
+          if (dx * dx + dy * dy < exp.radius * exp.radius) {
+            e.takeDamage(exp.damage);
+            if (e.isDead) _onEnemyKilled(e);
+          }
+        }
+        // Damage player if applicable
+        if (exp.damagesPlayer && !player.isInvincible) {
+          final dx = player.x - exp.x;
+          final dy = player.y - exp.y;
+          if (dx * dx + dy * dy < exp.radius * exp.radius) {
+            player.takeDamage(exp.damage);
+          }
+        }
+      }
+    }
+    pendingExplosions.removeWhere((e) => e.triggered);
+  }
+
+  void _checkEnemyProjectilePlayerCollisions() {
+    if (player.isInvincible || player.isDead) return;
+    for (final p in projectiles) {
+      if (p.isDead || !p.isEnemyProjectile) continue;
+      final dx = p.x - player.x;
+      final dy = p.y - player.y;
+      if (dx * dx + dy * dy < 15 * 15) {
+        player.takeDamage(p.damage);
+        p.isDead = true;
       }
     }
   }
@@ -430,6 +832,18 @@ class GameEngine {
   void _onEnemyKilled(Enemy e) {
     killCount++;
     score += e.xpDrop * 10;
+
+    // Bulk Detonator: death explosion
+    if (e.explodeOnDeath) {
+      pendingExplosions.add(PendingExplosion(
+        x: e.x,
+        y: e.y,
+        radius: 80,
+        damage: 80,
+        delay: 1.5,
+        damagesPlayer: true,
+      ));
+    }
 
     // Spawn XP pickup
     pickups.add(Pickup(
@@ -563,7 +977,7 @@ class GameEngine {
 
   /// Calculate final score
   double get finalScore {
-    return score + killCount * 5 + gameTimer * 2;
+    return (score + killCount * 5 + gameTimer * 2) * hazard.scoreMultiplier;
   }
 }
 

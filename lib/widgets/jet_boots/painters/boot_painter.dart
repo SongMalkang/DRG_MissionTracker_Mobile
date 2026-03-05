@@ -5,8 +5,13 @@ import 'package:flutter/material.dart';
 class BootPainter extends CustomPainter {
   final bool isThrusting;
   final int thrustPhase;
+  final double velocity; // 4-4: 속도 기반 화염 강도
 
-  BootPainter({required this.isThrusting, required this.thrustPhase});
+  BootPainter({
+    required this.isThrusting,
+    required this.thrustPhase,
+    this.velocity = 0.0,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -73,8 +78,10 @@ class BootPainter extends CustomPainter {
       final thrustTop = soleTop + soleH;
       final centerX = ankleL + ankleW / 2;
 
-      // 메인 불꽃 (삼각형)
-      final flameLen = h * 0.28 + (thrustPhase % 3) * 2.0;
+      // 4-4: 속도 비례 화염 길이
+      final speedFactor = (-velocity / 1.2).clamp(0.0, 1.0);
+      final flameLen =
+          h * (0.20 + 0.15 * speedFactor) + (thrustPhase % 3) * 2.0;
       final flamePath = Path()
         ..moveTo(centerX - 5, thrustTop)
         ..lineTo(centerX + 5, thrustTop)
@@ -124,5 +131,6 @@ class BootPainter extends CustomPainter {
   @override
   bool shouldRepaint(BootPainter oldDelegate) =>
       oldDelegate.isThrusting != isThrusting ||
-      oldDelegate.thrustPhase != thrustPhase;
+      oldDelegate.thrustPhase != thrustPhase ||
+      oldDelegate.velocity != velocity;
 }

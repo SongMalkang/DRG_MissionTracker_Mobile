@@ -1,11 +1,11 @@
 {
-  "latest_version": "1.4.0",
+  "latest_version": "1.5.0",
   "min_required": "1.0.0",
   "force_update": false,
   "store_url": "https://play.google.com/store/apps/details?id=com.songmalkang.drg_mission_tracker",
   "changelog": {
-    "KR": "• Pull-to-Refresh 지원\n• 미션 카드에서 버프/디버프 아이콘 탭으로 직접 Trivia 확인\n• 스플래시 화면 데이터 프리로딩으로 로딩 속도 개선\n• 알림 메시지 5종 변형 추가\n• 오프라인 캐싱 강화",
-    "EN": "• Pull-to-Refresh support\n• Tap buff/debuff icons on mission cards to view Trivia directly\n• Splash screen data preloading for faster startup\n• 5 BOSCO notification message variants\n• Enhanced offline caching",
-    "CN": "• 下拉刷新支持\n• 点击任务卡片上的增益/减益图标直接查看Trivia\n• 启动画面数据预加载，加快启动速度\n• 5种BOSCO通知消息变体\n• 增强离线缓存"
+    "KR": "• 미니게임 3종 개선 (보스 특수능력, Nitra/수류탄, Hazard Level, Pit Jaw, 무기 해금)\n• 위젯 정상화 (테스트중)\n• 미션 워치리스트 추가\n• Deep Dive 버그 수정",
+    "EN": "• 3 mini-games improved (boss abilities, Nitra/grenades, Hazard Level, Pit Jaw, weapon unlocks)\n• Widget stabilization (testing)\n• Mission watchlist added\n• Deep Dive bug fix",
+    "CN": "• 3款迷你游戏改进（Boss特殊能力、Nitra/手雷、危险等级、Pit Jaw、武器解锁）\n• 小组件稳定化（测试中）\n• 新增任务关注列表\n• Deep Dive Bug修复"
   }
 }

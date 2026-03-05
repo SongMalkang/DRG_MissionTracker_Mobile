@@ -39,6 +39,7 @@ class AppConstants {
 
   // ── UI ──────────────────────────────────────────────────────────────────
   static const double elapsedMissionOpacity = 0.38;
+  static const int splashMinDurationMs = 2500;
 
   // ── Assets ──────────────────────────────────────────────────────────────
   static const String boscoImage = 'assets/images/bosco.png';
@@ -47,9 +48,16 @@ class AppConstants {
   static const String widgetDoubleXpCount = 'widget_double_xp_count';
   static const String widgetMissionSummary = 'widget_mission_summary';
   static const String widgetNextRotation = 'widget_next_rotation';
+  static const String widgetNextRotationEpoch = 'widget_next_rotation_epoch';
   static const String widgetLastUpdate = 'widget_last_update';
   static const String widgetNoDoubleXp = 'widget_no_double_xp';
   static const String widgetTitle = 'widget_title';
+
+  // ── Widget Alarm ───────────────────────────────────────────────────────
+  static const int widgetAlarmId = 9999;
+
+  // ── Watchlist ──────────────────────────────────────────────────────────
+  static const double watchlistBorderWidth = 2.0;
 
   // ── External Links ────────────────────────────────────────────────────
   static const String privacyPolicyUrl =

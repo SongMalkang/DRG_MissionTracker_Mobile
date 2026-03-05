@@ -30,6 +30,7 @@ class MissionService {
   List<String> _availableSeasons = [];
   bool _isInitialized = false;
   DataStatus _status = DataStatus.offline;
+  String? _lastError;
   Timer? _refreshTimer;
 
   /// 서버-디바이스 시간 차이 (분). null이면 측정되지 않은 상태.
@@ -46,6 +47,15 @@ class MissionService {
   List<String> get availableSeasons => _availableSeasons;
   bool get isInitialized => _isInitialized;
   DataStatus get status => _status;
+  String? get lastError => _lastError;
+
+  /// 마지막 캐시 저장 시각 (UTC ms). null이면 캐시 없음.
+  Future<DateTime?> getCacheTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ts = prefs.getInt(AppConstants.cacheTimestampKey);
+    if (ts == null) return null;
+    return DateTime.fromMillisecondsSinceEpoch(ts, isUtc: true);
+  }
 
   /// 서버-디바이스 시간 차이가 임계값 이상인 경우 true
   bool get hasClockDrift =>
@@ -121,6 +131,7 @@ class MissionService {
       await _saveCacheTimestamp();
 
       _status = DataStatus.online;
+      _lastError = null;
       _isInitialized = true;
       _notifyListeners();
 
@@ -128,6 +139,7 @@ class MissionService {
       unawaited(HomeWidgetService.updateWidget());
     } catch (e) {
       debugPrint("Background refresh failed: $e");
+      _lastError = e.toString();
       _status = previousStatus == DataStatus.refreshing
           ? DataStatus.offline
           : previousStatus;

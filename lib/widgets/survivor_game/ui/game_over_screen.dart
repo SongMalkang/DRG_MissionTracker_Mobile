@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/game_colors.dart';
+import '../data/weapon_data.dart';
 
 class GameOverScreen extends StatefulWidget {
   final int killCount;
@@ -8,6 +9,7 @@ class GameOverScreen extends StatefulWidget {
   final double score;
   final int level;
   final List<int> topScores;
+  final int totalKills;
   final VoidCallback onRestart;
   final VoidCallback onBack;
 
@@ -19,6 +21,7 @@ class GameOverScreen extends StatefulWidget {
     required this.score,
     required this.level,
     required this.topScores,
+    this.totalKills = 0,
     required this.onRestart,
     required this.onBack,
   });
@@ -105,7 +108,12 @@ class _GameOverScreenState extends State<GameOverScreen> {
                   ),
                 ),
               if (_visibleLines >= 7) ..._buildLeaderboard(),
-              if (_visibleLines >= 8) const SizedBox(height: 16),
+              if (_visibleLines >= 8) ...[
+                const SizedBox(height: 8),
+                _statLine('TOTAL KILLS', widget.totalKills.toString(), _termGreen),
+                ..._buildUnlockNotifications(),
+                const SizedBox(height: 8),
+              ],
               if (_showButtons) ...[
                 _buildButton('RETRY', _termGreen, widget.onRestart),
                 const SizedBox(height: 8),
@@ -144,6 +152,32 @@ class _GameOverScreenState extends State<GameOverScreen> {
         ],
       ),
     );
+  }
+
+  List<Widget> _buildUnlockNotifications() {
+    final prevKills = widget.totalKills - widget.killCount;
+    final List<Widget> notifications = [];
+    for (final entry in weaponUnlockKills.entries) {
+      final threshold = entry.value;
+      if (threshold > 0 && prevKills < threshold && widget.totalKills >= threshold) {
+        final weapon = primaryWeapons[entry.key];
+        if (weapon != null) {
+          notifications.add(Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text(
+              'UNLOCKED: ${weapon.name}!',
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 10,
+                color: _termAmber,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ));
+        }
+      }
+    }
+    return notifications;
   }
 
   List<Widget> _buildLeaderboard() {

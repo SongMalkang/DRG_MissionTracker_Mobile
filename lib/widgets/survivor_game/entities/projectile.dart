@@ -9,6 +9,7 @@ class Projectile {
   bool isDead = false;
   double angle;
   String? weaponId; // tracks which weapon fired this projectile
+  bool isEnemyProjectile;
 
   // Track enemies already hit (for piercing)
   final Set<int> hitEnemyIds = {};
@@ -23,6 +24,7 @@ class Projectile {
     required this.angle,
     this.piercing = false,
     this.weaponId,
+    this.isEnemyProjectile = false,
   });
 
   void update(double dt) {

@@ -1,6 +1,6 @@
 import 'dart:math';
 
-enum PickupType { xp, gold }
+enum PickupType { xp, gold, nitra, redSugar }
 
 class Pickup {
   double x;

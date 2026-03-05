@@ -3,6 +3,20 @@
 // key: pubspec.yaml의 version (예: '1.1.0')
 
 const Map<String, Map<String, String>> changelogData = {
+  '1.5.0': {
+    'KR': '• 미니게임 3종 개선 (보스 특수능력, Nitra/수류탄, Hazard Level, Pit Jaw, 무기 해금).\n'
+        '• 위젯 정상화 (테스트중).\n'
+        '• 미션 워치리스트 추가.\n'
+        '• Deep Dive 버그 수정.',
+    'EN': '• 3 mini-games improved (boss abilities, Nitra/grenades, Hazard Level, Pit Jaw, weapon unlocks).\n'
+        '• Widget stabilization (testing).\n'
+        '• Mission watchlist added.\n'
+        '• Deep Dive bug fix.',
+    'CN': '• 3款迷你游戏改进（Boss特殊能力、Nitra/手雷、危险等级、Pit Jaw、武器解锁）。\n'
+        '• 小组件稳定化（测试中）。\n'
+        '• 新增任务关注列表。\n'
+        '• Deep Dive Bug修复。',
+  },
   '1.4.0': {
     'KR': '• 코드 품질 개선: Lint 규칙 확장 및 버그 수정.\n'
         '• 미션 리스트 성능 최적화 (캐싱 적용).\n'

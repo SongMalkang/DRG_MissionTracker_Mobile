@@ -142,6 +142,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } else {
       await cancelAllNotificationAlarms();
     }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            val
+                ? (i18n[_selectedLang]!['notif_enabled'] ?? 'Notifications enabled.')
+                : (i18n[_selectedLang]!['notif_disabled'] ?? 'Notifications disabled.'),
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: val ? Colors.green[700] : Colors.grey[700],
+        ),
+      );
+    }
   }
 
   Future<void> _pickNotifTime() async {
@@ -164,6 +177,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (picked != null) {
       setState(() => _notifEndTime = picked);
       await _notifSettings.setEndTime(picked.hour, picked.minute);
+
+      // 종료 시간이 시작 시간보다 앞인 경우 경고
+      final startMinutes = _notifTime.hour * 60 + _notifTime.minute;
+      final endMinutes = picked.hour * 60 + picked.minute;
+      if (endMinutes <= startMinutes && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              i18n[_selectedLang]!['notif_time_warning'] ??
+                  'End time is before start time.',
+            ),
+            backgroundColor: Colors.amber[800],
+          ),
+        );
+      }
+
       if (_notifEnabled) await scheduleNotificationAlarms();
     }
   }

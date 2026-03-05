@@ -14,8 +14,9 @@ class MissionCard extends StatelessWidget {
   final Mission mission;
   final String lang;
   final bool showWarnings;
+  final bool isWatchlistMatch;
 
-  const MissionCard({super.key, required this.mission, required this.lang, this.showWarnings = true});
+  const MissionCard({super.key, required this.mission, required this.lang, this.showWarnings = true, this.isWatchlistMatch = false});
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +34,10 @@ class MissionCard extends StatelessWidget {
             border: Border.all(
               color: isDoubleXp
                   ? Colors.amber
-                  : Colors.white.withValues(alpha: 0.08),
-              width: isDoubleXp ? 2.0 : 1.0,
+                  : isWatchlistMatch
+                      ? Colors.cyanAccent
+                      : Colors.white.withValues(alpha: 0.08),
+              width: (isDoubleXp || isWatchlistMatch) ? 2.0 : 1.0,
             ),
             boxShadow: isDoubleXp
                 ? [
@@ -44,7 +47,15 @@ class MissionCard extends StatelessWidget {
                       spreadRadius: 2,
                     )
                   ]
-                : [],
+                : isWatchlistMatch
+                    ? [
+                        BoxShadow(
+                          color: Colors.cyanAccent.withValues(alpha: 0.15),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        )
+                      ]
+                    : [],
           ),
           child: Material(
             color: Colors.transparent,

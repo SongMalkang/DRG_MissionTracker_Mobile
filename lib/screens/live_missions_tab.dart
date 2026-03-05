@@ -1,9 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/mission_model.dart';
+import '../models/watchlist_filter.dart';
 import '../widgets/mission_card.dart';
 import '../utils/strings.dart';
+import '../utils/constants.dart';
 import '../services/mission_service.dart';
+import '../services/watchlist_service.dart';
+import '../widgets/skeleton_loading.dart';
+import '../widgets/watchlist_modal.dart';
 
 class LiveMissionsTab extends StatefulWidget {
   final String lang;
@@ -29,6 +34,8 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
   int _secondsUntilNext = 0;
 
   final MissionService _missionService = MissionService();
+  final WatchlistService _watchlistService = WatchlistService();
+  WatchlistFilter _watchlistFilter = WatchlistFilter.empty;
 
   // ── 캐시: filter+sort 결과를 매 build()마다 재계산하지 않음 ──
   List<Mission> _cachedFiltered = [];
@@ -43,9 +50,34 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
     super.initState();
     _calculateTimeLeft();
     _missionService.addListener(_onDataChanged);
+    _loadWatchlistFilter();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _calculateTimeLeft();
     });
+  }
+
+  Future<void> _loadWatchlistFilter() async {
+    final filter = await _watchlistService.getFilter();
+    if (mounted) {
+      setState(() {
+        _watchlistFilter = filter;
+        _dataVersion++; // 캐시 무효화
+      });
+    }
+  }
+
+  Future<void> _openWatchlistModal() async {
+    final result = await showWatchlistModal(
+      context,
+      currentFilter: _watchlistFilter,
+      lang: widget.lang,
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _watchlistFilter = result;
+        _dataVersion++; // 캐시 무효화
+      });
+    }
   }
 
   void _onDataChanged() {
@@ -63,7 +95,7 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
     final diff = target.difference(now).inSeconds;
     if (mounted) {
       setState(() {
-        _secondsUntilNext = diff.clamp(0, 1800);
+        _secondsUntilNext = diff.clamp(0, AppConstants.missionRotationMinutes * 60);
       });
     }
   }
@@ -117,7 +149,7 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
         .where((m) => m.seasons.contains(widget.currentSeason))
         .toList();
 
-    // Double XP 상단 고정 정렬 (가장 높은 우선순위)
+    // 정렬 우선순위: 1) Double XP  2) Watchlist 매칭  3) 바이옴명
     filteredList.sort((a, b) {
       final aIsDouble = (a.buff == "Double XP");
       final bIsDouble = (b.buff == "Double XP");
@@ -125,7 +157,14 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
       if (aIsDouble && !bIsDouble) return -1;
       if (!aIsDouble && bIsDouble) return 1;
 
-      // Double XP가 아닌 미션들 간에는 바이옴 이름순으로 정렬 (일관성 유지)
+      // Watchlist 매칭 미션 상단 고정
+      if (_watchlistFilter.isActive) {
+        final aMatch = _watchlistFilter.matches(a);
+        final bMatch = _watchlistFilter.matches(b);
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+      }
+
       return a.biome.compareTo(b.biome);
     });
 
@@ -140,7 +179,37 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
   @override
   Widget build(BuildContext context) {
     if (!_missionService.isInitialized) {
-      return const Center(child: CircularProgressIndicator(color: Colors.orange));
+      // 에러 상태: 초기화 실패
+      if (_missionService.lastError != null) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.wifi_off, color: Colors.redAccent, size: 48),
+                const SizedBox(height: 12),
+                Text(
+                  i18n[widget.lang]!['load_error'] ?? 'Failed to load data.',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: () => _missionService.forceRefresh(),
+                  icon: const Icon(Icons.refresh),
+                  label: Text(i18n[widget.lang]!['retry'] ?? 'Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      return const SkeletonLoadingList();
     }
 
     final String statusText;
@@ -163,121 +232,150 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
         ? i18n[widget.lang]!['standard']!
         : "SEASON ${widget.currentSeason.replaceAll('s', '')}";
 
-    return Column(
+    return Stack(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          color: Colors.black45,
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              color: Colors.black45,
+              child: Column(
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back_ios, color: _timeOffset > -1 ? Colors.orange : Colors.grey, size: 18),
-                    onPressed: () => _changeOffset(-1),
-                  ),
-                  Column(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(statusText, style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
-                      Text(
-                        '${localDisplayTime.hour.toString().padLeft(2, '0')}:${localDisplayTime.minute.toString().padLeft(2, '0')} Local',
-                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                      IconButton(
+                        icon: Icon(Icons.arrow_back_ios, color: _timeOffset > -1 ? Colors.orange : Colors.grey, size: 18),
+                        onPressed: () => _changeOffset(-1),
+                      ),
+                      Column(
+                        children: [
+                          Text(statusText, style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                          Text(
+                            '${localDisplayTime.hour.toString().padLeft(2, '0')}:${localDisplayTime.minute.toString().padLeft(2, '0')} Local',
+                            style: const TextStyle(fontSize: 10, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.arrow_forward_ios, color: _timeOffset < 1 ? Colors.orange : Colors.grey, size: 18),
+                        onPressed: () => _changeOffset(1),
                       ),
                     ],
                   ),
-                  IconButton(
-                    icon: Icon(Icons.arrow_forward_ios, color: _timeOffset < 1 ? Colors.orange : Colors.grey, size: 18),
-                    onPressed: () => _changeOffset(1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_left, color: Colors.orange),
+                        onPressed: () => _changeSeason(-1),
+                      ),
+                      Text(
+                        seasonLabel,
+                        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.arrow_right, color: Colors.orange),
+                        onPressed: () => _changeSeason(1),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_left, color: Colors.orange),
-                    onPressed: () => _changeSeason(-1),
-                  ),
-                  Text(
-                    seasonLabel,
-                    style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_right, color: Colors.orange),
-                    onPressed: () => _changeSeason(1),
-                  ),
-                ],
-              ),
-              if (_timeOffset == 0) ...[
-                Text(
-                  '${i18n[widget.lang]!['time_left']} $minutes:$seconds',
-                  style: const TextStyle(fontSize: 12, color: Colors.orangeAccent),
-                ),
-              ],
-              if (_missionService.hasClockDrift)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                  if (_timeOffset == 0) ...[
+                    Text(
+                      '${i18n[widget.lang]!['time_left']} $minutes:$seconds',
+                      style: const TextStyle(fontSize: 12, color: Colors.orangeAccent),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.access_time, color: Colors.amber, size: 14),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            t('clock_drift', widget.lang),
-                            style: const TextStyle(color: Colors.amber, fontSize: 10),
-                          ),
+                  ],
+                  if (_missionService.hasClockDrift)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            color: Colors.orange,
-            backgroundColor: const Color(0xFF1E1E1E),
-            onRefresh: () => _missionService.forceRefresh(),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: filteredList.isEmpty
-                  ? ListView(
-                      key: const ValueKey('empty'),
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.5,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.search_off, size: 48, color: Colors.grey),
-                              const SizedBox(height: 16),
-                              Text(
-                                t('no_missions', widget.lang).replaceAll('{season}', seasonLabel),
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.grey),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.access_time, color: Colors.amber, size: 14),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                t('clock_drift', widget.lang),
+                                style: const TextStyle(color: Colors.amber, fontSize: 10),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    )
-                  : ListView.builder(
-                      key: ValueKey('missions_${targetUtc.toIso8601String()}_${widget.currentSeason}'),
-                      itemCount: filteredList.length,
-                      itemBuilder: (context, index) {
-                        return MissionCard(mission: filteredList[index], lang: widget.lang, showWarnings: widget.showWarnings);
-                      },
+                      ),
                     ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                color: Colors.orange,
+                backgroundColor: const Color(0xFF1E1E1E),
+                onRefresh: () => _missionService.forceRefresh(),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: filteredList.isEmpty
+                      ? ListView(
+                          key: const ValueKey('empty'),
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.5,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.search_off, size: 48, color: Colors.grey),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    t('no_missions', widget.lang).replaceAll('{season}', seasonLabel),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
+                          key: ValueKey('missions_${targetUtc.toIso8601String()}_${widget.currentSeason}'),
+                          itemCount: filteredList.length,
+                          itemBuilder: (context, index) {
+                            final mission = filteredList[index];
+                            return MissionCard(
+                              mission: mission,
+                              lang: widget.lang,
+                              showWarnings: widget.showWarnings,
+                              isWatchlistMatch: _watchlistFilter.isActive && _watchlistFilter.matches(mission),
+                            );
+                          },
+                        ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        // ── Watchlist FAB ──
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: FloatingActionButton.small(
+            heroTag: 'watchlist_fab',
+            backgroundColor: _watchlistFilter.isActive
+                ? Colors.cyanAccent
+                : Colors.grey[850],
+            onPressed: _openWatchlistModal,
+            child: Icon(
+              Icons.visibility,
+              color: _watchlistFilter.isActive
+                  ? Colors.black
+                  : Colors.white54,
+              size: 20,
             ),
           ),
         ),

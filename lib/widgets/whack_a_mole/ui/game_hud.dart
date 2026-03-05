@@ -8,12 +8,13 @@ const _termGreenDim = GameColors.termGreenDim;
 const _termSurface = GameColors.termSurface;
 const _termAmber = GameColors.termAmber;
 
-// ── 헤더 ──
+// ── 헤더 (1-4: 점수 바운스 지원) ──
 class GameHeader extends StatelessWidget {
   final String lang;
   final int score;
   final int highScore;
   final VoidCallback onBack;
+  final double scoreBounceScale;
 
   const GameHeader({
     super.key,
@@ -21,10 +22,12 @@ class GameHeader extends StatelessWidget {
     required this.score,
     required this.highScore,
     required this.onBack,
+    this.scoreBounceScale = 1.0,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isBouncing = scoreBounceScale > 1.01;
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 8, 12, 6),
       decoration: BoxDecoration(
@@ -56,11 +59,16 @@ class GameHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '${t('minigame_score', lang)}: $score',
-                  style: GoogleFonts.pressStart2p(
-                    fontSize: 7,
-                    color: _termGreenDim,
+                // 1-4: 점수 바운스 애니메이션
+                Transform.scale(
+                  scale: scoreBounceScale,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${t('minigame_score', lang)}: $score',
+                    style: GoogleFonts.pressStart2p(
+                      fontSize: 7,
+                      color: isBouncing ? _termGreen : _termGreenDim,
+                    ),
                   ),
                 ),
               ],
@@ -80,7 +88,7 @@ class GameHeader extends StatelessWidget {
   }
 }
 
-// ── 생명 + 스테이지 바 ──
+// ── 생명 + 스테이지 바 (1-5: 라이프 손실 빨간 틴트) ──
 class TimerBar extends StatelessWidget {
   final int stage;
   final int lives;
@@ -101,7 +109,10 @@ class TimerBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      color: _termSurface,
+      // 1-5: 라이프 손실 시 빨간 틴트
+      color: lifeLostFlash
+          ? Colors.redAccent.withValues(alpha: 0.15)
+          : _termSurface,
       child: Row(
         children: [
           // 스테이지 표시
@@ -155,12 +166,13 @@ class TimerBar extends StatelessWidget {
   }
 }
 
-// ── 콤보 대형 오버레이 ──
+// ── 콤보 대형 오버레이 (4-4: 감쇠 깜빡임 지원) ──
 class ComboOverlay extends StatelessWidget {
   final String lang;
   final int combo;
   final Animation<double> comboScaleAnim;
   final AnimationController comboAnimController;
+  final bool comboDecayWarning;
 
   const ComboOverlay({
     super.key,
@@ -168,6 +180,7 @@ class ComboOverlay extends StatelessWidget {
     required this.combo,
     required this.comboScaleAnim,
     required this.comboAnimController,
+    this.comboDecayWarning = false,
   });
 
   @override
@@ -194,7 +207,8 @@ class ComboOverlay extends StatelessWidget {
                   '▸ ${t('minigame_wam_combo', lang)} ◂',
                   style: GoogleFonts.pressStart2p(
                     fontSize: 8,
-                    color: _termAmber.withValues(alpha: 0.7),
+                    color: _termAmber.withValues(
+                        alpha: comboDecayWarning ? 0.4 : 0.7),
                     letterSpacing: 1,
                   ),
                 ),
@@ -203,7 +217,8 @@ class ComboOverlay extends StatelessWidget {
                   'x$combo',
                   style: GoogleFonts.pressStart2p(
                     fontSize: 22,
-                    color: _termAmber,
+                    color: _termAmber.withValues(
+                        alpha: comboDecayWarning ? 0.5 : 1.0),
                     letterSpacing: 2,
                     shadows: [
                       Shadow(

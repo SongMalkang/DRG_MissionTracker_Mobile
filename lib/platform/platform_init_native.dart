@@ -7,4 +7,5 @@ Future<void> platformInit() async {
   await AndroidAlarmManager.initialize();
   await NotificationService().initialize();
   await HomeWidgetService.initialize();
+  await HomeWidgetService.schedulePeriodicUpdate();
 }

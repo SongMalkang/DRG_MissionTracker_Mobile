@@ -32,6 +32,12 @@ class WeaponData {
   });
 }
 
+const Map<WeaponId, int> weaponUnlockKills = {
+  WeaponId.gk2: 0,
+  WeaponId.m1000: 500,
+  WeaponId.drak25: 2000,
+};
+
 // Primary weapons (selected in loadout)
 const Map<WeaponId, WeaponData> primaryWeapons = {
   WeaponId.gk2: WeaponData(

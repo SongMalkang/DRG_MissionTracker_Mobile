@@ -18,7 +18,15 @@ class MediumWidgetProvider : HomeWidgetProvider() {
 
             val title = widgetData.getString("widget_title", "BOSCO TERMINAL") ?: "BOSCO TERMINAL"
             val count = widgetData.getInt("widget_double_xp_count", 0)
-            val rotation = widgetData.getString("widget_next_rotation", "--:--") ?: "--:--"
+            val epoch = widgetData.getLong("widget_next_rotation_epoch", 0L)
+            val rotation = if (epoch > 0) {
+                val diff = (epoch - System.currentTimeMillis()) / 1000
+                if (diff > 0) {
+                    val mm = (diff / 60).toString().padStart(2, '0')
+                    val ss = (diff % 60).toString().padStart(2, '0')
+                    "$mm:$ss"
+                } else "00:00"
+            } else "--:--"
             val noXpText = widgetData.getString("widget_no_double_xp", "No Double XP") ?: "No Double XP"
             val missionSummary = widgetData.getString("widget_mission_summary", "") ?: ""
 

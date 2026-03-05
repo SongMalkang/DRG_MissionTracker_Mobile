@@ -9,9 +9,17 @@ const _termGreenDim = GameColors.termGreenDim;
 const _termGreenFaint = GameColors.termGreenFaint;
 const _termBg = GameColors.termBg;
 const _termAmber = GameColors.termAmber;
+// 함정(decoy): 새빨간색
+const _nitraRed = Color(0xFFFF1111);
+const _nitraRedDim = Color(0xFFCC0000);
+const _goldenColor = Color(0xFFFFD700);
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  게임플레이 구멍 페인터 (핏죠 턱 + 스카웃 합체, 곡괭이, 그래플링훅)
+//  게임플레이 구멍 페인터
+//  - 등장 예고 (개미지옥 흔들림)
+//  - 핏죠 턱 + 스카웃 합체, 곡괭이, 그래플링훅
+//  - 함정(빨간 decoy), 골든, 멀티탭 크랙
+//  - 스냅 애니메이션 (타임아웃 시 턱 닫힘)
 // ═══════════════════════════════════════════════════════════════════════════
 class HolePainter extends CustomPainter {
   final MoleHole hole;
@@ -24,13 +32,38 @@ class HolePainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // 셀 전체 클리핑 (절대 밖으로 안 나감)
     canvas.save();
     canvas.clipRect(Rect.fromLTWH(0, 0, w, h));
 
     // 구멍 위치 (하단 35%)
     final holeTop = h * 0.65;
     final holeRect = Rect.fromLTWH(w * 0.1, holeTop, w * 0.8, h * 0.28);
+
+    // ── 함정(decoy): 빨간 글로우 (구멍 주변) ──
+    if (hole.moleType == MoleType.decoy && hole.isActive && !hole.isSnapping) {
+      final glowAlpha = 0.15 + 0.1 * sin(blinkCounter * 0.2);
+      final glowPaint = Paint()
+        ..color = _nitraRed.withValues(alpha: glowAlpha)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      canvas.drawOval(holeRect.inflate(4), glowPaint);
+
+      // 광맥 결정 라인 (구멍 주변에 뻗어나온 빨간 결)
+      final veinPaint = Paint()
+        ..color = _nitraRedDim.withValues(alpha: 0.5 + 0.2 * sin(blinkCounter * 0.15))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+      final cx = w * 0.5;
+      final cy = holeTop + h * 0.14;
+      // 좌측 결정
+      canvas.drawLine(Offset(w * 0.08, cy - 4), Offset(w * 0.18, cy + 2), veinPaint);
+      canvas.drawLine(Offset(w * 0.18, cy + 2), Offset(w * 0.12, cy + 8), veinPaint);
+      // 우측 결정
+      canvas.drawLine(Offset(w * 0.92, cy - 2), Offset(w * 0.82, cy + 4), veinPaint);
+      canvas.drawLine(Offset(w * 0.82, cy + 4), Offset(w * 0.88, cy + 10), veinPaint);
+      // 상단 결정
+      canvas.drawLine(Offset(cx - 8, holeTop - 6), Offset(cx - 2, holeTop - 1), veinPaint);
+      canvas.drawLine(Offset(cx + 8, holeTop - 5), Offset(cx + 3, holeTop - 1), veinPaint);
+    }
 
     // 구멍 배경
     final holeBgPaint = Paint()
@@ -39,38 +72,60 @@ class HolePainter extends CustomPainter {
       ).createShader(holeRect);
     canvas.drawOval(holeRect, holeBgPaint);
 
-    // 구멍 테두리
+    // 구멍 테두리 — 함정은 새빨간 테두리
+    Color borderColor;
+    double borderWidth = 1.5;
+    if (hole.moleType == MoleType.decoy && hole.isActive) {
+      borderColor = _nitraRed.withValues(alpha: 0.7 + 0.3 * sin(blinkCounter * 0.2));
+      borderWidth = 2.0;
+    } else {
+      borderColor = _termGreenDim.withValues(alpha: 0.6);
+    }
     final holeBorderPaint = Paint()
-      ..color = _termGreenDim.withValues(alpha: 0.6)
+      ..color = borderColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+      ..strokeWidth = borderWidth;
     canvas.drawOval(holeRect, holeBorderPaint);
 
     // 이빨 (구멍 상단)
+    final toothColor = hole.moleType == MoleType.decoy && hole.isActive
+        ? _nitraRedDim.withValues(alpha: 0.6)
+        : _termGreenDim.withValues(alpha: 0.4);
     final toothPaint = Paint()
-      ..color = _termGreenDim.withValues(alpha: 0.4)
+      ..color = toothColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
-    for (int i = 0; i < 4; i++) {
-      final tx = w * (0.2 + i * 0.18);
-      canvas.drawLine(
-        Offset(tx, holeTop + 2),
-        Offset(tx + w * 0.04, holeTop - 3),
-        toothPaint,
-      );
+
+    // ── 등장 예고: 이빨 흔들림 ──
+    if (hole.warningTimer > 0 && hole.isActive) {
+      _drawWarningTeeth(canvas, w, h, holeTop, toothPaint);
+    } else {
+      // 일반 이빨
+      for (int i = 0; i < 4; i++) {
+        final tx = w * (0.2 + i * 0.18);
+        canvas.drawLine(
+          Offset(tx, holeTop + 2),
+          Offset(tx + w * 0.04, holeTop - 3),
+          toothPaint,
+        );
+      }
     }
 
-    // 스카웃 + 핏죠 합체 팝업
-    if (hole.isActive || hole.isRescued) {
+    // ── 스냅 애니메이션 (턱이 닫힘) ──
+    if (hole.isSnapping) {
+      _drawSnapAnimation(canvas, w, h, holeTop);
+    }
+    // 스카웃 + 핏죠 합체 팝업 (예고 중에는 표시 안함, 스냅 중에도 안함)
+    else if ((hole.isActive && hole.warningTimer <= 0) || hole.isRescued) {
       _drawComboAsset(canvas, w, h, holeTop);
     }
 
-    // 곡괭이 타격 이펙트 (스윙 → 임팩트 → 파티클)
+    // 곡괭이 타격 이펙트
     if (hole.pickaxeProgress > 0 && hole.pickaxeProgress < 1.0) {
       _drawPickaxe(canvas, w, h, holeTop);
     }
 
-    // 히트 이펙트 — 터미널 스타일 텍스트 + 파티클
+    // 히트 이펙트
     if (hole.hitFlashProgress > 0 && hole.hitFlashProgress < 1.0) {
       _drawHitEffect(canvas, w, h, holeTop);
     }
@@ -78,35 +133,158 @@ class HolePainter extends CustomPainter {
     canvas.restore();
   }
 
+  /// 등장 예고: 이빨이 위아래로 흔들리며 긁적거림
+  void _drawWarningTeeth(
+      Canvas canvas, double w, double h, double holeTop, Paint basePaint) {
+    final warnProgress = hole.warningDuration > 0
+        ? 1.0 - (hole.warningTimer / hole.warningDuration)
+        : 0.0;
+    // 흔들림 강도: 시간이 지날수록 증가
+    final shakeAmp = 1.0 + warnProgress * 3.0;
+    final shakeFreq = 8.0 + warnProgress * 12.0;
+
+    // 이빨이 점점 높이 올라오며 흔들림
+    final peekAmount = warnProgress * 4.0; // 최대 4px 올라옴
+
+    // 함정이면 빨간 이빨
+    final paint = hole.moleType == MoleType.decoy
+        ? (Paint()
+          ..color = _nitraRed.withValues(alpha: 0.4 + warnProgress * 0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0 + warnProgress * 0.5)
+        : basePaint;
+
+    for (int i = 0; i < 4; i++) {
+      final tx = w * (0.2 + i * 0.18);
+      final shake = sin(blinkCounter * shakeFreq * 0.1 + i * 1.5) * shakeAmp;
+      canvas.drawLine(
+        Offset(tx + shake, holeTop + 2 - peekAmount),
+        Offset(tx + w * 0.04 + shake * 0.5, holeTop - 3 - peekAmount),
+        paint,
+      );
+    }
+
+    // 구멍에서 먼지 파티클 (흔들림 시)
+    if (warnProgress > 0.3) {
+      final dustAlpha = (warnProgress - 0.3) * 0.5;
+      final dustPaint = Paint()
+        ..color = (hole.moleType == MoleType.decoy ? _nitraRedDim : _termGreenDim)
+            .withValues(alpha: dustAlpha);
+      final rng = Random(blinkCounter ~/ 3);
+      for (int i = 0; i < 3; i++) {
+        final dx = w * 0.2 + rng.nextDouble() * w * 0.6;
+        final dy = holeTop - 2 - rng.nextDouble() * peekAmount * 2;
+        canvas.drawCircle(Offset(dx, dy), 1.0 + rng.nextDouble(), dustPaint);
+      }
+    }
+  }
+
+  /// 스냅 애니메이션: 턱이 위에서 덮쳐 닫힘 + "SNAP!" 텍스트
+  void _drawSnapAnimation(Canvas canvas, double w, double h, double holeTop) {
+    final t = hole.snapProgress.clamp(0.0, 1.0);
+    // 턱 닫힘: 위에서 아래로 빠르게
+    final jawCloseT = Curves.easeIn.transform(min(t * 2.0, 1.0));
+    // 흔들림: 닫힌 후
+    final shakeT = max(t - 0.5, 0.0) * 2.0;
+
+    final assetW = w * 0.6;
+    final assetX = (w - assetW) / 2;
+    final jawY = holeTop - h * 0.15 * (1.0 - jawCloseT);
+
+    // 상단 턱 (위에서 내려옴)
+    final jawColor = hole.moleType == MoleType.decoy
+        ? _nitraRed
+        : _termGreenDim;
+    final jawPaint = Paint()
+      ..color = jawColor.withValues(alpha: 0.9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+
+    // 흔들림 오프셋
+    final shakeX = shakeT > 0 ? sin(shakeT * 20) * 2.0 * (1.0 - shakeT) : 0.0;
+
+    // 상단 V자 이빨
+    final topJaw = Path();
+    topJaw.moveTo(assetX + shakeX, jawY);
+    topJaw.lineTo(assetX + assetW * 0.2 + shakeX, jawY + 8);
+    topJaw.lineTo(assetX + assetW * 0.35 + shakeX, jawY);
+    topJaw.lineTo(assetX + assetW * 0.5 + shakeX, jawY + 6);
+    topJaw.lineTo(assetX + assetW * 0.65 + shakeX, jawY);
+    topJaw.lineTo(assetX + assetW * 0.8 + shakeX, jawY + 8);
+    topJaw.lineTo(assetX + assetW + shakeX, jawY);
+    canvas.drawPath(topJaw, jawPaint);
+
+    // 하단 V자 이빨 (구멍 위치에서)
+    final bottomJaw = Path();
+    final bJawY = holeTop + 4;
+    bottomJaw.moveTo(assetX + shakeX, bJawY);
+    bottomJaw.lineTo(assetX + assetW * 0.15 + shakeX, bJawY - 6);
+    bottomJaw.lineTo(assetX + assetW * 0.3 + shakeX, bJawY);
+    bottomJaw.lineTo(assetX + assetW * 0.5 + shakeX, bJawY - 5);
+    bottomJaw.lineTo(assetX + assetW * 0.7 + shakeX, bJawY);
+    bottomJaw.lineTo(assetX + assetW * 0.85 + shakeX, bJawY - 6);
+    bottomJaw.lineTo(assetX + assetW + shakeX, bJawY);
+    canvas.drawPath(bottomJaw, jawPaint);
+
+    // "SNAP!" 텍스트 (닫힌 후 표시)
+    if (t > 0.4) {
+      final textAlpha = ((t - 0.4) / 0.3).clamp(0.0, 1.0) * (1.0 - max(t - 0.7, 0.0) / 0.3);
+      final snapColor = hole.moleType == MoleType.decoy ? _nitraRed : _termAmber;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: 'SNAP!',
+          style: TextStyle(
+            fontFamily: 'monospace',
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            color: snapColor.withValues(alpha: textAlpha.clamp(0.0, 1.0)),
+            letterSpacing: 2,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset((w - tp.width) / 2, holeTop - h * 0.25));
+    }
+  }
+
+  /// 몰 타입별 주 색상
+  Color _moleColor(double opacity) {
+    switch (hole.moleType) {
+      case MoleType.decoy:
+        return _nitraRed.withValues(alpha: opacity);
+      case MoleType.golden:
+        return _goldenColor.withValues(alpha: opacity);
+      case MoleType.normal:
+        return _termGreen.withValues(alpha: opacity);
+    }
+  }
+
   /// 핏죠 턱 + 스카웃 상반신 합체 에셋
   void _drawComboAsset(Canvas canvas, double w, double h, double holeTop) {
-    // 합체 에셋 크기 (셀 안에 맞춤)
     final assetW = w * 0.6;
-    final assetH = h * 0.5; // 셀 높이의 50%
+    final assetH = h * 0.5;
     final assetX = (w - assetW) / 2;
 
-    // 팝업 위치 계산
     double assetY;
     double opacity = 1.0;
 
     if (hole.isRescued) {
-      // 그래플링 훅 탈출: 위로 올라감
       final t = hole.rescueAnimProgress.clamp(0.0, 1.0);
       assetY = holeTop - assetH * (1.0 + t * 0.3);
       opacity = 1.0 - t;
     } else {
-      // 일반 팝업: 구멍에서 위로
-      final pop = hole.popProgress.clamp(0.0, 1.0);
-      // pop 0 → 구멍 안 (holeTop), pop 1 → 구멍 위 (holeTop - assetH)
+      // elasticOut 이징
+      final rawPop = hole.popProgress.clamp(0.0, 1.0);
+      final pop = Curves.elasticOut.transform(rawPop);
       assetY = holeTop - assetH * pop;
     }
 
-    final color = (hole.isRescued ? _termAmber : _termGreen)
+    final color = (hole.isRescued ? _termAmber : _moleColor(1.0))
         .withValues(alpha: opacity);
     final strokePaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+      ..strokeWidth = hole.moleType == MoleType.decoy ? 2.0 : 1.5;
 
     // ── 스카웃 상반신 (상단 60%) ──
     final scoutTopY = assetY;
@@ -119,15 +297,64 @@ class HolePainter extends CustomPainter {
       pi, pi, false, strokePaint,
     );
 
-    // 헤드램프
-    final lampPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(
-      Offset(assetX + assetW * 0.5, scoutTopY + scoutH * 0.06),
-      2,
-      lampPaint,
-    );
+    // 헤드램프 — 골든은 별 글로우
+    if (hole.moleType == MoleType.golden) {
+      final glowPaint = Paint()
+        ..color = _goldenColor.withValues(alpha: opacity * 0.6)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawCircle(
+        Offset(assetX + assetW * 0.5, scoutTopY + scoutH * 0.06),
+        5, glowPaint,
+      );
+      final starPaint = Paint()
+        ..color = Colors.white.withValues(alpha: opacity * 0.9)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0;
+      final cx = assetX + assetW * 0.5;
+      final cy = scoutTopY + scoutH * 0.06;
+      canvas.drawLine(Offset(cx - 4, cy), Offset(cx + 4, cy), starPaint);
+      canvas.drawLine(Offset(cx, cy - 4), Offset(cx, cy + 4), starPaint);
+    } else {
+      final lampPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(
+        Offset(assetX + assetW * 0.5, scoutTopY + scoutH * 0.06),
+        2, lampPaint,
+      );
+    }
+
+    // 함정(decoy): 빨간 경고 깜빡임 + "TRAP" 라벨
+    if (hole.moleType == MoleType.decoy && !hole.isRescued) {
+      // 빨간 글로우 오라
+      final auraPaint = Paint()
+        ..color = _nitraRed.withValues(
+            alpha: opacity * (0.15 + 0.1 * sin(blinkCounter * 0.25)))
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawRect(
+        Rect.fromLTWH(assetX - 4, scoutTopY - 2, assetW + 8, assetH * 0.7),
+        auraPaint,
+      );
+
+      // "TRAP" 라벨 (깜빡임)
+      final labelAlpha =
+          opacity * (blinkCounter % 16 < 8 ? 1.0 : 0.4);
+      final labelTp = TextPainter(
+        text: TextSpan(
+          text: 'TRAP',
+          style: TextStyle(
+            fontFamily: 'monospace',
+            fontSize: 7,
+            fontWeight: FontWeight.w900,
+            color: _nitraRed.withValues(alpha: labelAlpha),
+            letterSpacing: 1,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      labelTp.paint(
+          canvas, Offset((w - labelTp.width) / 2, scoutTopY - 10));
+    }
 
     // 몸체 (상반신만)
     canvas.drawRect(
@@ -138,14 +365,11 @@ class HolePainter extends CustomPainter {
 
     // 팔
     if (hole.isRescued) {
-      // 구출: 한 팔 위로 (그래플링 훅) + 다른 팔 아래
-      // 오른팔 위로 (그래플링)
       canvas.drawLine(
         Offset(assetX + assetW * 0.75, scoutTopY + scoutH * 0.45),
         Offset(assetX + assetW * 0.85, scoutTopY - scoutH * 0.1),
         strokePaint,
       );
-      // 그래플링 훅 와이어 (팔 끝 → 셀 상단)
       final wirePaint = Paint()
         ..color = _termAmber.withValues(alpha: opacity)
         ..style = PaintingStyle.stroke
@@ -155,26 +379,16 @@ class HolePainter extends CustomPainter {
         Offset(assetX + assetW * 0.85, 0),
         wirePaint,
       );
-      // 갈고리 (작은 V)
-      canvas.drawLine(
-        Offset(assetX + assetW * 0.8, 4),
-        Offset(assetX + assetW * 0.85, 0),
-        wirePaint,
-      );
-      canvas.drawLine(
-        Offset(assetX + assetW * 0.9, 4),
-        Offset(assetX + assetW * 0.85, 0),
-        wirePaint,
-      );
-
-      // 왼팔 아래
+      canvas.drawLine(Offset(assetX + assetW * 0.8, 4),
+          Offset(assetX + assetW * 0.85, 0), wirePaint);
+      canvas.drawLine(Offset(assetX + assetW * 0.9, 4),
+          Offset(assetX + assetW * 0.85, 0), wirePaint);
       canvas.drawLine(
         Offset(assetX + assetW * 0.25, scoutTopY + scoutH * 0.45),
         Offset(assetX + assetW * 0.1, scoutTopY + scoutH * 0.7),
         strokePaint,
       );
     } else {
-      // SOS 양팔 위로
       canvas.drawLine(
         Offset(assetX + assetW * 0.25, scoutTopY + scoutH * 0.45),
         Offset(assetX, scoutTopY + scoutH * 0.15),
@@ -191,12 +405,17 @@ class HolePainter extends CustomPainter {
     if (!hole.isRescued) {
       final jawTopY = assetY + assetH * 0.6;
       final jawH = assetH * 0.4;
+      final jawColor = hole.moleType == MoleType.decoy
+          ? _nitraRed.withValues(alpha: opacity)
+          : hole.moleType == MoleType.golden
+              ? _goldenColor.withValues(alpha: opacity * 0.7)
+              : _termGreenDim.withValues(alpha: opacity);
+      final jawStroke = hole.moleType == MoleType.decoy ? 2.5 : 1.5;
       final jawPaint = Paint()
-        ..color = _termGreenDim.withValues(alpha: opacity)
+        ..color = jawColor
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
+        ..strokeWidth = jawStroke;
 
-      // V자 이빨 (작은 버전)
       final jawPath = Path();
       jawPath.moveTo(assetX, jawTopY);
       jawPath.lineTo(assetX + assetW * 0.2, jawTopY - jawH * 0.3);
@@ -207,7 +426,6 @@ class HolePainter extends CustomPainter {
       jawPath.lineTo(assetX + assetW, jawTopY);
       canvas.drawPath(jawPath, jawPaint);
 
-      // 턱 하단 (스카웃 물고 있는 형태)
       final jawBottomPaint = Paint()
         ..color = _termGreenFaint.withValues(alpha: opacity * 0.6)
         ..style = PaintingStyle.stroke
@@ -222,9 +440,36 @@ class HolePainter extends CustomPainter {
         Offset(assetX + assetW * 0.5, jawTopY + jawH * 0.7),
         jawBottomPaint,
       );
+
+      // 멀티탭 크랙 이펙트
+      if (hole.hitsTaken > 0 && hole.hitsTaken < hole.hitsRequired) {
+        final crackPaint = Paint()
+          ..color = _termAmber.withValues(alpha: opacity * 0.8)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
+        final cx = assetX + assetW * 0.5;
+        final cy = jawTopY;
+        canvas.drawLine(Offset(cx - 6, cy - 4), Offset(cx, cy + 2), crackPaint);
+        canvas.drawLine(Offset(cx, cy + 2), Offset(cx + 4, cy - 3), crackPaint);
+        canvas.drawLine(Offset(cx + 4, cy - 3), Offset(cx + 8, cy + 1), crackPaint);
+        final hitTp = TextPainter(
+          text: TextSpan(
+            text: '${hole.hitsTaken}/${hole.hitsRequired}',
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 6,
+              fontWeight: FontWeight.bold,
+              color: _termAmber.withValues(alpha: opacity * 0.9),
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        hitTp.paint(canvas,
+            Offset(assetX + assetW * 0.5 - hitTp.width / 2, jawTopY + 6));
+      }
     }
 
-    // "RESCUED!" 텍스트 떠오르기
+    // "RESCUED!" 텍스트
     if (hole.isRescued && hole.textFloatProgress < 1.0) {
       final textY = assetY - 5 - hole.textFloatProgress * 15;
       final textOpacity = (1.0 - hole.textFloatProgress).clamp(0.0, 1.0);
@@ -244,7 +489,8 @@ class HolePainter extends CustomPainter {
     }
 
     // 남은 시간 인디케이터
-    if (hole.isActive && !hole.isRescued && hole.totalVisibleTime > 0) {
+    if (hole.isActive && !hole.isRescued && !hole.isSnapping &&
+        hole.warningTimer <= 0 && hole.totalVisibleTime > 0) {
       final barW = w * 0.5;
       final barX = (w - barW) / 2;
       final barY = h - 6;
@@ -263,27 +509,22 @@ class HolePainter extends CustomPainter {
     }
   }
 
-  /// 곡괭이 타격 이펙트 — 크고 명시적인 스윙
+  /// 곡괭이 타격 이펙트
   void _drawPickaxe(Canvas canvas, double w, double h, double holeTop) {
     final t = hole.pickaxeProgress.clamp(0.0, 1.0);
 
-    // 곡괭이 위치: 우상단에서 핏죠 턱 위치로 내려침
     final startX = w * 0.85;
     final startY = h * 0.05;
     final endX = w * 0.5;
     final endY = holeTop - h * 0.08;
 
-    // 스윙 단계 (0~0.45: 내려침)
     final strikeT = (t / 0.45).clamp(0.0, 1.0);
     final eased = Curves.easeIn.transform(strikeT);
     final curX = startX + (endX - startX) * eased;
     final curY = startY + (endY - startY) * eased;
-
-    // 곡괭이 회전 (0° → -60° 내려치기)
     final rotation = -1.05 * eased;
-
-    // 스윙 중: 풀 불투명, 임팩트 후: 페이드아웃
-    final alpha = t < 0.45 ? 1.0 : (1.0 - ((t - 0.45) / 0.55)).clamp(0.0, 1.0);
+    final alpha =
+        t < 0.45 ? 1.0 : (1.0 - ((t - 0.45) / 0.55)).clamp(0.0, 1.0);
 
     final pickaxePaint = Paint()
       ..color = _termAmber.withValues(alpha: alpha)
@@ -299,46 +540,28 @@ class HolePainter extends CustomPainter {
     canvas.translate(curX, curY);
     canvas.rotate(rotation);
 
-    // 곡괭이 자루 (두껍고 길게)
-    canvas.drawLine(
-      const Offset(0, -2),
-      const Offset(0, 22),
-      pickaxePaint,
-    );
+    canvas.drawLine(const Offset(0, -2), const Offset(0, 22), pickaxePaint);
 
-    // 곡괭이 머리 — 두꺼운 T자 + 곡선 날
     final headPaint = Paint()
       ..color = _termAmber.withValues(alpha: alpha)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3.5
       ..strokeCap = StrokeCap.round;
-    // 가로 날
     canvas.drawLine(const Offset(-12, 0), const Offset(12, 0), headPaint);
-    // 좌측 날 끝 (곡선 효과)
     canvas.drawLine(const Offset(-12, 0), const Offset(-14, 5), headPaint);
-    // 우측 날 끝
     canvas.drawLine(const Offset(12, 0), const Offset(14, 5), headPaint);
-    // 날 꼭지 (삼각형)
-    final tipPath = Path()
-      ..moveTo(-14, 5)
-      ..lineTo(-12, 8)
-      ..lineTo(-10, 5);
+    final tipPath = Path()..moveTo(-14, 5)..lineTo(-12, 8)..lineTo(-10, 5);
     canvas.drawPath(tipPath, pickaxeFill);
-    final tipPath2 = Path()
-      ..moveTo(14, 5)
-      ..lineTo(12, 8)
-      ..lineTo(10, 5);
+    final tipPath2 = Path()..moveTo(14, 5)..lineTo(12, 8)..lineTo(10, 5);
     canvas.drawPath(tipPath2, pickaxeFill);
 
     canvas.restore();
 
-    // 스윙 궤적 (잔상) — 스윙 진행 중일 때
     if (t < 0.45 && t > 0.1) {
       final trailPaint = Paint()
         ..color = _termAmber.withValues(alpha: 0.2)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5;
-      // 이전 위치에서 현재까지 궤적
       final prevT = (t - 0.08).clamp(0.0, 1.0);
       final prevEased = Curves.easeIn.transform((prevT / 0.45).clamp(0.0, 1.0));
       final prevX = startX + (endX - startX) * prevEased;
@@ -346,20 +569,16 @@ class HolePainter extends CustomPainter {
       canvas.drawLine(Offset(prevX, prevY), Offset(curX, curY), trailPaint);
     }
 
-    // ── 임팩트 이펙트 (0.45 이후) ──
     if (t >= 0.45) {
       final impactT = ((t - 0.45) / 0.55).clamp(0.0, 1.0);
       final impactAlpha = (1.0 - impactT).clamp(0.0, 1.0);
 
-      // 충격파 원 (확산)
       final ringPaint = Paint()
         ..color = _termAmber.withValues(alpha: impactAlpha * 0.6)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
-      final ringR = 8.0 + impactT * w * 0.25;
-      canvas.drawCircle(Offset(endX, endY), ringR, ringPaint);
+      canvas.drawCircle(Offset(endX, endY), 8.0 + impactT * w * 0.25, ringPaint);
 
-      // 방사형 충격선 (8방향, 더 길게)
       final sparkPaint = Paint()
         ..color = _termAmber.withValues(alpha: impactAlpha * 0.9)
         ..style = PaintingStyle.stroke
@@ -376,7 +595,6 @@ class HolePainter extends CustomPainter {
         );
       }
 
-      // 별 모양 스파크 (십자)
       if (impactT < 0.6) {
         final starAlpha = (1.0 - impactT / 0.6) * 0.8;
         final starPaint = Paint()
@@ -384,35 +602,37 @@ class HolePainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0;
         final starR = 5.0 + impactT * 15.0;
-        canvas.drawLine(
-          Offset(endX - starR, endY),
-          Offset(endX + starR, endY),
-          starPaint,
-        );
-        canvas.drawLine(
-          Offset(endX, endY - starR),
-          Offset(endX, endY + starR),
-          starPaint,
-        );
+        canvas.drawLine(Offset(endX - starR, endY), Offset(endX + starR, endY), starPaint);
+        canvas.drawLine(Offset(endX, endY - starR), Offset(endX, endY + starR), starPaint);
       }
     }
   }
 
-  /// 터미널 스타일 히트 이펙트 — "██ HIT! ██" + 파티클
+  /// 히트 이펙트 텍스트 + 파티클
   void _drawHitEffect(Canvas canvas, double w, double h, double holeTop) {
     final t = hole.hitFlashProgress.clamp(0.0, 1.0);
     final alpha = (1.0 - t).clamp(0.0, 1.0);
 
-    // ── "██ HIT! ██" 텍스트 (셀 중앙, 위로 떠오름) ──
+    final hitText = hole.moleType == MoleType.decoy
+        ? 'TRAP!'
+        : hole.moleType == MoleType.golden
+            ? 'GOLD!'
+            : (hole.hitsTaken < hole.hitsRequired ? 'CRACK!' : 'HIT!');
+    final hitColor = hole.moleType == MoleType.decoy
+        ? _nitraRed
+        : hole.moleType == MoleType.golden
+            ? _goldenColor
+            : _termAmber;
+
     final textY = holeTop * 0.35 - t * 12.0;
     final hitTp = TextPainter(
       text: TextSpan(
-        text: '██ HIT! ██',
+        text: hitText,
         style: TextStyle(
           fontFamily: 'monospace',
           fontSize: 10,
           fontWeight: FontWeight.w900,
-          color: _termAmber.withValues(alpha: alpha),
+          color: hitColor.withValues(alpha: alpha),
           letterSpacing: 1.5,
         ),
       ),
@@ -420,7 +640,6 @@ class HolePainter extends CustomPainter {
     )..layout();
     hitTp.paint(canvas, Offset((w - hitTp.width) / 2, textY));
 
-    // ── 터미널 파티클 (블록 문자들 흩뿌리기) ──
     final chars = ['█', '▓', '▒', '░', '✦', '⚡', '*'];
     final seed = (hole.pickaxeProgress * 1000).toInt();
     final rng = Random(seed);
@@ -429,7 +648,8 @@ class HolePainter extends CustomPainter {
       final dist = 10.0 + t * (25.0 + rng.nextDouble() * 20.0);
       final px = w * 0.5 + cos(angle) * dist;
       final py = holeTop - h * 0.08 + sin(angle) * dist;
-      final charAlpha = (alpha * (0.5 + rng.nextDouble() * 0.5)).clamp(0.0, 1.0);
+      final charAlpha =
+          (alpha * (0.5 + rng.nextDouble() * 0.5)).clamp(0.0, 1.0);
       if (charAlpha < 0.05) continue;
 
       final tp = TextPainter(
@@ -438,7 +658,7 @@ class HolePainter extends CustomPainter {
           style: TextStyle(
             fontFamily: 'monospace',
             fontSize: 6 + rng.nextDouble() * 4,
-            color: (i % 2 == 0 ? _termAmber : _termGreen)
+            color: (i % 2 == 0 ? hitColor : _termGreen)
                 .withValues(alpha: charAlpha),
           ),
         ),

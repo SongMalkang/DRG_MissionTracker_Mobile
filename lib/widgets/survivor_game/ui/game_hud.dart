@@ -12,11 +12,14 @@ class GameHudPainter extends CustomPainter {
   final double gameTime;
   final int killCount;
   final bool dashReady;
+  final double nitra;
+  final int hazardLevel;
 
   static const Color _termGreen = GameColors.survivorGreen;
   static const Color _termAmber = GameColors.survivorAmber;
   static const Color _termRed = GameColors.survivorRed;
   static const Color _termBg = GameColors.survivorBg;
+  static const Color _nitraColor = Color(0xFF00CED1);
 
   GameHudPainter({
     required this.hp,
@@ -28,6 +31,8 @@ class GameHudPainter extends CustomPainter {
     required this.gameTime,
     required this.killCount,
     required this.dashReady,
+    this.nitra = 0,
+    this.hazardLevel = 3,
   });
 
   @override
@@ -41,6 +46,7 @@ class GameHudPainter extends CustomPainter {
     _drawKillCount(canvas, w);
     _drawLevelBadge(canvas, w);
     if (dashReady) _drawDashIndicator(canvas, size);
+    _drawNitraCounter(canvas, w);
   }
 
   void _drawHpBar(Canvas canvas, double w) {
@@ -120,6 +126,11 @@ class GameHudPainter extends CustomPainter {
 
   void _drawLevelBadge(Canvas canvas, double w) {
     _drawText(canvas, 'LV.$level', w - 110, 28, 9, _termAmber);
+  }
+
+  void _drawNitraCounter(Canvas canvas, double w) {
+    _drawText(canvas, 'NITRA: ${nitra.toInt()}', w - 110, 42, 9, _nitraColor);
+    _drawText(canvas, 'HAZ $hazardLevel', w - 110, 56, 8, _termAmber.withValues(alpha: 0.6));
   }
 
   void _drawDashIndicator(Canvas canvas, Size size) {

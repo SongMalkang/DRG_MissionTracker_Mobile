@@ -110,6 +110,15 @@ class Player {
     invincibilityTimer = invincibilityDuration;
   }
 
+  void applyKnockback(double dx, double dy, double force) {
+    final dist = sqrt(dx * dx + dy * dy);
+    if (dist < 0.01) return;
+    final nx = dx / dist;
+    final ny = dy / dist;
+    x += nx * force * 0.1; // instant displacement
+    y += ny * force * 0.1;
+  }
+
   void heal(double amount) {
     hp = (hp + amount).clamp(0.0, maxHp);
   }

@@ -7,6 +7,7 @@ import '../services/mission_service.dart';
 import '../utils/asset_helper.dart';
 import '../widgets/mission_card.dart' show showMissionModal;
 import '../widgets/mission_detail_components.dart' show SeasonBadge;
+import '../widgets/skeleton_loading.dart';
 
 class HighlightsTab extends StatefulWidget {
   final String lang;
@@ -96,8 +97,36 @@ class _HighlightsTabState extends State<HighlightsTab> {
   @override
   Widget build(BuildContext context) {
     if (!_missionService.isInitialized) {
-      return const Center(
-          child: CircularProgressIndicator(color: Colors.orange));
+      if (_missionService.lastError != null) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.wifi_off, color: Colors.redAccent, size: 48),
+                const SizedBox(height: 12),
+                Text(
+                  i18n[widget.lang]!['load_error'] ?? 'Failed to load data.',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: () => _missionService.forceRefresh(),
+                  icon: const Icon(Icons.refresh),
+                  label: Text(i18n[widget.lang]!['retry'] ?? 'Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      return const SkeletonLoadingList();
     }
 
     final timeStr =

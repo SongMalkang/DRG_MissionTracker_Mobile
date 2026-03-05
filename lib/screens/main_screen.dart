@@ -172,28 +172,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   },
                 ),
               ],
-              bottom: _missionService.status == DataStatus.refreshing
-                  ? const PreferredSize(
-                      preferredSize: Size.fromHeight(2),
-                      child: LinearProgressIndicator(
-                        minHeight: 2,
-                        backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
-                      ),
-                    )
-                  : null,
+              bottom: _buildAppBarBottom(),
             ),
-            body: Stack(
+            body: Column(
               children: [
-                tabs[_currentIndex],
-                if (_missionService.status == DataStatus.offline ||
-                    _missionService.status == DataStatus.outdated)
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                    child: _buildOfflineWarning(),
+                Expanded(
+                  child: IndexedStack(
+                    index: _currentIndex,
+                    children: tabs,
                   ),
+                ),
               ],
             ),
             bottomNavigationBar: Container(
@@ -226,53 +214,61 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildOfflineWarning() {
+  PreferredSize? _buildAppBarBottom() {
+    final isRefreshing = _missionService.status == DataStatus.refreshing;
+    final isOffline = _missionService.status == DataStatus.offline;
     final isOutdated = _missionService.status == DataStatus.outdated;
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isOutdated ? Colors.red.withValues(alpha: 0.9) : Colors.orange.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          Image.asset(AppConstants.boscoImage, width: 40, height: 40),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+    if (isRefreshing) {
+      return const PreferredSize(
+        preferredSize: Size.fromHeight(2),
+        child: LinearProgressIndicator(
+          minHeight: 2,
+          backgroundColor: Colors.transparent,
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+        ),
+      );
+    }
+
+    if (isOffline || isOutdated) {
+      return PreferredSize(
+        preferredSize: const Size.fromHeight(28),
+        child: GestureDetector(
+          onTap: () => _missionService.forceRefresh(),
+          child: Container(
+            height: 28,
+            color: isOutdated
+                ? Colors.red.withValues(alpha: 0.8)
+                : Colors.orange.withValues(alpha: 0.7),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Icon(
+                  isOutdated ? Icons.warning_amber_rounded : Icons.cloud_off,
+                  color: Colors.white,
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
                 Text(
                   isOutdated
-                      ? (i18n[_currentLang]!['signal_lost'] ?? "SIGNAL LOST!")
-                      : (i18n[_currentLang]!['offline_mode'] ?? "OFFLINE MODE"),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      ? (i18n[_currentLang]!['signal_lost'] ?? 'STALE DATA')
+                      : (i18n[_currentLang]!['offline_mode'] ?? 'OFFLINE MODE'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                Text(
-                  isOutdated
-                      ? (i18n[_currentLang]!['signal_lost_desc'] ?? "Data is too old.")
-                      : (i18n[_currentLang]!['offline_mode_desc'] ?? "Using cached data."),
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
-                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.refresh, color: Colors.white, size: 14),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => _missionService.forceRefresh(),
-          )
-        ],
-      ),
-    );
+        ),
+      );
+    }
+
+    return null;
   }
 }
 
