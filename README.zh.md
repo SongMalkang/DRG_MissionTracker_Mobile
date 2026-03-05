@@ -76,12 +76,14 @@
 
 ## ⚖️ 免责声明
 
-1. **零收益与非商业性**: 这是一个**完全非营利性的粉丝项目**，不产生任何收益。应用内不含广告、不含인앱구매 (In-app Purchase)，也不含任何付费功能。
-2. **版权声明**: *深岩银河 (Deep Rock Galactic)* 的所有游戏资产、图像及角色的版权均归 **Ghost Ship Games** 及 **Coffee Stain Publishing** 所有。
+1. **零收益与非商业性**: 这是一个**完全非营利性的粉丝项目**，不产生任何收益。应用内不含广告、不含应用内购买，也不含任何付费功能。
+2. **版权声明**: *深岩银河 (Deep Rock Galactic)* 的所有游戏资产（图像、图标、音效等）的版权均归 **Ghost Ship Games ApS** 及 **Coffee Stain Publishing** 所有。这些资产是在权利持有者的单独许可下使用的，**不在** MIT 许可证范围内。未经 Ghost Ship Games 明确许可，禁止重新分发这些资产。
 3. **无官方关联**: 本应用与 Ghost Ship Games 没有任何官方关联，仅作为社区辅助工具使用。
 
 ---
 
 ## 📄 许可证
 
-本项目使用 [MIT 许可证](LICENSE)。
+本项目的**源代码**使用 [MIT 许可证](LICENSE)。
+
+游戏资产（图像、图标、音效等）**不在**此许可证范围内，仍归 Ghost Ship Games ApS / Coffee Stain Publishing 所有。详情请参阅 [LICENSE](LICENSE) 文件和 [ASSETS.md](ASSETS.md) 资产清单。

@@ -77,11 +77,13 @@ This project would not be possible without **[rolfosian](https://github.com/rolf
 ## ⚖️ Disclaimer
 
 1. **Zero-Revenue & Non-Commercial**: This is a **strictly non-profit fan project** that generates zero revenue. There are no ads, no in-app purchases, and no paid features. We do not accept donations within this project.
-2. **Intellectual Property**: All game assets, images, and characters are property of **Ghost Ship Games**. This app is intended to follow Fair Use guidelines.
+2. **Intellectual Property**: All game assets, images, sounds, and characters are the property of **Ghost Ship Games ApS** and **Coffee Stain Publishing**. These assets are used under separate permission from the rights holders and are **not** covered by the MIT License. Redistribution of these assets is prohibited without explicit permission from Ghost Ship Games.
 3. **No Affiliation**: This app is not affiliated with Ghost Ship Games and is used only as a supplementary community tool.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+The **source code** of this project is licensed under the [MIT License](LICENSE).
+
+Game assets (images, icons, sounds, etc.) are **excluded** from this license and remain the property of Ghost Ship Games ApS / Coffee Stain Publishing. See the [LICENSE](LICENSE) file for details and [ASSETS.md](ASSETS.md) for the full asset attribution list.
