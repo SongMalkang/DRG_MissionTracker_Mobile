@@ -74,6 +74,89 @@ This project would not be possible without **[rolfosian](https://github.com/rolf
 
 ---
 
+## 🔨 Build from Source
+
+Want to build and install the APK yourself? Follow the steps below.
+
+### Prerequisites
+
+| Tool | Required Version | Install Guide |
+|------|-----------------|---------------|
+| Flutter SDK | **3.41.x** (Dart ≥ 3.11.0) | [flutter.dev/get-started](https://docs.flutter.dev/get-started/install) |
+| Android Studio | Latest stable | [developer.android.com](https://developer.android.com/studio) |
+| Android SDK | API 36 (via SDK Manager) | Included with Android Studio |
+| Java (JDK) | **17** | Bundled with Android Studio |
+| Git | Any recent version | [git-scm.com](https://git-scm.com/) |
+
+> **Note**: Gradle 8.14, AGP 8.11.1, and Kotlin 2.2.20 are configured in the project and will be downloaded automatically on first build.
+
+### 1. Verify your environment
+
+```bash
+flutter doctor
+```
+
+Ensure **no ❌ errors** appear for the following:
+- `Flutter` — channel stable, 3.41.x
+- `Android toolchain` — Android SDK API 36
+- `Android Studio` — plugins: Dart, Flutter
+
+### 2. Clone & install dependencies
+
+```bash
+git clone https://github.com/SongMalkang/DRG_MissionTracker_Mobile.git
+cd DRG_MissionTracker_Mobile
+flutter pub get
+```
+
+### 3. Build the APK
+
+**Debug build** (for testing):
+```bash
+flutter build apk --debug
+```
+
+**Release build** (optimized, smaller size):
+```bash
+flutter build apk --release
+```
+
+> ⚠️ The release build uses `minifyEnabled` and `shrinkResources`. If you encounter missing resource errors, check `android/app/proguard-rules.pro`.
+
+### 4. Find the output APK
+
+| Build Type | Output Path |
+|-----------|-------------|
+| Debug | `build/app/outputs/flutter-apk/app-debug.apk` |
+| Release | `build/app/outputs/flutter-apk/app-release.apk` |
+
+### 5. Install on your device
+
+```bash
+# via ADB (USB debugging must be enabled)
+flutter install
+
+# or manually transfer the APK file to your device
+```
+
+### Build Web (PWA)
+
+```bash
+flutter build web
+# Output: build/web/
+```
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `Gradle build failed` | Run `cd android && ./gradlew clean` then retry |
+| `SDK version mismatch` | Open Android Studio → SDK Manager → install API 36 |
+| `flutter doctor` shows Java error | Ensure `JAVA_HOME` points to JDK 17 |
+| `Kotlin version conflict` | Delete `.gradle` cache: `rm -rf ~/.gradle/caches` |
+
+---
+
 ## ⚖️ Disclaimer
 
 1. **Zero-Revenue & Non-Commercial**: This is a **strictly non-profit fan project** that generates zero revenue. There are no ads, no in-app purchases, and no paid features. We do not accept donations within this project.

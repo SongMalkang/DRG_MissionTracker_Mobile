@@ -74,6 +74,89 @@ BOSCO가 Double XP 미션이 등장하면 직접 알려줍니다.
 
 ---
 
+## 🔨 직접 빌드하기
+
+APK를 직접 빌드하여 설치하고 싶다면 아래 절차를 따라주세요.
+
+### 사전 요구사항
+
+| 도구 | 필요 버전 | 설치 가이드 |
+|------|---------|-----------|
+| Flutter SDK | **3.41.x** (Dart ≥ 3.11.0) | [flutter.dev/get-started](https://docs.flutter.dev/get-started/install) |
+| Android Studio | 최신 안정 버전 | [developer.android.com](https://developer.android.com/studio) |
+| Android SDK | API 36 (SDK Manager에서 설치) | Android Studio에 포함 |
+| Java (JDK) | **17** | Android Studio에 번들 포함 |
+| Git | 최신 버전 | [git-scm.com](https://git-scm.com/) |
+
+> **참고**: Gradle 8.14, AGP 8.11.1, Kotlin 2.2.20은 프로젝트에 설정되어 있으며, 첫 빌드 시 자동으로 다운로드됩니다.
+
+### 1. 환경 확인
+
+```bash
+flutter doctor
+```
+
+아래 항목에 **❌ 에러가 없는지** 확인하세요:
+- `Flutter` — stable 채널, 3.41.x
+- `Android toolchain` — Android SDK API 36
+- `Android Studio` — Dart, Flutter 플러그인 설치됨
+
+### 2. 클론 및 의존성 설치
+
+```bash
+git clone https://github.com/SongMalkang/DRG_MissionTracker_Mobile.git
+cd DRG_MissionTracker_Mobile
+flutter pub get
+```
+
+### 3. APK 빌드
+
+**디버그 빌드** (테스트용):
+```bash
+flutter build apk --debug
+```
+
+**릴리스 빌드** (최적화, 용량 축소):
+```bash
+flutter build apk --release
+```
+
+> ⚠️ 릴리스 빌드는 `minifyEnabled`와 `shrinkResources`가 활성화되어 있습니다. 리소스 누락 에러 발생 시 `android/app/proguard-rules.pro`를 확인하세요.
+
+### 4. APK 산출물 위치
+
+| 빌드 타입 | 출력 경로 |
+|----------|---------|
+| Debug | `build/app/outputs/flutter-apk/app-debug.apk` |
+| Release | `build/app/outputs/flutter-apk/app-release.apk` |
+
+### 5. 디바이스에 설치
+
+```bash
+# ADB를 통한 설치 (USB 디버깅 활성화 필요)
+flutter install
+
+# 또는 APK 파일을 디바이스에 직접 전송하여 설치
+```
+
+### Web (PWA) 빌드
+
+```bash
+flutter build web
+# 산출물: build/web/
+```
+
+### 문제 해결
+
+| 문제 | 해결 방법 |
+|-----|---------|
+| `Gradle build failed` | `cd android && ./gradlew clean` 실행 후 재시도 |
+| `SDK version mismatch` | Android Studio → SDK Manager → API 36 설치 |
+| `flutter doctor`에서 Java 에러 | `JAVA_HOME`이 JDK 17을 가리키는지 확인 |
+| `Kotlin version conflict` | `.gradle` 캐시 삭제: `rm -rf ~/.gradle/caches` |
+
+---
+
 ## ⚖️ 면책 조항
 
 1. **Zero-Revenue & Non-Commercial**: 본 프로젝트는 어떠한 수익도 창출하지 않는 **순수 비영리 팬 프로젝트**입니다. 앱 내에 광고, 인앱 결제, 유료 콘텐츠가 일절 포함되어 있지 않으며, 향후에도 이를 통한 수익화를 하지 않습니다.

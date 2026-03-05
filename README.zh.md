@@ -74,6 +74,89 @@
 
 ---
 
+## 🔨 从源码构建
+
+如果您想自行构建并安装 APK，请按照以下步骤操作。
+
+### 前置要求
+
+| 工具 | 所需版本 | 安装指南 |
+|------|---------|---------|
+| Flutter SDK | **3.41.x** (Dart ≥ 3.11.0) | [flutter.dev/get-started](https://docs.flutter.dev/get-started/install) |
+| Android Studio | 最新稳定版 | [developer.android.com](https://developer.android.com/studio) |
+| Android SDK | API 36（通过 SDK Manager 安装） | 包含在 Android Studio 中 |
+| Java (JDK) | **17** | 已包含在 Android Studio 中 |
+| Git | 任意最新版本 | [git-scm.com](https://git-scm.com/) |
+
+> **提示**: Gradle 8.14、AGP 8.11.1 和 Kotlin 2.2.20 已在项目中配置，首次构建时会自动下载。
+
+### 1. 验证环境
+
+```bash
+flutter doctor
+```
+
+确保以下项目**无 ❌ 错误**：
+- `Flutter` — stable 频道, 3.41.x
+- `Android toolchain` — Android SDK API 36
+- `Android Studio` — 已安装 Dart、Flutter 插件
+
+### 2. 克隆并安装依赖
+
+```bash
+git clone https://github.com/SongMalkang/DRG_MissionTracker_Mobile.git
+cd DRG_MissionTracker_Mobile
+flutter pub get
+```
+
+### 3. 构建 APK
+
+**Debug 构建**（用于测试）：
+```bash
+flutter build apk --debug
+```
+
+**Release 构建**（已优化，体积更小）：
+```bash
+flutter build apk --release
+```
+
+> ⚠️ Release 构建启用了 `minifyEnabled` 和 `shrinkResources`。如遇资源缺失错误，请检查 `android/app/proguard-rules.pro`。
+
+### 4. APK 输出位置
+
+| 构建类型 | 输出路径 |
+|---------|---------|
+| Debug | `build/app/outputs/flutter-apk/app-debug.apk` |
+| Release | `build/app/outputs/flutter-apk/app-release.apk` |
+
+### 5. 安装到设备
+
+```bash
+# 通过 ADB 安装（需启用 USB 调试）
+flutter install
+
+# 或手动将 APK 文件传输到设备
+```
+
+### 构建 Web (PWA)
+
+```bash
+flutter build web
+# 输出: build/web/
+```
+
+### 故障排除
+
+| 问题 | 解决方案 |
+|------|---------|
+| `Gradle build failed` | 执行 `cd android && ./gradlew clean` 后重试 |
+| `SDK version mismatch` | 打开 Android Studio → SDK Manager → 安装 API 36 |
+| `flutter doctor` 显示 Java 错误 | 确保 `JAVA_HOME` 指向 JDK 17 |
+| `Kotlin version conflict` | 删除 `.gradle` 缓存: `rm -rf ~/.gradle/caches` |
+
+---
+
 ## ⚖️ 免责声明
 
 1. **零收益与非商业性**: 这是一个**完全非营利性的粉丝项目**，不产生任何收益。应用内不含广告、不含应用内购买，也不含任何付费功能。
