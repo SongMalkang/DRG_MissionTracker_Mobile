@@ -66,11 +66,43 @@
     </td>
     <td valign="middle">
       <b>Pinyo</b><br/>
-      <a href="https://steamcommunity.com/id/VonVon93/">🎮 Steam 个人资料</a><br/>
+      <a href="https://steamcommunity.com/id/VonVon93/">🎮 Steam</a> · <a href="https://x.com/SongMalkang">𝕏 Twitter</a> · <a href="https://www.reddit.com/user/SongSongYi/">📮 Reddit</a><br/>
       <sub>欢迎通过 GitHub Issues 提交错误报告和反馈。</sub>
     </td>
   </tr>
 </table>
+
+---
+
+## 💬 联系方式
+
+> **最快的联系方式是 Discord DM。**
+
+<table>
+  <tr>
+    <td align="center" width="100">
+      <a href="https://discord.com/users/286124554915676161">
+        <img src="https://avatars.githubusercontent.com/u/108260540?v=4"
+             width="80" style="border-radius:50%" alt="vonvon93"/>
+      </a>
+    </td>
+    <td valign="middle">
+      <b>vonvon93</b><br/>
+      <sub>错误报告、反馈、功能建议，随时欢迎。</sub><br/><br/>
+      <a href="https://discord.com/users/286124554915676161">
+        <img src="https://img.shields.io/badge/发送_Discord_DM-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Send DM"/>
+      </a>
+    </td>
+  </tr>
+</table>
+
+---
+
+## ☕ 赞助
+
+<a href="https://ko-fi.com/songmalkang">
+  <img src="https://storage.ko-fi.com/cdn/kofi2.png?v=6" alt="在 Ko-fi 上赞助" height="36"/>
+</a>
 
 ---
 
@@ -159,7 +191,7 @@ flutter build web
 
 ## ⚖️ 免责声明
 
-1. **零收益与非商业性**: 这是一个**完全非营利性的粉丝项目**，不产生任何收益。应用内不含广告、不含应用内购买，也不含任何付费功能。
+1. **非商业性**: 这是一个**完全非营利性的粉丝项目**。应用内不含广告、不含应用内购买，也不含任何付费功能。
 2. **版权声明**: *深岩银河 (Deep Rock Galactic)* 的所有游戏资产（图像、图标、音效等）的版权均归 **Ghost Ship Games ApS** 及 **Coffee Stain Publishing** 所有。这些资产是在权利持有者的单独许可下使用的，**不在** MIT 许可证范围内。未经 Ghost Ship Games 明确许可，禁止重新分发这些资产。
 3. **无官方关联**: 本应用与 Ghost Ship Games 没有任何官方关联，仅作为社区辅助工具使用。
 

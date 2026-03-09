@@ -64,4 +64,6 @@ class AppConstants {
       'https://songmalkang.github.io/DRG_MissionTracker_Mobile/privacy.html';
   static const String githubRepoUrl =
       'https://github.com/SongMalkang/DRG_MissionTracker_Mobile';
+  static const String githubReleasesUrl =
+      'https://github.com/SongMalkang/DRG_MissionTracker_Mobile/releases';
 }

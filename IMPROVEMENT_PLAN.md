@@ -55,7 +55,7 @@ Phase 0 (Lint) → Phase 1 (구조) → Phase 3 (테스트) → Phase 5 (Riverpo
 
 ## Phase 3: 테스트 보강 ✅
 
-### 현재: 9개 테스트 파일, 84개 테스트 통과
+### 현재: 9개 테스트 파일, 109개 테스트 통과
 
 ### 3.1 게임 엔진 테스트 ✅
 - `test/widgets/survivor_game/game_engine_test.dart` 신규 (19개 테스트)
@@ -84,11 +84,23 @@ Phase 0 (Lint) → Phase 1 (구조) → Phase 3 (테스트) → Phase 5 (Riverpo
 
 ---
 
-## 검증 결과 (2026-03-04)
+## 추가 수정 (2026-03-05)
+
+### home_widget_service.dart 버그 수정
+- `ms.fetchMissions()` → `ms.forceRefresh()` (존재하지 않는 메서드 호출 수정)
+- `dart analyze`에서 `undefined_method` 에러로 발견
+
+### UX 개선 (Phase A~C)
+- 상세 내용은 `ANALYSIS_AND_PLAN.md` 참조
+- Skeleton Loading, 에러 상태 통일, IndexedStack, 오프라인 배너, PopScope 등 11개 항목
+
+---
+
+## 검증 결과 (2026-03-05)
 
 | 항목 | 결과 |
 |------|------|
 | `dart analyze --fatal-infos` | 0 issues |
-| `flutter test` | 84/84 통과 |
-| `flutter build web --release` | 성공 |
+| `flutter test` | 109/109 통과 |
+| `flutter build web --release` | 미확인 (analyze + test 통과) |
 | `print()` 호출 | 0건 |

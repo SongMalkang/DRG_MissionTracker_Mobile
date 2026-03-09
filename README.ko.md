@@ -66,11 +66,43 @@ BOSCO가 Double XP 미션이 등장하면 직접 알려줍니다.
     </td>
     <td valign="middle">
       <b>Pinyo</b><br/>
-      <a href="https://steamcommunity.com/id/VonVon93/">🎮 Steam 프로필</a><br/>
-      <sub>버그 제보 및 피드백은 Steam으로 부탁드립니다.</sub>
+      <a href="https://steamcommunity.com/id/VonVon93/">🎮 Steam</a> · <a href="https://x.com/SongMalkang">𝕏 Twitter</a> · <a href="https://www.reddit.com/user/SongSongYi/">📮 Reddit</a><br/>
+      <sub>버그 제보 및 피드백은 GitHub Issues로 부탁드립니다.</sub>
     </td>
   </tr>
 </table>
+
+---
+
+## 💬 연락처
+
+> **가장 빠른 연락 방법은 Discord DM입니다.**
+
+<table>
+  <tr>
+    <td align="center" width="100">
+      <a href="https://discord.com/users/286124554915676161">
+        <img src="https://avatars.githubusercontent.com/u/108260540?v=4"
+             width="80" style="border-radius:50%" alt="vonvon93"/>
+      </a>
+    </td>
+    <td valign="middle">
+      <b>vonvon93</b><br/>
+      <sub>버그 제보, 피드백, 기능 요청 등 무엇이든 편하게 보내주세요.</sub><br/><br/>
+      <a href="https://discord.com/users/286124554915676161">
+        <img src="https://img.shields.io/badge/Discord_DM_보내기-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Send DM"/>
+      </a>
+    </td>
+  </tr>
+</table>
+
+---
+
+## ☕ 후원
+
+<a href="https://ko-fi.com/songmalkang">
+  <img src="https://storage.ko-fi.com/cdn/kofi2.png?v=6" alt="Ko-fi에서 후원하기" height="36"/>
+</a>
 
 ---
 
@@ -159,7 +191,7 @@ flutter build web
 
 ## ⚖️ 면책 조항
 
-1. **Zero-Revenue & Non-Commercial**: 본 프로젝트는 어떠한 수익도 창출하지 않는 **순수 비영리 팬 프로젝트**입니다. 앱 내에 광고, 인앱 결제, 유료 콘텐츠가 일절 포함되어 있지 않으며, 향후에도 이를 통한 수익화를 하지 않습니다.
+1. **Non-Commercial**: 본 프로젝트는 **순수 비영리 팬 프로젝트**입니다. 앱 내에 광고, 인앱 결제, 유료 콘텐츠가 일절 포함되어 있지 않습니다.
 2. **Intellectual Property**: *Deep Rock Galactic*의 모든 게임 에셋(이미지, 아이콘, 사운드 등)의 저작권은 **Ghost Ship Games ApS** 및 **Coffee Stain Publishing**에 있습니다. 해당 에셋은 권리자의 별도 허가 하에 사용되며, MIT 라이선스에 **포함되지 않습니다**. Ghost Ship Games의 명시적 허가 없이 에셋을 재배포하는 것은 금지됩니다.
 3. **No Affiliation**: 본 앱은 Ghost Ship Games와 공식적으로 연관되어 있지 않으며, 커뮤니티를 위한 보조 도구로만 작동합니다.
 

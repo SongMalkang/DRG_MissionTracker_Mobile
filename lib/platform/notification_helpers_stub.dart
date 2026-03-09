@@ -1,7 +1,15 @@
-// 웹용 알림 stub: Android 전용 알림 기능을 no-op 처리
+import '../services/web_notification_service.dart';
 
-Future<bool> requestNotificationPermission() async => false;
+/// 웹용 알림 헬퍼: Web Notification API에 위임
 
-Future<void> scheduleNotificationAlarms() async {}
+Future<bool> requestNotificationPermission() async {
+  return WebNotificationService().requestPermission();
+}
 
-Future<void> cancelAllNotificationAlarms() async {}
+Future<void> scheduleNotificationAlarms() async {
+  await WebNotificationService().scheduleAlarms();
+}
+
+Future<void> cancelAllNotificationAlarms() async {
+  await WebNotificationService().cancelAllAlarms();
+}

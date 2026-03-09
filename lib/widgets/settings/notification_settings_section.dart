@@ -43,7 +43,8 @@ class NotificationSettingsSection extends StatefulWidget {
 
 class _NotificationSettingsSectionState
     extends State<NotificationSettingsSection> {
-  bool get _isPlatformUnsupported => kIsWeb;
+  // PWA 전환: 웹에서도 Web Notification API를 통해 알림 지원
+  bool get _isPlatformUnsupported => false;
 
   @override
   Widget build(BuildContext context) {
@@ -75,26 +76,25 @@ class _NotificationSettingsSectionState
             ],
           ),
         ),
-        // 플랫폼 미지원 배너 (iOS / Web)
-        if (_isPlatformUnsupported)
+        // 웹 알림 안내 배너
+        if (kIsWeb)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.08),
+              color: Colors.blue.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.25)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.notifications_off_outlined,
-                    color: Colors.redAccent, size: 14),
+                const Icon(Icons.web, color: Colors.lightBlueAccent, size: 14),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    langMap['notif_platform_unsupported']!,
+                    langMap['notif_web_note'] ?? langMap['notif_platform_unsupported']!,
                     style:
-                        const TextStyle(color: Colors.redAccent, fontSize: 11),
+                        const TextStyle(color: Colors.lightBlueAccent, fontSize: 11),
                   ),
                 ),
               ],

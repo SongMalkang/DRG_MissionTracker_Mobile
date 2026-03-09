@@ -15,6 +15,7 @@ import '../services/update_service.dart';
 import '../widgets/changelog_dialog.dart';
 import '../widgets/update_dialog.dart';
 import '../widgets/debug_menu.dart';
+import '../widgets/pwa_install_guide.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -148,6 +149,12 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                 ),
               ),
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.help_outline),
+                  tooltip: i18n[_currentLang]!['pwa_guide_title'],
+                  onPressed: () =>
+                      showPwaInstallGuide(context, _currentLang),
+                ),
                 IconButton(
                   icon: const Icon(Icons.settings),
                   onPressed: () async {

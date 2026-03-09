@@ -1,11 +1,11 @@
 {
-  "latest_version": "1.5.0",
+  "latest_version": "1.6.0",
   "min_required": "1.0.0",
   "force_update": false,
-  "store_url": "https://play.google.com/store/apps/details?id=com.songmalkang.drg_mission_tracker",
+  "store_url": "https://github.com/SongMalkang/DRG_MissionTracker_Mobile/releases",
   "changelog": {
-    "KR": "• 미니게임 3종 개선 (보스 특수능력, Nitra/수류탄, Hazard Level, Pit Jaw, 무기 해금)\n• 위젯 정상화 (테스트중)\n• 미션 워치리스트 추가\n• Deep Dive 버그 수정",
-    "EN": "• 3 mini-games improved (boss abilities, Nitra/grenades, Hazard Level, Pit Jaw, weapon unlocks)\n• Widget stabilization (testing)\n• Mission watchlist added\n• Deep Dive bug fix",
-    "CN": "• 3款迷你游戏改进（Boss特殊能力、Nitra/手雷、危险等级、Pit Jaw、武器解锁）\n• 小组件稳定化（测试中）\n• 新增任务关注列表\n• Deep Dive Bug修复"
+    "KR": "• PWA 전환: Android/iOS 모두 PWA로 설치 가능\n• PC 브라우저 웹 알림 지원 (Web Notification API)\n• 도움말 버튼 추가: 플랫폼별 PWA 설치 가이드\n• APK 다운로드 안내 (GitHub Releases 링크)\n• README 개선: Discord 연락처, Ko-fi 후원, SNS 링크 추가",
+    "EN": "• PWA pivot: installable on Android/iOS/PC via browser\n• PC browser web notifications (Web Notification API)\n• Help button added: platform-specific PWA install guide\n• APK download guide (GitHub Releases link)\n• README improvements: Discord contact, Ko-fi, SNS links",
+    "CN": "• PWA转型：Android/iOS/PC均可通过浏览器安装\n• PC浏览器Web通知支持（Web Notification API）\n• 新增帮助按钮：各平台PWA安装指南\n• APK下载指引（GitHub Releases链接）\n• README改进：Discord联系方式、Ko-fi赞助、SNS链接"
   }
 }

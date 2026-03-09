@@ -1,4 +1,6 @@
-/// 웹 빌드용 stub: Android 전용 초기화를 no-op 처리
+import '../services/web_notification_service.dart';
+
+/// 웹 빌드용 초기화: Web Notification 서비스 시작
 Future<void> platformInit() async {
-  // 웹에서는 AlarmManager / NotificationService 사용 불가 → 아무것도 안 함
+  await WebNotificationService().initialize();
 }

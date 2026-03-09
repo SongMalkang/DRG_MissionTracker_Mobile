@@ -66,11 +66,43 @@ This project would not be possible without **[rolfosian](https://github.com/rolf
     </td>
     <td valign="middle">
       <b>Pinyo</b><br/>
-      <a href="https://steamcommunity.com/id/VonVon93/">🎮 Steam Profile</a><br/>
+      <a href="https://steamcommunity.com/id/VonVon93/">🎮 Steam</a> · <a href="https://x.com/SongMalkang">𝕏 Twitter</a> · <a href="https://www.reddit.com/user/SongSongYi/">📮 Reddit</a><br/>
       <sub>Bug reports and feedback are welcome via GitHub Issues.</sub>
     </td>
   </tr>
 </table>
+
+---
+
+## 💬 Contact
+
+> **The fastest way to reach me is Discord DM.**
+
+<table>
+  <tr>
+    <td align="center" width="100">
+      <a href="https://discord.com/users/286124554915676161">
+        <img src="https://avatars.githubusercontent.com/u/108260540?v=4"
+             width="80" style="border-radius:50%" alt="vonvon93"/>
+      </a>
+    </td>
+    <td valign="middle">
+      <b>vonvon93</b><br/>
+      <sub>Bug reports, feedback, feature requests — anything is welcome.</sub><br/><br/>
+      <a href="https://discord.com/users/286124554915676161">
+        <img src="https://img.shields.io/badge/Send_DM_on_Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Send DM"/>
+      </a>
+    </td>
+  </tr>
+</table>
+
+---
+
+## ☕ Support
+
+<a href="https://ko-fi.com/songmalkang">
+  <img src="https://storage.ko-fi.com/cdn/kofi2.png?v=6" alt="Support on Ko-fi" height="36"/>
+</a>
 
 ---
 
@@ -159,7 +191,7 @@ flutter build web
 
 ## ⚖️ Disclaimer
 
-1. **Zero-Revenue & Non-Commercial**: This is a **strictly non-profit fan project** that generates zero revenue. There are no ads, no in-app purchases, and no paid features. We do not accept donations within this project.
+1. **Non-Commercial**: This is a **strictly non-profit fan project**. There are no ads, no in-app purchases, and no paid features of any kind within the app.
 2. **Intellectual Property**: All game assets, images, sounds, and characters are the property of **Ghost Ship Games ApS** and **Coffee Stain Publishing**. These assets are used under separate permission from the rights holders and are **not** covered by the MIT License. Redistribution of these assets is prohibited without explicit permission from Ghost Ship Games.
 3. **No Affiliation**: This app is not affiliated with Ghost Ship Games and is used only as a supplementary community tool.
 

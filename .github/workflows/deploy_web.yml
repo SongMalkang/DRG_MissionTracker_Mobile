@@ -23,7 +23,12 @@ jobs:
 
       - run: flutter pub get
 
+      # 커스텀 서비스 워커(web/sw.js)를 사용하므로 Flutter 기본 캐싱 SW 비활성화
+      # --pwa-strategy는 deprecated이지만 Flutter 기본 SW 충돌 방지를 위해 유지
       - run: flutter build web --release --pwa-strategy=none --base-href "/DRG_MissionTracker_Mobile/"
+
+      # SW 버전을 빌드 타임스탬프로 교체 → 배포마다 캐시 갱신
+      - run: sed -i "s/__SW_VERSION__/$(date -u +%Y%m%d%H%M%S)/" build/web/sw.js
 
       # docs/privacy.html을 빌드 결과에 복사 (기존 URL 유지)
       - run: cp docs/privacy.html build/web/privacy.html
