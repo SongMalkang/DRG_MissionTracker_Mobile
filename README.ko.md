@@ -8,6 +8,8 @@
 
 **Bosco Terminal**은 *Deep Rock Galactic(DRG)* 플레이어를 위한 비공식 미션 추적 앱입니다. Double XP 미션을 놓치지 마세요 — 실시간 미션 트래킹, 딥 다이브 정보, BOSCO 테마 알림을 한곳에서 확인하세요.
 
+> **지금 바로 사용해보세요:** [**songmalkang.github.io/DRG_MissionTracker_Mobile**](https://songmalkang.github.io/DRG_MissionTracker_Mobile/) — 모든 플랫폼에서 PWA로 설치 가능합니다.
+
 ---
 
 ## ✨ 주요 기능
@@ -15,7 +17,7 @@
 - **실시간 미션 트래커** — 30분마다 갱신되는 미션 로테이션. Double XP 및 Gold Rush 미션은 황금색 테두리로 강조되어 상단에 고정됩니다.
 - **딥 다이브 & 엘리트 딥 다이브** — 단계별 주 목표, 보조 목표, 바이옴, 이상 현상 정보를 모두 제공합니다.
 - **Trivia 시스템** — 바이옴, 미션 타입, 버프, 경고 뱃지를 탭하면 해당 항목의 상세 정보와 공략 팁을 확인할 수 있습니다.
-- **BOSCO 푸시 알림** — Double XP 미션이 등장하면 알림을 받으세요. 알림받을 요일, 시간, 미션 타입을 직접 설정할 수 있습니다. *(Android 전용)*
+- **BOSCO 푸시 알림** — Double XP 미션이 등장하면 알림을 받으세요. 알림받을 요일, 시간, 미션 타입을 직접 설정할 수 있습니다. *(Android & PC 브라우저)*
 - **오프라인 캐시** — 네트워크 연결 없이도 마지막으로 가져온 데이터를 표시합니다.
 - **3개 언어 지원** — 한국어 · English · 中文
 
@@ -23,24 +25,28 @@
 
 ## 📱 플랫폼 지원
 
-| 플랫폼 | 지원 | 비고 |
-|---|---|---|
-| Android | ✅ | Push 알림 포함 전체 기능 지원 |
-| Web PWA | ✅ | Push 알림 불가 (브라우저 한계) |
-| iOS | ❌ | App Store 등록비($99/년) 문제로 미지원 |
+| 플랫폼 | 지원 | 알림 | 비고 |
+|---|---|---|---|
+| Android | ✅ 전체 | ✅ 백그라운드 푸시 | [APK 다운로드](https://github.com/SongMalkang/DRG_MissionTracker_Mobile/releases)로 설치 |
+| Web (PC) | ✅ 전체 | ✅ 브라우저 알림 | [웹에서 열기](https://songmalkang.github.io/DRG_MissionTracker_Mobile/) · PWA 설치 가능 |
+| iOS | ⚠️ 부분 | ❌ 미지원 | Safari "홈 화면에 추가"로 PWA 설치 · App Store 미출시 |
+| Web (모바일) | ⚠️ 부분 | ❌ 미지원 | PWA 설치 가능하나 알림 불가 |
 
 ---
 
-## 🔔 푸시 알림 *(Android 전용)*
+## 🔔 푸시 알림
 
 BOSCO가 Double XP 미션이 등장하면 직접 알려줍니다.
 
 - 알림받을 **요일**과 **시간**을 자유롭게 설정
 - 원하지 않는 미션 타입은 알림에서 제외 (예: Escort Duty)
-- 앱이 꺼진 상태에서도 동작
 - 설정한 언어로 BOSCO 스타일의 위트있는 문구로 전달
 
-*Web PWA 버전은 브라우저 한계로 인해 Push 알림이 지원되지 않습니다.*
+| 플랫폼 | 동작 방식 |
+|---|---|
+| **Android** | AlarmManager를 통한 백그라운드 푸시 — 앱이 꺼져도 동작 |
+| **PC 브라우저 / PWA** | Web Notification API — 브라우저 또는 PWA 창이 열려있을 때 동작 |
+| **모바일 브라우저 / iOS** | 플랫폼 한계로 알림 미지원 |
 
 ---
 

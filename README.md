@@ -8,6 +8,8 @@
 
 **Bosco Terminal** is an unofficial companion app for *Deep Rock Galactic (DRG)*. Never miss a Double XP mission again — get real-time mission tracking, Deep Dive info, and BOSCO-themed push notifications, all in one place.
 
+> **Try it now in your browser:** [**songmalkang.github.io/DRG_MissionTracker_Mobile**](https://songmalkang.github.io/DRG_MissionTracker_Mobile/) — installable as a PWA on any platform.
+
 ---
 
 ## ✨ Features
@@ -15,7 +17,7 @@
 - **Real-Time Mission Tracker** — Mission rotation refreshes every 30 minutes. Double XP and Gold Rush missions are highlighted with a golden border and pinned to the top.
 - **Deep Dive & Elite Deep Dive** — Full stage-by-stage breakdown including primary objectives, secondary objectives, biome, and anomaly info.
 - **Trivia System** — Tap any biome, mission type, buff, or warning badge for detailed tips and descriptions.
-- **BOSCO Push Notifications** — Get alerted when Double XP missions appear. Customize which days, time, and mission types trigger notifications. *(Android only)*
+- **BOSCO Push Notifications** — Get alerted when Double XP missions appear. Customize which days, time, and mission types trigger notifications. *(Android & PC browsers)*
 - **Offline Cache** — Displays the last fetched data even without a network connection.
 - **3 Languages** — Korean (한국어) · English · Chinese (中文)
 
@@ -23,24 +25,28 @@
 
 ## 📱 Platform Support
 
-| Platform | Support | Notes |
-|---|---|---|
-| Android | ✅ | Full support including Push Notifications |
-| Web PWA | ✅ | Push Notifications unavailable (browser limitation) |
-| iOS | ❌ | Not available due to App Store registration costs |
+| Platform | Support | Notifications | Notes |
+|---|---|---|---|
+| Android | ✅ Full | ✅ Background push | Native app via [APK download](https://github.com/SongMalkang/DRG_MissionTracker_Mobile/releases) |
+| Web (PC) | ✅ Full | ✅ Browser notifications | [Open in browser](https://songmalkang.github.io/DRG_MissionTracker_Mobile/) · Installable as PWA |
+| iOS | ⚠️ Partial | ❌ Not supported | PWA via Safari "Add to Home Screen" · No App Store release |
+| Web (Mobile) | ⚠️ Partial | ❌ Not supported | PWA installable but notifications unavailable |
 
 ---
 
-## 🔔 Push Notifications *(Android only)*
+## 🔔 Push Notifications
 
 Bosco will personally alert you when a Double XP mission appears.
 
 - Set your preferred **days of the week** and **time** for alerts
 - Filter out mission types you don't want to be notified about (e.g. Escort Duty)
-- Works even when the app is closed
 - Delivered in your selected language with BOSCO-flavored messages
 
-*Push notifications are not supported on the Web PWA version due to browser limitations.*
+| Platform | How it works |
+|---|---|
+| **Android** | Background push via AlarmManager — works even when the app is closed |
+| **PC Browser / PWA** | Web Notification API — works while the browser or PWA window is open |
+| **Mobile Browser / iOS** | Not supported due to platform limitations |
 
 ---
 
