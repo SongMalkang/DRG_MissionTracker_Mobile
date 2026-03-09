@@ -93,7 +93,7 @@ This project would not be possible without **[rolfosian](https://github.com/rolf
       </a>
     </td>
     <td valign="middle">
-      <b>vonvon93</b><br/>
+      <b>vonvon0741</b><br/>
       <sub>Bug reports, feedback, feature requests — anything is welcome.</sub><br/><br/>
       <a href="https://discord.com/users/286124554915676161">
         <img src="https://img.shields.io/badge/Send_DM_on_Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Send DM"/>
