@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import '../../utils/strings.dart';
 
@@ -43,8 +43,15 @@ class NotificationSettingsSection extends StatefulWidget {
 
 class _NotificationSettingsSectionState
     extends State<NotificationSettingsSection> {
-  // PWA 전환: 웹에서도 Web Notification API를 통해 알림 지원
-  bool get _isPlatformUnsupported => false;
+  // 웹 모바일(Android/iOS PWA)에서는 Notification API 미지원 → 비활성화
+  // PC 브라우저/PWA에서만 웹 알림 지원
+  // Flutter 웹에서 defaultTargetPlatform은 User-Agent 기반으로 자동 감지됨
+  bool get _isPlatformUnsupported {
+    if (!kIsWeb) return false;
+    final platform = defaultTargetPlatform;
+    return platform == TargetPlatform.android ||
+        platform == TargetPlatform.iOS;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,25 +83,43 @@ class _NotificationSettingsSectionState
             ],
           ),
         ),
-        // 웹 알림 안내 배너
+        // 웹 알림 안내 배너 (모바일: 미지원 경고 / PC: 안내)
         if (kIsWeb)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.08),
+              color: _isPlatformUnsupported
+                  ? Colors.red.withValues(alpha: 0.08)
+                  : Colors.blue.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.blue.withValues(alpha: 0.25)),
+              border: Border.all(
+                color: _isPlatformUnsupported
+                    ? Colors.red.withValues(alpha: 0.25)
+                    : Colors.blue.withValues(alpha: 0.25),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.web, color: Colors.lightBlueAccent, size: 14),
+                Icon(
+                  _isPlatformUnsupported ? Icons.block : Icons.web,
+                  color: _isPlatformUnsupported
+                      ? Colors.redAccent
+                      : Colors.lightBlueAccent,
+                  size: 14,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    langMap['notif_web_note'] ?? langMap['notif_platform_unsupported']!,
-                    style:
-                        const TextStyle(color: Colors.lightBlueAccent, fontSize: 11),
+                    _isPlatformUnsupported
+                        ? langMap['notif_platform_unsupported']!
+                        : (langMap['notif_web_note'] ?? langMap['notif_platform_unsupported']!),
+                    style: TextStyle(
+                      color: _isPlatformUnsupported
+                          ? Colors.redAccent
+                          : Colors.lightBlueAccent,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ],

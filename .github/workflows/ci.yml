@@ -17,6 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.41.2'
           channel: stable
       - run: flutter pub get
       - run: dart analyze --fatal-infos
@@ -29,6 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.41.2'
           channel: stable
       - run: flutter pub get
       - run: flutter test --coverage
@@ -51,6 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.41.2'
           channel: stable
       - run: flutter pub get
       # web 빌드: 커스텀 SW(web/sw.js) 사용, Flutter 기본 캐싱 SW 비활성화

@@ -145,9 +145,9 @@ class WebNotificationService {
           .toList();
       if (!days.contains(currentDay)) return;
 
-      final startHour = prefs.getInt('notif_time_hour') ?? 18;
+      final startHour = prefs.getInt('notif_time_hour') ?? 19;
       final startMinute = prefs.getInt('notif_time_minute') ?? 0;
-      final endHour = prefs.getInt('notif_end_hour') ?? 23;
+      final endHour = prefs.getInt('notif_end_hour') ?? 22;
       final endMinute = prefs.getInt('notif_end_minute') ?? 0;
 
       final currentSlot = toSlot(now.hour, now.minute);
