@@ -3,6 +3,26 @@
 // key: pubspec.yaml의 version (예: '1.1.0')
 
 const Map<String, Map<String, String>> changelogData = {
+  '1.6.0': {
+    'KR': '• PWA 전면 전환: 모든 플랫폼에서 브라우저로 설치 가능.\n'
+        '• PC 브라우저 웹 알림 지원 (Web Notification API).\n'
+        '• 도움말 버튼 추가: 플랫폼별 PWA 설치 가이드.\n'
+        '• APK 다운로드 안내 (GitHub Releases 링크).\n'
+        '• 알림 설정 UI 개선: 플랫폼별 지원 현황 안내.\n'
+        '• README 대규모 개편: PWA 링크, Discord 연락처, Ko-fi.',
+    'EN': '• Full PWA pivot: installable via browser on all platforms.\n'
+        '• PC browser web notifications (Web Notification API).\n'
+        '• Help button: platform-specific PWA install guide.\n'
+        '• APK download card (GitHub Releases link).\n'
+        '• Notification settings UI: per-platform support info.\n'
+        '• README overhaul: PWA link, Discord contact, Ko-fi.',
+    'CN': '• PWA全面转型：所有平台均可通过浏览器安装。\n'
+        '• PC浏览器Web通知支持（Web Notification API）。\n'
+        '• 新增帮助按钮：各平台PWA安装指南。\n'
+        '• APK下载卡片（GitHub Releases链接）。\n'
+        '• 通知设置UI改进：各平台支持状态提示。\n'
+        '• README大规模改版：PWA链接、Discord联系方式、Ko-fi。',
+  },
   '1.5.0': {
     'KR': '• 미니게임 3종 개선 (보스 특수능력, Nitra/수류탄, Hazard Level, Pit Jaw, 무기 해금).\n'
         '• 위젯 정상화 (테스트중).\n'
