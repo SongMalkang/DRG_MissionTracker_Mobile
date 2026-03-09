@@ -28,7 +28,7 @@
 - **`web_notification_service.dart`** (신규) — Web Notification API 서비스, 30분 주기 폴링, Service Worker postMessage 연동
 - **`notification_shared.dart`** (신규) — 알림 공통 코드 분리 (boscoMessages, toSlot, formatTimeKey), 웹 빌드 시 `dart:io` 의존성 제거
 - **`pwa_install_guide.dart`** (신규) — PWA 설치 가이드 다이얼로그 위젯 (플랫폼별 아코디언 카드, 알림 지원 배너, APK 다운로드 카드)
-- **`sw.js`** (신규) — 커스텀 Service Worker (캐싱 없음, 알림 + installability 전용)
+- **`sw.js`** (신규) — 커스텀 Service Worker (스마트 캐싱 + 알림 + installability). CanvasKit/에셋은 cache-first, 앱 코드는 network-first, API는 network-only. 배포 시 CI가 버전을 자동 주입하여 캐시 갱신
 - **`notification_service.dart`** — 공통 코드를 `notification_shared.dart`로 분리
 - **`notification_settings_section.dart`** — 웹 플랫폼 비활성화 제거, 안내 배너로 교체
 - **`platform_init_stub.dart` / `notification_helpers_stub.dart`** — no-op에서 WebNotificationService 연동으로 변경

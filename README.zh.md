@@ -207,4 +207,4 @@ flutter build web
 
 本项目的**源代码**使用 [MIT 许可证](LICENSE)。
 
-游戏资产（图像、图标、音效等）**不在**此许可证范围内，仍归 Ghost Ship Games ApS / Coffee Stain Publishing 所有。详情请参阅 [LICENSE](LICENSE) 文件和 [ASSETS.md](ASSETS.md) 资产清单。
+游戏资产（图像、图标、音效等）**不在**此许可证范围内，仍归 Ghost Ship Games ApS / Coffee Stain Publishing 所有。详情请参阅 [LICENSE](LICENSE) 文件和 [ASSETS.md](docs/ASSETS.md) 资产清单。

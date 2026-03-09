@@ -207,4 +207,4 @@ flutter build web
 
 본 프로젝트의 **소스 코드**는 [MIT 라이선스](LICENSE) 하에 배포됩니다.
 
-게임 에셋(이미지, 아이콘, 사운드 등)은 MIT 라이선스에서 **제외**되며, Ghost Ship Games ApS / Coffee Stain Publishing의 소유입니다. 자세한 내용은 [LICENSE](LICENSE) 파일과 [ASSETS.md](ASSETS.md) 에셋 목록을 참조하세요.
+게임 에셋(이미지, 아이콘, 사운드 등)은 MIT 라이선스에서 **제외**되며, Ghost Ship Games ApS / Coffee Stain Publishing의 소유입니다. 자세한 내용은 [LICENSE](LICENSE) 파일과 [ASSETS.md](docs/ASSETS.md) 에셋 목록을 참조하세요.

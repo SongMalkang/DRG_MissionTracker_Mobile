@@ -207,4 +207,4 @@ flutter build web
 
 The **source code** of this project is licensed under the [MIT License](LICENSE).
 
-Game assets (images, icons, sounds, etc.) are **excluded** from this license and remain the property of Ghost Ship Games ApS / Coffee Stain Publishing. See the [LICENSE](LICENSE) file for details and [ASSETS.md](ASSETS.md) for the full asset attribution list.
+Game assets (images, icons, sounds, etc.) are **excluded** from this license and remain the property of Ghost Ship Games ApS / Coffee Stain Publishing. See the [LICENSE](LICENSE) file for details and [ASSETS.md](docs/ASSETS.md) for the full asset attribution list.

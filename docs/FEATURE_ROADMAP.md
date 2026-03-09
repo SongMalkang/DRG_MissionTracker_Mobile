@@ -1,33 +1,34 @@
 # Bosco Terminal - Feature Roadmap
 
-> 기능 기획 문서. 기술적 리팩토링은 `IMPROVEMENT_PLAN.md` 참조.
+> 기능 기획 문서. 기술적 리팩토링은 `docs/IMPROVEMENT_PLAN.md` 참조.
 
 ## Platform Strategy
 
 | Platform | Method | Cost | Note |
 |----------|--------|------|------|
-| Android | Play Store | $25 (one-time) | Primary target |
-| iOS / Web | Flutter Web (PWA) | $0 (hosting only) | Apple Store $99/yr 배제 |
+| Web (PC/Mobile) | GitHub Pages PWA | $0 | Primary target · [Live](https://songmalkang.github.io/DRG_MissionTracker_Mobile/) |
+| Android | APK via GitHub Releases | $0 | Full features (background push + home widget) |
+| iOS | PWA via Safari | $0 | Partial support · App Store $99/yr 배제 |
 
-Flutter Web은 번들 사이즈(2MB+)가 크지만, 타겟 유저(PC 게이머)의 네트워크 환경에서 허용 범위.
-코드베이스 단일 유지가 우선. 웹 UX 불만족 시 경량 PWA 별도 개발 검토.
+Flutter Web 번들(~42MB, CanvasKit 포함)은 무겁지만, 커스텀 Service Worker의 cache-first 전략으로 재방문 시 ~3MB만 전송.
+코드베이스 단일 유지가 우선. GitHub Pages + Fastly CDN으로 호스팅.
 
 ---
 
 ## Feature Priority
 
 ```
-[P0] Push Notification     ← app 존재 이유. 웹 불가 기능.
-[P0] Android Home Widget   ← app 존재 이유. 웹 불가 기능.
-[P1] Mutator/Warning 설명  ← 기존 UI에 녹이는 방식. 작업량 적음.
+[P0] Push Notification     ← ✅ 완료. Android(AlarmManager) + PC Web(Notification API).
+[P0] Android Home Widget   ← ✅ 완료. Android APK 전용.
+[P1] Mutator/Warning 설명  ← ✅ 완료. Trivia 시스템으로 구현.
 [P2] Double XP 통계        ← 기존 데이터 활용. 차별화 요소.
-[P2] Custom Watchlist       ← Push 알림 확장. 개인화.
+[P2] Custom Watchlist       ← ✅ 완료. Push 알림 확장. 개인화.
 [P3] Daily Deal 표시        ← 데이터 이미 존재. 여유 시 추가.
 ```
 
 ---
 
-## F1: Push Notification (P0)
+## F1: Push Notification (P0) ✅ 완료
 
 ### 개요
 Double XP 미션 등장 시 사용자에게 즉시 알림.
@@ -65,10 +66,11 @@ Double XP 미션 등장 시 사용자에게 즉시 알림.
 └─ Daily Deal 알림: [ON/OFF]
 ```
 
-**PWA 제한사항**
-- iOS PWA에서는 Push API 지원이 제한적 (iOS 16.4+에서 부분 지원)
-- Web Push는 서버(FCM 등) 필요 → 초기에는 Android only로 제한
-- iOS 사용자에게는 "앱을 열어서 확인" 안내
+**PWA 알림 현황** (v1.6.0 업데이트)
+- **PC 브라우저(Chrome/Edge)**: Web Notification API + Service Worker로 알림 지원 ✅
+- **Android APK**: AlarmManager를 통한 백그라운드 푸시 ✅
+- **모바일 PWA(Android/iOS)**: 플랫폼 한계로 알림 미지원 ❌
+- 서버(FCM) 없이 클라이언트 사이드 폴링으로 구현 (30분 주기)
 
 ### 배제 사항
 - Steam 친구 게임 시작 감지: 기술적으로 가능하나 (Steam Web API GetPlayerSummaries),
@@ -77,7 +79,7 @@ Double XP 미션 등장 시 사용자에게 즉시 알림.
 
 ---
 
-## F2: Android Home Widget (P0)
+## F2: Android Home Widget (P0) ✅ 완료
 
 ### 개요
 앱을 열지 않고 홈 화면에서 현재 Double XP 상태를 즉시 확인.
@@ -124,7 +126,7 @@ Push 알림과 함께 "앱이어야만 가능한 기능" #2.
 
 ---
 
-## F3: Mutator/Warning Quick Reference (P1)
+## F3: Mutator/Warning Quick Reference (P1) ✅ 완료
 
 ### 개요
 전체 코덱스가 아닌, 미션 카드 UI에 녹이는 방식의 빠른 참조.
@@ -206,7 +208,7 @@ const Map<String, Map<String, Map<String, String>>> mutatorInfo = {
 
 ---
 
-## F5: Custom Watchlist (P2)
+## F5: Custom Watchlist (P2) ✅ 완료
 
 ### 개요
 사용자가 관심 조건을 설정하면, 해당 조건의 미션 등장 시 알림.
@@ -264,7 +266,7 @@ Push Notification(F1)의 확장 기능.
 | 빌드 시뮬레이터 | DB/백엔드 필요, 독립 프로젝트 규모 (Karl.gg 존재) |
 | 어사인먼트 헬퍼 | 해당 미션 타입이 매 로테이션마다 항상 존재하므로 불필요 |
 | Steam 친구 감지 | API Key 발급 필요 + 프로필 공개 필수 + 배터리 부담 + ROI 낮음 |
-| Apple Store 배포 | 연간 $99 비용 대비 타겟 유저 규모가 작음 |
+| Apple Store 배포 | 연간 $99 비용 대비 타겟 유저 규모가 작음 (PWA로 대체) |
 
 ---
 
@@ -280,14 +282,14 @@ F3 (Mutator Reference) ──→ 독립 구현 가능
 F4 (Statistics) ──→ 독립 구현 가능
 ```
 
-### 추천 구현 순서
+### 구현 현황
 ```
-1. F3 (Mutator Reference)  ← 가장 빠르게 완성 가능, 즉시 가치 제공
-2. F1 (Push Notification)  ← 킬러 기능, 기술적 난이도 있음
-3. F2 (Home Widget)        ← F1의 background worker 재활용
-4. F4 (Statistics)         ← 데이터 활용, 독립 구현
-5. F5 (Custom Watchlist)   ← F1 확장
-6. F6 (Daily Deal)         ← 여유 시
+1. F3 (Mutator Reference)  ← ✅ 완료 (Trivia 시스템)
+2. F1 (Push Notification)  ← ✅ 완료 (Android + PC Web)
+3. F2 (Home Widget)        ← ✅ 완료 (Android APK)
+4. F5 (Custom Watchlist)   ← ✅ 완료
+5. F4 (Statistics)         ← 미착수. 데이터 활용, 독립 구현
+6. F6 (Daily Deal)         ← 미착수. 여유 시
 ```
 
 ---
@@ -296,11 +298,12 @@ F4 (Statistics) ──→ 독립 구현 가능
 
 **"doublexp.net을 앱으로 옮긴 것" → "DRG 플레이어의 일상에 끼어드는 도구"**
 
-| 가치 | 웹 가능? | 이 앱만? |
-|------|----------|----------|
-| 미션 보드 조회 | O | X |
-| Double XP 하이라이트 | O | X |
-| Push 알림 "지금 Double XP" | X | **O** |
-| 홈 위젯 | X | **O** |
-| 뮤테이터 즉시 참조 | 위키 가능 | **더 빠름** |
+| 가치 | 웹(doublexp.net) | 이 앱(PWA/APK) |
+|------|------------------|----------------|
+| 미션 보드 조회 | O | O |
+| Double XP 하이라이트 | O | O (더 눈에 띔) |
+| Push 알림 "지금 Double XP" | X | **O** (Android + PC 브라우저) |
+| 홈 위젯 | X | **O** (Android APK) |
+| 뮤테이터 즉시 참조 | 위키 가능 | **O** (Trivia 시스템) |
 | 개인화된 워치리스트 알림 | X | **O** |
+| PWA 설치 (앱처럼 사용) | X | **O** (모든 플랫폼) |

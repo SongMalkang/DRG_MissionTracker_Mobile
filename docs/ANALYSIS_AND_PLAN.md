@@ -245,9 +245,9 @@ class Mission {
 
 | 문서 | 범위 | 이 문서와의 관계 |
 |------|------|-----------------|
-| `IMPROVEMENT_PLAN.md` | 코드 품질/구조 리팩토링 | Phase 0~4 완료. Phase 5(Riverpod) 미착수 |
-| `FEATURE_ROADMAP.md` | 신규 기능 기획 | F1~F6 기능 추가 로드맵 (독립) |
-| `SURVIVOR_MINIGAME_PLAN.md` | 미니게임 개발 | Phase 2+ 개발 계획 (독립) |
+| `docs/IMPROVEMENT_PLAN.md` | 코드 품질/구조 리팩토링 | Phase 0~4 완료. Phase 5(Riverpod) 미착수 |
+| `docs/FEATURE_ROADMAP.md` | 신규 기능 기획 | F1~F6 기능 추가 로드맵 (독립) |
+| `docs/SURVIVOR_MINIGAME_PLAN.md` | 미니게임 개발 | Phase 2+ 개발 계획 (독립) |
 | **이 문서** | 기존 기능의 버그/UX/성능 | 위 문서들과 독립적으로 실행 가능 |
 
 ---

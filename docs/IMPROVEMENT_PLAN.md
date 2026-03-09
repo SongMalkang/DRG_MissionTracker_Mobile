@@ -91,7 +91,7 @@ Phase 0 (Lint) → Phase 1 (구조) → Phase 3 (테스트) → Phase 5 (Riverpo
 - `dart analyze`에서 `undefined_method` 에러로 발견
 
 ### UX 개선 (Phase A~C)
-- 상세 내용은 `ANALYSIS_AND_PLAN.md` 참조
+- 상세 내용은 `docs/ANALYSIS_AND_PLAN.md` 참조
 - Skeleton Loading, 에러 상태 통일, IndexedStack, 오프라인 배너, PopScope 등 11개 항목
 
 ---
