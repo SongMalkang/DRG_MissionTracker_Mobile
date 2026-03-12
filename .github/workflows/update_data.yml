@@ -3,7 +3,7 @@ name: Update Mission Data
 on:
   schedule:
     - cron: '5 0 * * *'      # 매일 00:05 UTC: 미션(오늘+내일) + Deep Dive
-    - cron: '0 11 * * 4'    # 목요일 11:00 UTC: DD 리셋(11:00 UTC) 직후 수집
+    - cron: '1 11 * * 4'    # 목요일 11:01 UTC: DD 리셋(11:00:30 UTC) 직후 수집
     - cron: '5 11 * * 4'     # 목요일 11:05 UTC: DD 수집 보험 (cron 지연 대비)
     - cron: '10 11 * * 4'     # 목요일 11:10 UTC: DD 수집 최종 보험
   workflow_dispatch:

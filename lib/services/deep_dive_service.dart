@@ -126,7 +126,8 @@ class DeepDiveService {
     _thursdayUtc = thu;
 
     // 메모리에 이미 같은 주 데이터가 있으면 즉시 반환
-    if (!forceRefresh && _dives != null) {
+    final currentKey = _thursdayKey(thu);
+    if (!forceRefresh && _dives != null && _cachedThursdayKey == currentKey) {
       return;
     }
 
