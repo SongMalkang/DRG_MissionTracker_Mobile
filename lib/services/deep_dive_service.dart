@@ -73,12 +73,23 @@ class DeepDiveService {
   DateTime? _thursdayUtc;
   bool _isLoading = false;
   String? _error;
+  String? _cachedThursdayKey;
 
   // ── Public Getters ────────────────────────────────────────────────────
   List<DeepDive>? get dives => _dives;
   DateTime? get thursdayUtc => _thursdayUtc;
   bool get isLoading => _isLoading;
   String? get error => _error;
+
+  /// 현재 표시 중인 데이터가 이번 주 것이 아닌 경우 true
+  bool get isDataStale {
+    if (_dives == null) return false;
+    final latestKey = _thursdayKey(_latestThursday());
+    return _cachedThursdayKey != null && _cachedThursdayKey != latestKey;
+  }
+
+  /// 기존 데이터를 보여주면서 백그라운드 로딩 중인 경우 true
+  bool get isRefreshing => _isLoading && _dives != null;
 
   // ── Listeners ─────────────────────────────────────────────────────────
   final List<VoidCallback> _listeners = [];
@@ -128,6 +139,7 @@ class DeepDiveService {
       final cached = await _loadFromCache(thu);
       if (cached != null) {
         _dives = cached;
+        _cachedThursdayKey = _thursdayKey(thu);
         _isLoading = false;
         _notifyListeners();
         // 백그라운드에서 GitHub도 확인 (silent refresh)
@@ -141,6 +153,7 @@ class DeepDiveService {
       final body = await _fetchFromGitHub();
       final dives = _parseDiveData(body);
       _dives = dives;
+      _cachedThursdayKey = _thursdayKey(thu);
       _isLoading = false;
       _notifyListeners();
       await _saveToCache(body, thu);
@@ -176,6 +189,7 @@ class DeepDiveService {
       final body = await _fetchFromGitHub();
       final dives = _parseDiveData(body);
       _dives = dives;
+      _cachedThursdayKey = _thursdayKey(thu);
       await _saveToCache(body, thu);
       _notifyListeners();
     } catch (_) {

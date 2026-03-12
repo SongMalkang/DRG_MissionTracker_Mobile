@@ -3,6 +3,7 @@ import '../data/trivia_data.dart';
 import '../utils/strings.dart';
 import '../utils/asset_helper.dart';
 import '../services/deep_dive_service.dart';
+import '../widgets/mission_detail_components.dart';
 import '../widgets/trivia_modal.dart';
 
 // ── Deep Dive 탭 ───────────────────────────────────────────────────────────────
@@ -100,6 +101,8 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
           _UpdateBanner(
             nextUpdate: _formatNextUpdate(),
             lang: widget.lang,
+            isStale: _ddService.isDataStale,
+            isRefreshing: _ddService.isRefreshing,
             onRefresh: () => _ddService.loadDeepDives(forceRefresh: true),
           ),
           const SizedBox(height: 12),
@@ -115,42 +118,74 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
   }
 }
 
-// ── 업데이트 배너 ──────────────────────────────────────────────────────────────
+// ── 업데이트 배너 (3단계 상태) ──────────────────────────────────────────────────
 
 class _UpdateBanner extends StatelessWidget {
   final String nextUpdate;
   final String lang;
+  final bool isStale;
+  final bool isRefreshing;
   final VoidCallback onRefresh;
 
   const _UpdateBanner({
     required this.nextUpdate,
     required this.lang,
+    required this.isStale,
+    required this.isRefreshing,
     required this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
+    final Color bannerColor;
+    final IconData bannerIcon;
+    final String bannerText;
+
+    if (isStale || isRefreshing) {
+      // 갱신 대기 중: 리셋 시간 경과 + 새 데이터 미도착 or 로딩 중
+      bannerColor = Colors.orange;
+      bannerIcon = Icons.hourglass_top;
+      bannerText = i18n[lang]!['dd_refreshing'] ?? 'Checking for new Deep Dive data...';
+    } else {
+      // 정상
+      bannerColor = Colors.blueAccent;
+      bannerIcon = Icons.update;
+      bannerText = '${i18n[lang]!['dd_next_update'] ?? 'Next Update:'}  $nextUpdate';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.blueAccent.withValues(alpha: 0.08),
+        color: bannerColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.25)),
+        border: Border.all(color: bannerColor.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.update, color: Colors.blueAccent, size: 18),
+          if (isRefreshing)
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: bannerColor,
+              ),
+            )
+          else
+            Icon(bannerIcon, color: bannerColor, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '${i18n[lang]!['dd_next_update'] ?? 'Next Update:'}  $nextUpdate',
-              style: const TextStyle(color: Colors.white60, fontSize: 12),
+              bannerText,
+              style: TextStyle(
+                color: bannerColor.withValues(alpha: 0.8),
+                fontSize: 12,
+              ),
             ),
           ),
           GestureDetector(
             onTap: onRefresh,
-            child: const Icon(Icons.refresh,
-                color: Colors.blueAccent, size: 18),
+            child: Icon(Icons.refresh, color: bannerColor, size: 18),
           ),
         ],
       ),
@@ -199,6 +234,7 @@ class _DeepDiveCard extends StatelessWidget {
               typeLabel: typeLabel,
               accent: accent,
               lang: lang,
+              stages: dive.stages,
             ),
 
             // ── 스테이지 목록 ──────────────────────────────────────────────
@@ -233,6 +269,7 @@ class _DDHeader extends StatelessWidget {
   final String typeLabel;
   final Color accent;
   final String lang;
+  final List<DeepDiveStage> stages;
 
   const _DDHeader({
     required this.biome,
@@ -240,12 +277,13 @@ class _DDHeader extends StatelessWidget {
     required this.typeLabel,
     required this.accent,
     required this.lang,
+    required this.stages,
   });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 95,
+      height: 105,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -269,7 +307,7 @@ class _DDHeader extends StatelessWidget {
               ),
             ),
           ),
-          // 텍스트
+          // 텍스트 + 스테이지 요약
           Positioned(
             left: 14,
             right: 14,
@@ -278,25 +316,32 @@ class _DDHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 타입 뱃지
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                        color: accent.withValues(alpha: 0.6), width: 1),
-                  ),
-                  child: Text(
-                    typeLabel,
-                    style: TextStyle(
-                      color: accent,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.0,
+                // 타입 뱃지 + 스테이지 아이콘 요약 (같은 행)
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                            color: accent.withValues(alpha: 0.6), width: 1),
+                      ),
+                      child: Text(
+                        typeLabel,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
                     ),
-                  ),
+                    const Spacer(),
+                    // 스테이지 미션 아이콘 요약: [1] → [2] → [3]
+                    _StageSummaryIcons(stages: stages, accent: accent),
+                  ],
                 ),
                 const SizedBox(height: 5),
                 // 코드명
@@ -323,6 +368,56 @@ class _DDHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── 스테이지 미션 아이콘 요약 (헤더 우측) ─────────────────────────────────────
+
+class _StageSummaryIcons extends StatelessWidget {
+  final List<DeepDiveStage> stages;
+  final Color accent;
+
+  const _StageSummaryIcons({required this.stages, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < stages.length; i++) ...[
+          if (i > 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Icon(
+                Icons.chevron_right,
+                color: Colors.white.withValues(alpha: 0.3),
+                size: 12,
+              ),
+            ),
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(5),
+              border: Border.all(
+                color: accent.withValues(alpha: 0.35),
+                width: 0.5,
+              ),
+            ),
+            padding: const EdgeInsets.all(3),
+            child: Image.asset(
+              AssetHelper.getMissionIcon(stages[i].primary),
+              errorBuilder: (ctx, e, st) => Icon(
+                Icons.assignment,
+                color: accent.withValues(alpha: 0.5),
+                size: 14,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -534,16 +629,20 @@ class _StageRow extends StatelessWidget {
                       ),
                     ],
 
-                    // 도트 (우측 정렬)
+                    // 길이/복잡도 도트 (우측 정렬)
                     const Spacer(),
-                    _MiniDots(
+                    IconDots(
                       value: stage.length,
-                      color: accent.withValues(alpha: 0.8),
+                      onIcon: 'assets/icons/ui/length_on.png',
+                      offIcon: 'assets/icons/ui/length_off.png',
+                      size: 11,
                     ),
-                    const SizedBox(width: 5),
-                    _MiniDots(
+                    const SizedBox(width: 6),
+                    IconDots(
                       value: stage.complexity,
-                      color: accent.withValues(alpha: 0.45),
+                      onIcon: 'assets/icons/ui/complexity_on.png',
+                      offIcon: 'assets/icons/ui/complexity_off.png',
+                      size: 11,
                     ),
                   ],
                 ),
@@ -552,34 +651,6 @@ class _StageRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── 미니 점 (스테이지용 간단 버전) ────────────────────────────────────────────
-
-class _MiniDots extends StatelessWidget {
-  final int value;
-  final Color color;
-  const _MiniDots({required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (i) {
-        final on = i < value;
-        return Container(
-          margin: const EdgeInsets.only(right: 3),
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: on ? color : Colors.white.withValues(alpha: 0.12),
-            border: on ? null : Border.all(color: Colors.white12),
-          ),
-        );
-      }),
     );
   }
 }
