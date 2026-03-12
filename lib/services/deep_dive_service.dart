@@ -73,7 +73,9 @@ class DeepDiveService {
   DateTime? _thursdayUtc;
   bool _isLoading = false;
   String? _error;
-  String? _cachedThursdayKey;
+
+  /// 현재 로드된 데이터가 어느 주의 것인지 (JSON의 "thursday" 필드에서 추출)
+  String? _dataThursdayKey;
 
   // ── Public Getters ────────────────────────────────────────────────────
   List<DeepDive>? get dives => _dives;
@@ -81,11 +83,14 @@ class DeepDiveService {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// 현재 표시 중인 데이터가 이번 주 것이 아닌 경우 true
+  /// 현재 표시 중인 데이터가 이번 주보다 오래된 경우 true
+  /// (다음 주 DD가 조기 게시된 경우에는 stale이 아님)
   bool get isDataStale {
     if (_dives == null) return false;
+    // _dataThursdayKey가 null이면 구 포맷 데이터 → stale 취급
+    if (_dataThursdayKey == null) return true;
     final latestKey = _thursdayKey(_latestThursday());
-    return _cachedThursdayKey != null && _cachedThursdayKey != latestKey;
+    return _dataThursdayKey!.compareTo(latestKey) < 0;
   }
 
   /// 기존 데이터를 보여주면서 백그라운드 로딩 중인 경우 true
@@ -118,6 +123,16 @@ class DeepDiveService {
     return '${thu.year}-${thu.month.toString().padLeft(2, '0')}-${thu.day.toString().padLeft(2, '0')}';
   }
 
+  /// JSON 본문에서 "thursday" 필드를 추출 (데이터의 실제 출처 주)
+  static String? _extractThursdayKey(String body) {
+    try {
+      final jsonData = jsonDecode(body) as Map<String, dynamic>;
+      return jsonData['thursday'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ── Load Deep Dives ───────────────────────────────────────────────────
   Future<void> loadDeepDives({bool forceRefresh = false}) async {
     if (_isLoading) return;
@@ -125,9 +140,29 @@ class DeepDiveService {
     final thu = _latestThursday();
     _thursdayUtc = thu;
 
-    // 메모리에 이미 같은 주 데이터가 있으면 즉시 반환
     final currentKey = _thursdayKey(thu);
-    if (!forceRefresh && _dives != null && _cachedThursdayKey == currentKey) {
+
+    // 메모리에 현재 주 이상의 데이터가 있으면 즉시 반환
+    final hasCurrentData = _dataThursdayKey != null &&
+        _dataThursdayKey!.compareTo(currentKey) >= 0;
+    if (!forceRefresh && _dives != null && hasCurrentData) {
+      return;
+    }
+
+    // 주가 바뀌었지만 기존 데이터가 있으면 → 기존 데이터 유지하면서 갱신 시도
+    if (!forceRefresh && _dives != null && !hasCurrentData) {
+      _isLoading = true;
+      _notifyListeners();
+      try {
+        final body = await _fetchFromGitHub();
+        _dives = _parseDiveData(body);
+        _dataThursdayKey = _extractThursdayKey(body);
+        await _saveToCache(body);
+      } catch (_) {
+        // GitHub 실패 → 기존 데이터 유지, isDataStale 유지 (수동 새로고침 가능)
+      }
+      _isLoading = false;
+      _notifyListeners();
       return;
     }
 
@@ -137,43 +172,51 @@ class DeepDiveService {
 
     // Tier 1: 로컬 캐시
     if (!forceRefresh) {
-      final cached = await _loadFromCache(thu);
-      if (cached != null) {
-        _dives = cached;
-        _cachedThursdayKey = _thursdayKey(thu);
-        _isLoading = false;
-        _notifyListeners();
-        // 백그라운드에서 GitHub도 확인 (silent refresh)
-        unawaited(_silentRefresh(thu));
-        return;
+      final body = await _loadCacheBody(thu);
+      if (body != null) {
+        try {
+          _dives = _parseDiveData(body);
+          _dataThursdayKey = _extractThursdayKey(body);
+          _isLoading = false;
+          _notifyListeners();
+          // 백그라운드에서 GitHub도 확인 (silent refresh)
+          unawaited(_silentRefresh());
+          return;
+        } catch (_) {
+          // 캐시 파싱 실패 → 다음 단계로
+        }
       }
     }
 
     // Tier 2: GitHub Raw
     try {
       final body = await _fetchFromGitHub();
-      final dives = _parseDiveData(body);
-      _dives = dives;
-      _cachedThursdayKey = _thursdayKey(thu);
+      _dives = _parseDiveData(body);
+      _dataThursdayKey = _extractThursdayKey(body);
       _isLoading = false;
       _notifyListeners();
-      await _saveToCache(body, thu);
+      await _saveToCache(body);
     } catch (e) {
       debugPrint("Deep Dive GitHub fetch failed: $e");
 
       // Tier 3: 번들 에셋
       try {
         final assetBody = await rootBundle.loadString('data/deep_dive.json');
-        final dives = _parseDiveData(assetBody);
-        _dives = dives;
+        _dives = _parseDiveData(assetBody);
+        _dataThursdayKey = _extractThursdayKey(assetBody);
         _error = null;
       } catch (assetError) {
         debugPrint("Deep Dive asset fallback failed: $assetError");
         // Tier 4: stale 캐시라도 표시
-        final stale = await _loadFromCache(thu, ignoreExpiry: true);
-        if (stale != null) {
-          _dives = stale;
-          _error = null;
+        final staleBody = await _loadCacheBody(thu, ignoreExpiry: true);
+        if (staleBody != null) {
+          try {
+            _dives = _parseDiveData(staleBody);
+            _dataThursdayKey = _extractThursdayKey(staleBody);
+            _error = null;
+          } catch (_) {
+            _error = e.toString();
+          }
         } else {
           _error = e.toString();
         }
@@ -185,13 +228,13 @@ class DeepDiveService {
   }
 
   // ── Silent Background Refresh ─────────────────────────────────────────
-  Future<void> _silentRefresh(DateTime thu) async {
+  Future<void> _silentRefresh() async {
     try {
       final body = await _fetchFromGitHub();
       final dives = _parseDiveData(body);
       _dives = dives;
-      _cachedThursdayKey = _thursdayKey(thu);
-      await _saveToCache(body, thu);
+      _dataThursdayKey = _extractThursdayKey(body);
+      await _saveToCache(body);
       _notifyListeners();
     } catch (_) {
       // silent fail - 캐시 데이터 유지
@@ -217,25 +260,25 @@ class DeepDiveService {
   }
 
   // ── Cache Management ──────────────────────────────────────────────────
-  Future<List<DeepDive>?> _loadFromCache(DateTime thu, {bool ignoreExpiry = false}) async {
+  Future<String?> _loadCacheBody(DateTime thu, {bool ignoreExpiry = false}) async {
     try {
       if (!ignoreExpiry) {
         final prefs = await SharedPreferences.getInstance();
         final cachedThursday = prefs.getString(AppConstants.deepDiveCacheThursdayKey);
-        if (cachedThursday != _thursdayKey(thu)) return null;
+        // 캐시 데이터가 현재 주보다 과거이면 만료 (조기 게시된 미래 데이터는 유효)
+        if (cachedThursday == null || cachedThursday.compareTo(_thursdayKey(thu)) < 0) {
+          return null;
+        }
       }
 
-      final body = await loadCacheString(AppConstants.cachedDeepDiveFile);
-      if (body == null) return null;
-
-      return _parseDiveData(body);
+      return await loadCacheString(AppConstants.cachedDeepDiveFile);
     } catch (e) {
       debugPrint("Deep Dive cache load failed: $e");
       return null;
     }
   }
 
-  Future<void> _saveToCache(String body, DateTime thu) async {
+  Future<void> _saveToCache(String body) async {
     try {
       await saveCacheString(AppConstants.cachedDeepDiveFile, body);
 
@@ -246,7 +289,7 @@ class DeepDiveService {
       );
       await prefs.setString(
         AppConstants.deepDiveCacheThursdayKey,
-        _thursdayKey(thu),
+        _extractThursdayKey(body) ?? '',
       );
     } catch (e) {
       debugPrint("Deep Dive cache save failed: $e");

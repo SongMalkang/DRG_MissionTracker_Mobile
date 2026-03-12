@@ -115,10 +115,12 @@ def fetch_deep_dive():
     # 기존 파일의 CodeName을 읽어서 동일 데이터 재저장 방지
     existing_names = set()
     existing_info = {}
+    existing_has_thursday = False
     if os.path.exists(out_path):
         try:
             with open(out_path, 'r', encoding='utf-8') as f:
                 existing = json.load(f)
+            existing_has_thursday = "thursday" in existing
             dd = existing.get("Deep Dives", {})
             for key in ["Deep Dive Normal", "Deep Dive Elite"]:
                 cn = dd.get(key, {}).get("CodeName", "")
@@ -163,11 +165,13 @@ def fetch_deep_dive():
                     if cn:
                         new_names.add(cn)
 
-                if new_names and new_names == existing_names:
+                if new_names and new_names == existing_names and existing_has_thursday:
                     print(f"ℹ️ {date_str}: 기존 데이터와 동일, 건너뜀")
                     summary.append(f"- **결과**: ✅ 동일 데이터 (변경 없음)")
                     _write_summary(summary)
                     return
+
+                data["thursday"] = date_str
 
                 with open(out_path, 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False)

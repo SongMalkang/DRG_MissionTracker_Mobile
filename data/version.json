@@ -1,11 +1,11 @@
 {
-  "latest_version": "1.6.0",
+  "latest_version": "1.6.1",
   "min_required": "1.0.0",
   "force_update": false,
   "store_url": "https://github.com/SongMalkang/DRG_MissionTracker_Mobile/releases",
   "changelog": {
-    "KR": "• PWA 전면 전환: 모든 플랫폼에서 브라우저로 설치 가능\n• PC 브라우저 웹 알림 지원 (Web Notification API + Service Worker)\n• 도움말 버튼 추가: 플랫폼별 PWA 설치 가이드\n• APK 다운로드 안내 (GitHub Releases 링크)\n• 알림 설정 UI 개선: 플랫폼별 지원 현황 안내\n• README 대규모 개편: PWA 링크, 플랫폼 테이블, Discord 연락처, Ko-fi 후원\n• 코드 리팩토링: 웹 알림 서비스 분리, dart:io 의존성 제거",
-    "EN": "• Full PWA pivot: installable via browser on all platforms\n• PC browser web notifications (Web Notification API + Service Worker)\n• Help button: platform-specific PWA install guide\n• APK download card (GitHub Releases link)\n• Notification settings UI: per-platform support info banner\n• README overhaul: PWA link, platform table, Discord contact, Ko-fi\n• Code refactor: web notification service, removed dart:io dependency",
-    "CN": "• PWA全面转型：所有平台均可通过浏览器安装\n• PC浏览器Web通知支持（Web Notification API + Service Worker）\n• 新增帮助按钮：各平台PWA安装指南\n• APK下载卡片（GitHub Releases链接）\n• 通知设置UI改进：各平台支持状态提示\n• README大规模改版：PWA链接、平台表格、Discord联系方式、Ko-fi赞助\n• 代码重构：Web通知服务分离，移除dart:io依赖"
+    "KR": "• Deep Dive 데이터 갱신 안정성 개선\n• 주간 리셋 시 구 데이터가 계속 표시되던 문제 수정\n• 데이터 수집 타이밍 최적화 (목요일 11:01 UTC)\n• Deep Dive 갱신 상태를 배너로 정확히 표시",
+    "EN": "• Improved Deep Dive data refresh stability\n• Fixed stale data persisting after weekly reset\n• Optimized data collection timing (Thu 11:01 UTC)\n• Accurate Deep Dive refresh status banner",
+    "CN": "• 改进Deep Dive数据刷新稳定性\n• 修复每周重置后旧数据持续显示的问题\n• 优化数据收集时间（周四 11:01 UTC）\n• 准确显示Deep Dive刷新状态横幅"
   }
 }

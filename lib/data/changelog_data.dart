@@ -3,6 +3,20 @@
 // key: pubspec.yaml의 version (예: '1.1.0')
 
 const Map<String, Map<String, String>> changelogData = {
+  '1.6.1': {
+    'KR': '• Deep Dive 데이터 갱신 안정성 개선.\n'
+        '• 주간 리셋 시 구 데이터가 계속 표시되던 문제 수정.\n'
+        '• 데이터 수집 타이밍 최적화 (목요일 11:01 UTC).\n'
+        '• Deep Dive 갱신 상태를 배너로 정확히 표시.',
+    'EN': '• Improved Deep Dive data refresh stability.\n'
+        '• Fixed stale data persisting after weekly reset.\n'
+        '• Optimized data collection timing (Thu 11:01 UTC).\n'
+        '• Accurate Deep Dive refresh status banner.',
+    'CN': '• 改进Deep Dive数据刷新稳定性。\n'
+        '• 修复每周重置后旧数据持续显示的问题。\n'
+        '• 优化数据收集时间（周四 11:01 UTC）。\n'
+        '• 准确显示Deep Dive刷新状态横幅。',
+  },
   '1.6.0': {
     'KR': '• PWA 전면 전환: 모든 플랫폼에서 브라우저로 설치 가능.\n'
         '• PC 브라우저 웹 알림 지원 (Web Notification API).\n'

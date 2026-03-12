@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.6.1 — 2026-03-13
+
+### Deep Dive 데이터 갱신 안정성 개선
+
+- **데이터 출처 기록** — Deep Dive JSON에 `thursday` 필드 추가, 데이터가 어느 주의 것인지 자체 증명 (cache poisoning 근본 해결)
+- **주간 리셋 감지 수정** — 메모리/로컬 캐시가 주(week) 변경을 정확히 감지하도록 수정 (기존: 구 데이터를 이번 주 것으로 오인)
+- **갱신 배너 정확도 향상** — `isDataStale` 판정을 데이터 내용 기반으로 변경, 조기 게시된 미래 데이터는 stale 미표시
+- **수집 타이밍 최적화** — 목요일 cron 11:00→11:01 UTC (doublexp.net 게시 시점 11:00:30 대응)
+- **중복 감지 호환** — 기존 파일에 `thursday` 필드 없을 시 1회 재저장으로 자동 마이그레이션
+
+### 코드 변경
+
+- **`fetch_daily_missions.py`** — `data["thursday"]` 필드 추가, `existing_has_thursday` 마이그레이션 로직
+- **`deep_dive_service.dart`** — `_cachedThursdayKey` → `_dataThursdayKey` (데이터 기반), `_extractThursdayKey()` 추가, `_loadFromCache` → `_loadCacheBody` (raw body 반환), `_saveToCache`에서 `thu` 파라미터 제거, 비교 연산자 `!=` → `<` (사전순 날짜 비교)
+- **`deep_dives_tab.dart`** — 불필요한 자동 갱신 루프 제거
+- **`update_data.yml`** — 첫 번째 목요일 cron `11:00` → `11:01` UTC
+
+---
+
 ## 1.6.0 — 2026-03-10
 
 ### PWA Pivot & Web Notifications

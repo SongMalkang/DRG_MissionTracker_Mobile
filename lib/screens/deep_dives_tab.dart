@@ -27,12 +27,7 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
   }
 
   void _onDataChanged() {
-    if (!mounted) return;
-    setState(() {});
-    // stale 데이터 감지 시 자동 갱신
-    if (_ddService.isDataStale && !_ddService.isRefreshing) {
-      _ddService.loadDeepDives(forceRefresh: true);
-    }
+    if (mounted) setState(() {});
   }
 
   @override
