@@ -63,6 +63,17 @@ def fetch_bulk_data():
         print(f"🔍 Double XP 데이터 포함 여부: {has_double_xp}")
 
 
+def _write_summary(lines):
+    """GitHub Actions Job Summary에 내용을 추가한다."""
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY", "")
+    if summary_path:
+        try:
+            with open(summary_path, "a", encoding="utf-8") as f:
+                f.write("\n".join(lines) + "\n")
+        except Exception:
+            pass
+
+
 def fetch_deep_dive():
     """이번 주 Deep Dive 데이터를 doublexp.net에서 가져와 저장.
 
@@ -74,6 +85,7 @@ def fetch_deep_dive():
     (doublexp.net이 목요일 리셋 전에 다음 주 DD를 미리 게시하는 경우 대응)
     """
     now = datetime.now(timezone.utc)
+    summary = []
 
     # 가장 최근 목요일 계산 (weekday: Mon=0, Thu=3)
     days_since_thursday = (now.weekday() - 3) % 7
@@ -102,6 +114,7 @@ def fetch_deep_dive():
 
     # 기존 파일의 CodeName을 읽어서 동일 데이터 재저장 방지
     existing_names = set()
+    existing_info = {}
     if os.path.exists(out_path):
         try:
             with open(out_path, 'r', encoding='utf-8') as f:
@@ -109,10 +122,19 @@ def fetch_deep_dive():
             dd = existing.get("Deep Dives", {})
             for key in ["Deep Dive Normal", "Deep Dive Elite"]:
                 cn = dd.get(key, {}).get("CodeName", "")
+                biome = dd.get(key, {}).get("Biome", "")
                 if cn:
                     existing_names.add(cn)
+                    existing_info[key] = f"{biome} - {cn}"
         except Exception:
             pass
+
+    summary.append("### Deep Dive")
+    summary.append(f"- **실행 시각**: {now.strftime('%Y-%m-%d %H:%M UTC')}")
+    summary.append(f"- **기준 목요일**: {thursday.strftime('%Y-%m-%d')} 11:00 UTC")
+    if existing_info:
+        summary.append(f"- **기존 Normal**: {existing_info.get('Deep Dive Normal', 'N/A')}")
+        summary.append(f"- **기존 Elite**: {existing_info.get('Deep Dive Elite', 'N/A')}")
 
     for thu in candidates:
         date_str = thu.strftime('%Y-%m-%d')
@@ -131,6 +153,7 @@ def fetch_deep_dive():
 
                 if not normal and not elite:
                     print(f"⚠️ {date_str}: Deep Dive 데이터가 비어있음, 건너뜀")
+                    summary.append(f"- **{date_str}**: 빈 데이터, 건너뜀")
                     continue
 
                 # 새 데이터인지 확인
@@ -142,7 +165,9 @@ def fetch_deep_dive():
 
                 if new_names and new_names == existing_names:
                     print(f"ℹ️ {date_str}: 기존 데이터와 동일, 건너뜀")
-                    continue
+                    summary.append(f"- **결과**: ✅ 동일 데이터 (변경 없음)")
+                    _write_summary(summary)
+                    return
 
                 with open(out_path, 'w', encoding='utf-8') as f:
                     json.dump(data, f, ensure_ascii=False)
@@ -150,13 +175,21 @@ def fetch_deep_dive():
                 print(f"✅ Deep Dive 저장: {out_path}")
                 print(f"   Normal: {normal.get('Biome', 'N/A')} - {normal.get('CodeName', 'N/A')}")
                 print(f"   Elite:  {elite.get('Biome', 'N/A')} - {elite.get('CodeName', 'N/A')}")
+                summary.append(f"- **결과**: 🆕 새 데이터 저장!")
+                summary.append(f"  - Normal: {normal.get('Biome', 'N/A')} - {normal.get('CodeName', 'N/A')}")
+                summary.append(f"  - Elite: {elite.get('Biome', 'N/A')} - {elite.get('CodeName', 'N/A')}")
+                _write_summary(summary)
                 return  # 성공하면 즉시 종료
             else:
                 print(f"⚠️ {date_str}: Status {res.status_code}")
+                summary.append(f"- **{date_str}**: HTTP {res.status_code}")
         except Exception as e:
             print(f"⚠️ {date_str}: {e}")
+            summary.append(f"- **{date_str}**: 오류 - {e}")
 
     print("ℹ️ Deep Dive: 새 데이터 없음 (기존 데이터 유지)")
+    summary.append("- **결과**: ⚠️ 새 데이터 없음 (기존 유지)")
+    _write_summary(summary)
 
 
 if __name__ == "__main__":
