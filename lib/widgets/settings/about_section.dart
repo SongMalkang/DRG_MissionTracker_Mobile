@@ -41,7 +41,7 @@ class AboutSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final langMap = i18n[lang]!;
-
+ 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
