@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.6.2 — 2026-03-14
+
+### Deep Dive 상세 모달 & UI 개선
+
+- **스테이지 상세 모달** — Deep Dive 스테이지 행 탭 시 상세 다이얼로그 표시 (바이옴 배경 이미지, 미션 아이콘, 보조 목표, 길이/복잡도, 경고 목록)
+- **"모레 일정" 구분선** — 하이라이트 탭에서 모레(Day After Tomorrow) 시간대를 별도 구분선으로 표시
+- **알림 문구 명확화** — "PC에서만 알림 가능" → "웹 알림은 PC, 모바일은 Android APK" 로 오해 소지 제거
+- **신규 Deep Dive 목표 번역** — `Mine Morkite`(모르카이트 채굴), `Get Alien Eggs`(외계 알 수집) 3개 언어 추가
+- **JetBoots 조작성 개선** — 중력(3.24→2.916) 및 상승력(0.96→0.864) 10% 완화로 부드러운 조작감
+
+### 코드 변경
+
+- **`deep_dives_tab.dart`** — `_StageRow`에 biome 전달, `_showStageDetailModal()` 및 `_StageDetailDialog` 위젯 신규 추가
+- **`highlights_tab.dart`** — `isDayAfterTomorrow` 플래그 추가, `_TomorrowDivider`에 모레 라벨 분기
+- **`strings.dart`** — `day_after_tomorrow`, `Mine Morkite`, `Get Alien Eggs` 키 추가 (KR/EN/CN), `notif_web_note` 문구 수정
+- **`pwa_install_guide.dart`** — Android/iOS PWA 알림 안내 및 footer 문구에 APK 대안 명시
+- **`jet_boots_game.dart`** — 중력 상수 3.24→2.916, 점프 속도 -0.96→-0.864
+
+---
+
 ## 1.6.1 — 2026-03-13
 
 ### Deep Dive 데이터 갱신 안정성 개선
