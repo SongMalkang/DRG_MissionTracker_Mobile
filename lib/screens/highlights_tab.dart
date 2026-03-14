@@ -24,7 +24,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
   final MissionService _missionService = MissionService();
 
   // 각 원소: { 'time': DateTime, 'missions': List(Mission), 'isPast': bool,
-  //             'isCurrent': bool, 'isTomorrow': bool }
+  //             'isCurrent': bool, 'isTomorrow': bool, 'isDayAfterTomorrow': bool }
   List<Map<String, dynamic>> _slots = [];
 
   @override
@@ -70,15 +70,19 @@ class _HighlightsTabState extends State<HighlightsTab> {
       slotMap[localTime] = dxpMissions;
     }
 
+    final today = DateTime(_now.year, _now.month, _now.day);
     final slots = <Map<String, dynamic>>[];
     for (final time in (slotMap.keys.toList()..sort())) {
       final endTime = time.add(const Duration(minutes: AppConstants.missionRotationMinutes));
+      final slotDate = DateTime(time.year, time.month, time.day);
+      final diffDays = slotDate.difference(today).inDays;
       slots.add({
         'time': time,
         'missions': slotMap[time]!,
         'isPast': endTime.isBefore(_now),
         'isCurrent': time.isBefore(_now) && endTime.isAfter(_now),
-        'isTomorrow': time.day != _now.day,
+        'isTomorrow': diffDays == 1,
+        'isDayAfterTomorrow': diffDays >= 2,
       });
     }
 
@@ -184,6 +188,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
                     final bool isPast = slot['isPast'];
                     final bool isCurrent = slot['isCurrent'];
                     final bool isTomorrow = slot['isTomorrow'];
+                    final bool isDayAfterTomorrow = slot['isDayAfterTomorrow'];
 
                     final slotTimeStr =
                         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
@@ -196,6 +201,11 @@ class _HighlightsTabState extends State<HighlightsTab> {
                             (index == 0 ||
                                 !_slots[index - 1]['isTomorrow']))
                           _TomorrowDivider(lang: widget.lang),
+                        // ── 모레 구분선 ──────────────────────────────────
+                        if (isDayAfterTomorrow &&
+                            (index == 0 ||
+                                !_slots[index - 1]['isDayAfterTomorrow']))
+                          _TomorrowDivider(lang: widget.lang, isDayAfterTomorrow: true),
 
                         // ── 현재 시각 마커 ────────────────────────────────
                         if (isCurrent)
@@ -209,6 +219,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
                             missions: missions,
                             isCurrent: isCurrent,
                             isTomorrow: isTomorrow,
+                            isDayAfterTomorrow: isDayAfterTomorrow,
                             lang: widget.lang,
                             showWarnings: widget.showWarnings,
                           ),
@@ -228,10 +239,15 @@ class _HighlightsTabState extends State<HighlightsTab> {
 
 class _TomorrowDivider extends StatelessWidget {
   final String lang;
-  const _TomorrowDivider({required this.lang});
+  final bool isDayAfterTomorrow;
+  const _TomorrowDivider({required this.lang, this.isDayAfterTomorrow = false});
 
   @override
   Widget build(BuildContext context) {
+    final label = isDayAfterTomorrow
+        ? (i18n[lang]!['day_after_tomorrow'] ?? 'Day After Tomorrow')
+        : i18n[lang]!['tomorrow']!;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 20, 16, 4),
       child: Row(
@@ -248,7 +264,7 @@ class _TomorrowDivider extends StatelessWidget {
                   Border.all(color: Colors.blueAccent.withValues(alpha: 0.4)),
             ),
             child: Text(
-              i18n[lang]!['tomorrow']!,
+              label,
               style: const TextStyle(
                   color: Colors.blueAccent,
                   fontWeight: FontWeight.bold,
@@ -316,6 +332,7 @@ class _TimeSlotBlock extends StatelessWidget {
   final List<Mission> missions;
   final bool isCurrent;
   final bool isTomorrow;
+  final bool isDayAfterTomorrow;
   final String lang;
   final bool showWarnings;
 
@@ -324,6 +341,7 @@ class _TimeSlotBlock extends StatelessWidget {
     required this.missions,
     required this.isCurrent,
     required this.isTomorrow,
+    this.isDayAfterTomorrow = false,
     required this.lang,
     this.showWarnings = true,
   });
@@ -360,14 +378,13 @@ class _TimeSlotBlock extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (isTomorrow)
+                  if (isTomorrow || isDayAfterTomorrow)
                     Text(
-                      i18n[lang]!['tomorrow']!.substring(
-                          0,
-                          i18n[lang]!['tomorrow']!
-                              .split(' ')
-                              .first
-                              .length), // 첫 단어만
+                      (isDayAfterTomorrow
+                              ? (i18n[lang]!['day_after_tomorrow'] ?? '')
+                              : i18n[lang]!['tomorrow']!)
+                          .split(' ')
+                          .first,
                       style: const TextStyle(
                           color: Colors.blueAccent,
                           fontSize: 7,

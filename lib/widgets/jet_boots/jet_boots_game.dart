@@ -228,7 +228,7 @@ class _JetBootsGameState extends State<JetBootsGame>
     _gameTime += dt;
 
     setState(() {
-      _velocity += 3.24 * dt;
+      _velocity += 2.916 * dt;
       _characterY = (_characterY + _velocity * dt).clamp(0.0, 1.0);
 
       // 바닥/천장 충돌
@@ -444,7 +444,7 @@ class _JetBootsGameState extends State<JetBootsGame>
     HapticFeedback.lightImpact();
 
     // 점프 (완화된 상승력)
-    setState(() => _velocity = -0.96);
+    setState(() => _velocity = -0.864);
   }
 
   // ── 오디오 헬퍼 ──

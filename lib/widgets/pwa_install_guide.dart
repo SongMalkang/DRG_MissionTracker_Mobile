@@ -176,21 +176,21 @@ class _PwaInstallGuideDialog extends StatelessWidget {
           _StepInfo(Icons.more_vert, 'Chrome에서 이 사이트를 열고 우측 상단 ⋮ 메뉴를 탭합니다.'),
           _StepInfo(Icons.add_to_home_screen, '"홈 화면에 추가" 또는 "앱 설치"를 선택합니다.'),
           _StepInfo(Icons.check_circle_outline, '"설치"를 탭하면 홈 화면에 앱 아이콘이 추가됩니다.'),
-          _StepInfo(Icons.notifications_off_outlined, 'Android PWA는 현재 Push 알림을 지원하지 않습니다. 알림은 PC에서만 사용 가능합니다.'),
+          _StepInfo(Icons.notifications_off_outlined, 'Android PWA는 Push 알림을 지원하지 않습니다. 알림이 필요하면 GitHub에서 APK를 설치하세요.'),
         ];
       case 'CN':
         return const [
           _StepInfo(Icons.more_vert, '在Chrome中打开此网站，点击右上角 ⋮ 菜单。'),
           _StepInfo(Icons.add_to_home_screen, '选择"添加到主屏幕"或"安装应用"。'),
           _StepInfo(Icons.check_circle_outline, '点击"安装"，应用图标将出现在主屏幕上。'),
-          _StepInfo(Icons.notifications_off_outlined, 'Android PWA目前不支持推送通知。通知仅在PC上可用。'),
+          _StepInfo(Icons.notifications_off_outlined, 'Android PWA不支持推送通知。如需通知，请从GitHub安装APK。'),
         ];
       default:
         return const [
           _StepInfo(Icons.more_vert, 'Open this site in Chrome and tap the ⋮ menu at the top right.'),
           _StepInfo(Icons.add_to_home_screen, 'Select "Add to Home screen" or "Install app".'),
           _StepInfo(Icons.check_circle_outline, 'Tap "Install" and the app icon will appear on your home screen.'),
-          _StepInfo(Icons.notifications_off_outlined, 'Android PWA does not support push notifications. Notifications are only available on PC.'),
+          _StepInfo(Icons.notifications_off_outlined, 'Android PWA does not support push notifications. For alerts, install the APK from GitHub.'),
         ];
     }
   }
@@ -203,7 +203,7 @@ class _PwaInstallGuideDialog extends StatelessWidget {
           _StepInfo(Icons.add_box_outlined, '공유 메뉴에서 "홈 화면에 추가"를 선택합니다.'),
           _StepInfo(Icons.check_circle_outline, '"추가"를 탭하면 홈 화면에 앱 아이콘이 추가됩니다.'),
           _StepInfo(Icons.warning_amber_rounded, 'iOS는 반드시 Safari를 사용해야 합니다. Chrome/Firefox에서는 설치가 불가합니다.'),
-          _StepInfo(Icons.notifications_off_outlined, 'iOS PWA는 현재 Push 알림을 지원하지 않습니다. 알림은 PC에서만 사용 가능합니다.'),
+          _StepInfo(Icons.notifications_off_outlined, 'iOS에서는 Push 알림을 지원하지 않습니다. PC 브라우저 또는 Android APK에서 이용 가능합니다.'),
         ];
       case 'CN':
         return const [
@@ -211,7 +211,7 @@ class _PwaInstallGuideDialog extends StatelessWidget {
           _StepInfo(Icons.add_box_outlined, '在分享菜单中选择"添加到主屏幕"。'),
           _StepInfo(Icons.check_circle_outline, '点击"添加"，应用图标将出现在主屏幕上。'),
           _StepInfo(Icons.warning_amber_rounded, 'iOS必须使用Safari。Chrome/Firefox无法安装。'),
-          _StepInfo(Icons.notifications_off_outlined, 'iOS PWA目前不支持推送通知。通知仅在PC上可用。'),
+          _StepInfo(Icons.notifications_off_outlined, 'iOS不支持推送通知。请使用PC浏览器或Android APK。'),
         ];
       default:
         return const [
@@ -219,7 +219,7 @@ class _PwaInstallGuideDialog extends StatelessWidget {
           _StepInfo(Icons.add_box_outlined, 'Select "Add to Home Screen" from the share menu.'),
           _StepInfo(Icons.check_circle_outline, 'Tap "Add" and the app icon will appear on your home screen.'),
           _StepInfo(Icons.warning_amber_rounded, 'On iOS, you must use Safari. Chrome/Firefox cannot install PWAs.'),
-          _StepInfo(Icons.notifications_off_outlined, 'iOS PWA does not support push notifications. Notifications are only available on PC.'),
+          _StepInfo(Icons.notifications_off_outlined, 'iOS does not support push notifications. Use a PC browser or Android APK instead.'),
         ];
     }
   }
@@ -363,9 +363,9 @@ class _NotifSupportBanner extends StatelessWidget {
 
   String get _footerNote {
     switch (lang) {
-      case 'KR': return '모바일에서는 앱처럼 전체화면으로 사용할 수 있지만, 브라우저 제한으로 Push 알림은 PC에서만 동작합니다.';
-      case 'CN': return '移动端可作为全屏应用使用，但由于浏览器限制，推送通知仅在PC上可用。';
-      default:   return 'Mobile devices can use full-screen app mode, but push notifications only work on PC due to browser limitations.';
+      case 'KR': return '모바일 PWA는 전체화면 앱처럼 사용할 수 있지만, Push 알림은 PC 브라우저 또는 Android APK에서만 동작합니다.';
+      case 'CN': return '移动端PWA可作为全屏应用使用，但推送通知仅在PC浏览器或Android APK上可用。';
+      default:   return 'Mobile PWA can be used in full-screen app mode, but push notifications only work on PC browsers or Android APK.';
     }
   }
 }

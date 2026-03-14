@@ -3,6 +3,23 @@
 // key: pubspec.yaml의 version (예: '1.1.0')
 
 const Map<String, Map<String, String>> changelogData = {
+  '1.6.2': {
+    'KR': '• Deep Dive 스테이지 상세 모달 추가 (바이옴 배경, 보조 목표, 길이/복잡도, 경고).\n'
+        '• 하이라이트 탭에 "모레 일정" 구분선 추가.\n'
+        '• 알림 안내 문구 개선: Android APK 알림 지원 안내 명확화.\n'
+        '• Deep Dive 신규 목표 번역 추가 (Mine Morkite, Get Alien Eggs).\n'
+        '• JetBoots 미니게임 조작성 개선 (중력·상승력 완화).',
+    'EN': '• Deep Dive stage detail modal (biome background, secondary objectives, length/complexity, warnings).\n'
+        '• "Day After Tomorrow" divider in Highlights tab.\n'
+        '• Clarified notification messages: Android APK alert support.\n'
+        '• New Deep Dive objective translations (Mine Morkite, Get Alien Eggs).\n'
+        '• JetBoots mini-game smoother controls (reduced gravity & thrust).',
+    'CN': '• 新增Deep Dive阶段详情弹窗（生态背景、次要目标、长度/复杂度、警告）。\n'
+        '• 亮点标签新增"后天"分隔线。\n'
+        '• 改进通知提示文案：明确Android APK通知支持。\n'
+        '• 新增Deep Dive目标翻译（Mine Morkite、Get Alien Eggs）。\n'
+        '• JetBoots迷你游戏操控优化（降低重力和推力）。',
+  },
   '1.6.1': {
     'KR': '• Deep Dive 데이터 갱신 안정성 개선.\n'
         '• 주간 리셋 시 구 데이터가 계속 표시되던 문제 수정.\n'
