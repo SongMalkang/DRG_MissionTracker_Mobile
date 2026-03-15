@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -26,6 +27,7 @@ class DwarfVoiceTab extends StatefulWidget {
 class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
   final PageController _pageController = PageController();
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _mcAudioPlayer = AudioPlayer();
   final Random _random = Random();
   int _currentPage = 0;
 
@@ -34,10 +36,24 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
   bool _isForward = true; // 전환 방향: true=오른쪽→, false=←왼쪽
   String? _selectedGameId;
 
+  // 말풍선 상태
+  String? _currentSubtitle;
+  Timer? _bubbleDismissTimer;
+
+  // MC 오버레이 상태
+  String? _mcSubtitle;
+  Timer? _mcDismissTimer;
+
+  // 항목별 탭 카운터
+  final Map<String, int> _tapCounts = {};
+
   @override
   void dispose() {
     _pageController.dispose();
     _audioPlayer.dispose();
+    _mcAudioPlayer.dispose();
+    _bubbleDismissTimer?.cancel();
+    _mcDismissTimer?.cancel();
     super.dispose();
   }
 
@@ -53,6 +69,8 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
   Future<void> _playRandomSound(ShoutItem item) async {
     if (item.sounds.isEmpty) return;
     final index = _random.nextInt(item.sounds.length);
+
+    // 1. 기존 사운드 재생
     try {
       await _audioPlayer.stop();
       await _audioPlayer.play(
@@ -69,6 +87,55 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
           ),
         );
       }
+    }
+
+    // 2. 말풍선 표시
+    if (item.subtitles.isNotEmpty) {
+      final subtitleIndex = index < item.subtitles.length
+          ? index
+          : _random.nextInt(item.subtitles.length);
+      _bubbleDismissTimer?.cancel();
+      setState(() {
+        _currentSubtitle = item.subtitles[subtitleIndex];
+      });
+      _bubbleDismissTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _currentSubtitle = null);
+      });
+    }
+
+    // 3. MC 트리거 확률 계산
+    final count = (_tapCounts[item.id] ?? 0) + 1;
+    _tapCounts[item.id] = count;
+
+    final probability = ((count - 1) * 0.17).clamp(0.0, 1.0);
+    if (_random.nextDouble() < probability && item.mcSubtitles.isNotEmpty) {
+      // MC 트리거!
+      _tapCounts[item.id] = 0;
+      final mcIndex = _random.nextInt(item.mcSubtitles.length);
+
+      // 800ms 딜레이 후 MC 오버레이 표시
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (!mounted) return;
+
+        // MC 사운드 재생 (mcSounds가 비어있지 않을 때만)
+        if (item.mcSounds.isNotEmpty) {
+          final mcSoundIndex = mcIndex < item.mcSounds.length
+              ? mcIndex
+              : _random.nextInt(item.mcSounds.length);
+          _mcAudioPlayer.stop();
+          _mcAudioPlayer.play(
+            AssetSource(item.mcSounds[mcSoundIndex].replaceFirst('assets/', '')),
+          );
+        }
+
+        _mcDismissTimer?.cancel();
+        setState(() {
+          _mcSubtitle = item.mcSubtitles[mcIndex];
+        });
+        _mcDismissTimer = Timer(const Duration(seconds: 4), () {
+          if (mounted) setState(() => _mcSubtitle = null);
+        });
+      });
     }
   }
 
@@ -155,7 +222,7 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
     }
   }
 
-  // ─── Shout 페이지 (기존 레이아웃 + 상단 배너 + pointing 전폭) ───────────
+  // ─── Shout 페이지 (기존 레이아웃 + 말풍선 + MC 오버레이) ───────────
 
   Widget _buildShoutsPage() {
     return Stack(
@@ -258,7 +325,221 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
             ),
           ),
         ),
+
+        // 말풍선 — pointing 이미지 위 중앙
+        Positioned(
+          left: 40,
+          right: 40,
+          bottom: 105,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            reverseDuration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.85, end: 1.0).animate(
+                    CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutBack,
+                    ),
+                  ),
+                  child: child,
+                ),
+              );
+            },
+            child: _currentSubtitle != null
+                ? _SpeechBubble(
+                    key: ValueKey(_currentSubtitle),
+                    text: _currentSubtitle!,
+                  )
+                : const SizedBox.shrink(key: ValueKey('empty_bubble')),
+          ),
+        ),
+
+        // MC 오버레이 — 화면 중앙, 최상위
+        Positioned.fill(
+          child: IgnorePointer(
+            ignoring: _mcSubtitle == null,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              reverseDuration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.9, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutBack,
+                      ),
+                    ),
+                    child: child,
+                  ),
+                );
+              },
+              child: _mcSubtitle != null
+                  ? Center(
+                      key: ValueKey(_mcSubtitle),
+                      child: _McOverlay(text: _mcSubtitle!),
+                    )
+                  : const SizedBox.shrink(key: ValueKey('empty_mc')),
+            ),
+          ),
+        ),
       ],
+    );
+  }
+}
+
+// ─── 말풍선 위젯 ─────────────────────────────────────────────────────────────
+
+class _SpeechBubble extends StatelessWidget {
+  final String text;
+  const _SpeechBubble({super.key, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 말풍선 본체
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: Colors.orange.withValues(alpha: 0.6),
+              width: 1.5,
+            ),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontFamily: 'RussoOne',
+              fontSize: 12,
+              color: Colors.orange,
+              height: 1.3,
+            ),
+          ),
+        ),
+        // 꼬리 (하단 삼각형)
+        CustomPaint(
+          size: const Size(24, 12),
+          painter: _BubbleTailPainter(
+            fillColor: const Color(0xFF1A1A1A),
+            borderColor: Colors.orange.withValues(alpha: 0.6),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── 말풍선 꼬리 CustomPainter ───────────────────────────────────────────────
+
+class _BubbleTailPainter extends CustomPainter {
+  final Color fillColor;
+  final Color borderColor;
+
+  _BubbleTailPainter({required this.fillColor, required this.borderColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0)
+      ..close();
+
+    // Fill
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = fillColor
+        ..style = PaintingStyle.fill,
+    );
+
+    // Border (left and right edges only, top is covered by bubble)
+    final borderPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0);
+
+    canvas.drawPath(
+      borderPath,
+      Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleTailPainter oldDelegate) =>
+      fillColor != oldDelegate.fillColor ||
+      borderColor != oldDelegate.borderColor;
+}
+
+// ─── MC 오버레이 위젯 ────────────────────────────────────────────────────────
+
+class _McOverlay extends StatelessWidget {
+  final String text;
+  const _McOverlay({required this.text});
+
+  static const _mcBlue = Color(0xFF4FC3F7);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 320),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _mcBlue, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: _mcBlue.withValues(alpha: 0.15),
+            blurRadius: 20,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 상단: 안테나 아이콘 + MISSION CONTROL 라벨
+          const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cell_tower, color: _mcBlue, size: 18),
+              SizedBox(width: 6),
+              Text(
+                'MISSION CONTROL',
+                style: TextStyle(
+                  color: _mcBlue,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // MC 자막
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

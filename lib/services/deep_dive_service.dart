@@ -17,6 +17,7 @@ class DeepDiveStage {
   final String primary;
   final String? secondary;
   final List<String> warnings;
+  final String? mutator;
   final int complexity;
   final int length;
 
@@ -25,6 +26,7 @@ class DeepDiveStage {
     required this.primary,
     this.secondary,
     this.warnings = const [],
+    this.mutator,
     required this.complexity,
     required this.length,
   });
@@ -41,6 +43,7 @@ class DeepDiveStage {
               ?.whereType<String>()
               .toList() ??
           [],
+      mutator: j['MissionMutator'] as String?,
       complexity: int.tryParse(j['Complexity']?.toString() ?? '1') ?? 1,
       length: int.tryParse(j['Length']?.toString() ?? '1') ?? 1,
     );

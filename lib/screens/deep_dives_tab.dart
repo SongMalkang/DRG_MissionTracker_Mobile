@@ -538,6 +538,46 @@ class _StageRow extends StatelessWidget {
                           ),
                         ),
                     ],
+                    // 뮤테이터
+                    if (stage.mutator != null) ...[
+                      Tooltip(
+                        message: t(stage.mutator, lang),
+                        child: SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: Image.asset(
+                            AssetHelper.getMutatorIcon(stage.mutator!),
+                            errorBuilder: (ctx, e, st) => const Icon(
+                              Icons.bolt,
+                              color: Colors.amber,
+                              size: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Flexible(
+                        child: Text(
+                          t(stage.mutator, lang),
+                          style: const TextStyle(
+                            color: Colors.amber,
+                            fontSize: 11,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (stage.warnings.isNotEmpty)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 5),
+                          child: Text(
+                            '·',
+                            style: TextStyle(
+                              color: Colors.white24,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                    ],
                     // 경고 (다중 지원)
                     if (stage.warnings.isNotEmpty) ...[
                       if (stage.warnings.length == 1) ...[
@@ -922,6 +962,34 @@ class _StageDetailDialog extends StatelessWidget {
                               ),
                             ],
                           ),
+
+                          // 뮤테이터 (Mutator)
+                          if (stage.mutator != null) ...[
+                            const Padding(
+                              padding:
+                                  EdgeInsets.symmetric(vertical: 12),
+                              child: Divider(
+                                  color: Colors.white12, height: 1),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: BadgeRow(
+                                iconPath:
+                                    AssetHelper.getMutatorIcon(stage.mutator!),
+                                label: t(stage.mutator, lang),
+                                color: Colors.amber,
+                                fallbackIcon: Icons.bolt,
+                                onTap: () => showTriviaModal(
+                                  context,
+                                  itemKey: stage.mutator!,
+                                  lang: lang,
+                                  iconPath:
+                                      AssetHelper.getMutatorIcon(stage.mutator!),
+                                  accentColor: Colors.amber,
+                                ),
+                              ),
+                            ),
+                          ],
 
                           // 경고 (Warnings)
                           if (stage.warnings.isNotEmpty) ...[
