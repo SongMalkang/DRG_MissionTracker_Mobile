@@ -275,24 +275,96 @@ class _UpdateDialog extends StatelessWidget {
     );
   }
 
-  /// 강제 업데이트: 단일 버튼, 닫기 없음
+  /// 강제 업데이트: GitHub 릴리즈 카드 + 다운로드 버튼
   Widget _forcedButton(Color accentColor) {
-    return InkWell(
-      onTap: _launchStore,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        child: Text(
-          t('update_now', lang),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: accentColor,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-            fontSize: 14,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // GitHub 릴리즈 카드
+        InkWell(
+          onTap: _launchStore,
+          child: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                // GitHub 아이콘
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.code, color: Colors.white70, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'GitHub Releases',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'v${info.latestVersion} APK',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.open_in_new,
+                    color: Colors.white.withValues(alpha: 0.3), size: 16),
+              ],
+            ),
           ),
         ),
-      ),
+        // 다운로드 버튼
+        InkWell(
+          onTap: _launchStore,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            decoration: BoxDecoration(
+              border: Border(
+                  top: BorderSide(
+                      color: accentColor.withValues(alpha: 0.15))),
+              color: accentColor.withValues(alpha: 0.08),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.download_rounded, color: accentColor, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  t('update_now', lang),
+                  style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
