@@ -6,6 +6,7 @@ import 'live_missions_tab.dart';
 import 'highlights_tab.dart';
 import 'deep_dives_tab.dart';
 import 'dwarf_voice_tab.dart';
+import 'overclock_tab.dart';
 import 'settings_screen.dart';
 import '../utils/constants.dart';
 import '../utils/strings.dart';
@@ -118,6 +119,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       ),
       HighlightsTab(lang: _currentLang, showWarnings: _showWarnings),
       DeepDivesTab(lang: _currentLang),
+      OverclockTab(lang: _currentLang),
       DwarfVoiceTab(lang: _currentLang), // kIsWeb 필터 해제 (GSG 데모용 — 복원: if (!kIsWeb) 추가)
     ];
 
@@ -211,6 +213,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                   BottomNavigationBarItem(icon: const Icon(Icons.list_alt), label: i18n[_currentLang]!['live']),
                   BottomNavigationBarItem(icon: const Icon(Icons.star), label: i18n[_currentLang]!['highlights']),
                   BottomNavigationBarItem(icon: const Icon(Icons.diamond), label: i18n[_currentLang]!['deep_dives']),
+                  BottomNavigationBarItem(icon: const Icon(Icons.construction), label: i18n[_currentLang]!['overclock']),
                   BottomNavigationBarItem(icon: const Icon(Icons.casino), label: i18n[_currentLang]!['dwarf_voice']), // kIsWeb 필터 해제
                 ],
               ),

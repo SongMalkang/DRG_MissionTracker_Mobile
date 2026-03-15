@@ -49,4 +49,16 @@ class AssetHelper {
   static String getSecondaryIcon(String secondary) {
     return 'assets/icons/secondary/${_toSnakeCase(secondary)}.png';
   }
+
+  static String getWeaponImage(String weaponId) {
+    return 'assets/images/weapons/$weaponId.webp';
+  }
+
+  static String getOverclockImage(String iconName) {
+    return 'assets/images/overclocks/$iconName.webp';
+  }
+
+  static String getCharacterImage(String className) {
+    return 'assets/images/character/300px-$className.webp';
+  }
 }

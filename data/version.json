@@ -1,11 +1,11 @@
 {
-  "latest_version": "1.6.2",
-  "min_required": "1.0.0",
+  "latest_version": "2.0.0",
+  "min_required": "2.0.0",
   "force_update": false,
   "store_url": "https://github.com/SongMalkang/DRG_MissionTracker_Mobile/releases",
   "changelog": {
-    "KR": "• Deep Dive 스테이지 상세 모달 추가\n• 하이라이트 탭 \"모레 일정\" 구분선 추가\n• 알림 안내 문구 개선 (APK 알림 안내 명확화)\n• Deep Dive 신규 목표 번역 추가\n• JetBoots 조작성 개선",
-    "EN": "• Deep Dive stage detail modal\n• \"Day After Tomorrow\" divider in Highlights\n• Clarified notification messages (APK alert support)\n• New Deep Dive objective translations\n• JetBoots smoother controls",
-    "CN": "• 新增Deep Dive阶段详情弹窗\n• 亮点标签新增\"后天\"分隔线\n• 改进通知提示文案\n• 新增Deep Dive目标翻译\n• JetBoots操控优化"
+    "KR": "• 오버클럭 수집 트래커 추가 (159개 오버클럭 체크리스트)\n• 캐릭터별/전체 수집 진행률 표시\n• 무기별 아코디언 UI (Clean/Balanced/Unstable 등급)\n• 오버클럭 상세 모달 및 수집 토글\n• 로드아웃 동기화 기능 예고 (인게임 모드 연동 준비중)",
+    "EN": "• Overclock Collection Tracker (159 overclocks checklist)\n• Per-character & overall collection progress\n• Weapon accordion UI (Clean/Balanced/Unstable tiers)\n• Overclock detail modal & collection toggle\n• Loadout Sync feature teased (in-game mod coming soon)",
+    "CN": "• 新增超频收集追踪器（159个超频清单）\n• 按角色及总体显示收集进度\n• 武器手风琴UI（Clean/Balanced/Unstable等级）\n• 超频详情弹窗及收集切换\n• 配装同步功能预告（游戏内模组准备中）"
   }
 }

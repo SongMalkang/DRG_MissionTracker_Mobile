@@ -3,6 +3,29 @@
 // key: pubspec.yaml의 version (예: '1.1.0')
 
 const Map<String, Map<String, String>> changelogData = {
+  '2.0.0': {
+    'KR': '• 오버클럭 수집 트래커 추가: 4클래스 × 24무기 × 159개 오버클럭 체크리스트.\n'
+        '• 캐릭터별 수집 진행률 및 전체 진행률 표시.\n'
+        '• 무기별 아코디언 UI로 오버클럭 관리 (Clean/Balanced/Unstable 등급 표시).\n'
+        '• 오버클럭 상세 모달: 효과 설명 및 수집 토글.\n'
+        '• 수집 상태 로컬 저장 (앱 재시작 후에도 유지).\n'
+        '• 로드아웃 동기화 기능 예고 (인게임 모드 연동 준비중).\n'
+        '• 위키 기반 무기/오버클럭 아이콘 에셋 추가 (WebP).',
+    'EN': '• Overclock Collection Tracker: 4 classes × 24 weapons × 159 overclocks checklist.\n'
+        '• Per-character and overall collection progress display.\n'
+        '• Weapon accordion UI for overclock management (Clean/Balanced/Unstable tiers).\n'
+        '• Overclock detail modal: effect description & collection toggle.\n'
+        '• Collection state persisted locally (survives app restart).\n'
+        '• Loadout Sync feature teased (in-game mod integration coming soon).\n'
+        '• Wiki-based weapon/overclock icon assets added (WebP).',
+    'CN': '• 新增超频收集追踪器：4职业 × 24武器 × 159个超频清单。\n'
+        '• 按角色和总体显示收集进度。\n'
+        '• 武器手风琴UI管理超频（Clean/Balanced/Unstable等级显示）。\n'
+        '• 超频详情弹窗：效果描述及收集切换。\n'
+        '• 收集状态本地持久化（重启应用后保持）。\n'
+        '• 配装同步功能预告（游戏内模组集成准备中）。\n'
+        '• 新增基于Wiki的武器/超频图标资源（WebP）。',
+  },
   '1.6.2': {
     'KR': '• Deep Dive 스테이지 상세 모달 추가 (바이옴 배경, 보조 목표, 길이/복잡도, 경고).\n'
         '• 하이라이트 탭에 "모레 일정" 구분선 추가.\n'
