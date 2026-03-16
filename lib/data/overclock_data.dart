@@ -23,7 +23,7 @@ const List<DwarfCharacter> allDwarves = [
           Overclock(id: 'driller_crspr_fuel_stream_diffuser', name: 'Fuel Stream Diffuser', tier: OverclockTier.balanced, effect: '+5m Flame Reach, -20 Max Fuel', icon: 'icon_upgrade_distance'),
           Overclock(id: 'driller_crspr_face_melter', name: 'Face Melter', tier: OverclockTier.unstable, effect: '+2 Damage, +4 Rate of Fire, -75 Max Fuel, -2m Flame Reach', icon: 'icon_upgrade_damage_general'),
           Overclock(id: 'driller_crspr_sticky_fuel', name: 'Sticky Fuel', tier: OverclockTier.unstable, effect: '+6s Sticky Flame Duration, +1 Sticky Flame Damage, -25 Max Fuel, -75% Flow Rate', icon: 'icon_upgrade_duration_v2'),
-          Overclock(id: 'driller_crspr_scorching_tide', name: 'Scorching Tide', tier: OverclockTier.unstable, effect: 'Hold reload to charge and fire 8 horizontal fiery projectiles, Reduced movement while charging', icon: 'icon_overclock_special_magazine'),
+          Overclock(id: 'driller_crspr_scorching_tide', name: 'Scorching Tide', tier: OverclockTier.unstable, effect: 'Hold reload to charge and fire 8 horizontal fiery projectiles, Reduced movement while charging', icon: 'icon_upgrade_special'),
         ],
       ),
       // ── Cryo Cannon (7 OCs) ──
@@ -36,9 +36,9 @@ const List<DwarfCharacter> allDwarves = [
           Overclock(id: 'driller_cryo_tuned_cooler', name: 'Tuned Cooler', tier: OverclockTier.balanced, effect: '+1 Freezing Power, +0.8 Flow Rate, Increased Charge Time and Pressure Drop', icon: 'icon_upgrade_cold'),
           Overclock(id: 'driller_cryo_flow_rate_expansion', name: 'Flow Rate Expansion', tier: OverclockTier.balanced, effect: '+170% Pressure Gain Rate, +25% Flow Rate, -25 Tank Capacity', icon: 'icon_upgrade_duration'),
           Overclock(id: 'driller_cryo_ice_spear', name: 'Ice Spear', tier: OverclockTier.balanced, effect: 'Press reload to fire ice projectile (100 dmg), -50 Tank Capacity', icon: 'icon_upgrade_projectile_speed'),
+          Overclock(id: 'driller_cryo_crystal_nucleation', name: 'Crystal Nucleation', tier: OverclockTier.balanced, effect: 'Creates ice crystal formations on terrain that damage and slow enemies, -20% Max Ammo', icon: 'icon_upgrade_special'),
           Overclock(id: 'driller_cryo_ice_storm', name: 'Ice Storm', tier: OverclockTier.unstable, effect: '+2 Damage, +100% Damage vs Frozen, -3 Freezing Power, -75 Tank Capacity', icon: 'icon_upgrade_damage_general'),
           Overclock(id: 'driller_cryo_snowball', name: 'Snowball', tier: OverclockTier.unstable, effect: 'Press reload to shoot snowball (AoE freeze), -100 Tank Capacity, +1 Chargeup Time', icon: 'icon_upgrade_area'),
-          Overclock(id: 'driller_cryo_crystal_nucleation', name: 'Crystal Nucleation', tier: OverclockTier.balanced, effect: 'Creates ice crystal formations on terrain that damage and slow enemies, -20% Max Ammo', icon: 'icon_upgrade_special'),
         ],
       ),
       // ── Corrosive Sludge Pump (7 OCs) ──
@@ -51,9 +51,9 @@ const List<DwarfCharacter> allDwarves = [
           Overclock(id: 'driller_sludge_ag_mixture', name: 'AG Mixture', tier: OverclockTier.clean, effect: '+2 Charged Shot Area Damage, -0.4s Charge Time', icon: 'icon_upgrade_projectile_speed'),
           Overclock(id: 'driller_sludge_volatile_impact_mixture', name: 'Volatile Impact Mixture', tier: OverclockTier.balanced, effect: '+4 Damage, +25 Charged Shot Area Damage, Cannot leave puddles', icon: 'icon_upgrade_damage_general'),
           Overclock(id: 'driller_sludge_disperser_compound', name: 'Disperser Compound', tier: OverclockTier.balanced, effect: '+6 Normal Shot Area Damage, +50% Normal Shot Velocity, -1 Ammo per shot', icon: 'icon_upgrade_area_damage'),
+          Overclock(id: 'driller_sludge_combustive_goo_mix', name: 'Combustive Goo Mix', tier: OverclockTier.balanced, effect: 'Gooed enemies and puddles explode when ignited, +2 Charged Shot Ammo Use', icon: 'icon_upgrade_explosion'),
           Overclock(id: 'driller_sludge_goo_bomber_special', name: 'Goo Bomber Special', tier: OverclockTier.unstable, effect: 'Charged shot fragments into multiple projectiles, -50% Charged Shot Cost, -2 Normal Damage', icon: 'icon_upgrade_special'),
           Overclock(id: 'driller_sludge_sludge_blast', name: 'Sludge Blast', tier: OverclockTier.unstable, effect: 'Normal shot fires 5 projectiles (shotgun), Damage converted to Kinetic, No puddles on normal shot', icon: 'icon_upgrade_shotgun_blast'),
-          Overclock(id: 'driller_sludge_combustive_goo_mix', name: 'Combustive Goo Mix', tier: OverclockTier.balanced, effect: 'Gooed enemies and puddles explode when ignited, +2 Charged Shot Ammo Use', icon: 'icon_upgrade_explosion'),
         ],
       ),
       // ── Subata 120 (6 OCs) ──
@@ -319,9 +319,9 @@ const List<DwarfCharacter> allDwarves = [
           Overclock(id: 'scout_gk2_homebrew_powder', name: 'Homebrew Powder', tier: OverclockTier.clean, effect: 'Damage randomly between x0.8 and x1.4', icon: 'icon_overclock_change_of_higher_damage'),
           Overclock(id: 'scout_gk2_overclocked_firing_mechanism', name: 'Overclocked Firing Mechanism', tier: OverclockTier.balanced, effect: '+3 Rate of Fire, -50 Max Ammo, +100% Recoil', icon: 'icon_upgrade_fire_rate'),
           Overclock(id: 'scout_gk2_bullets_of_mercy', name: 'Bullets of Mercy', tier: OverclockTier.balanced, effect: '+33% Damage on status-affected enemies, -5 Magazine Size', icon: 'icon_upgrade_damage_general'),
+          Overclock(id: 'scout_gk2_burst_fire', name: 'Burst Fire', tier: OverclockTier.balanced, effect: '3-round burst mode, Increased damage and stun chance, Reduced rate of fire', icon: 'icon_upgrade_special'),
           Overclock(id: 'scout_gk2_ai_stability_engine', name: 'AI Stability Engine', tier: OverclockTier.unstable, effect: '+40% Weakpoint Bonus, No Recoil, -2 Rate of Fire, -2 Damage', icon: 'icon_upgrade_aim'),
           Overclock(id: 'scout_gk2_electrifying_reload', name: 'Electrifying Reload', tier: OverclockTier.unstable, effect: 'Embedded capacitors electrocute targets on reload, Reduced ammo capacity', icon: 'icon_overclock_special_magazine'),
-          Overclock(id: 'scout_gk2_burst_fire', name: 'Burst Fire', tier: OverclockTier.balanced, effect: '3-round burst mode, Increased damage and stun chance, Reduced rate of fire', icon: 'icon_upgrade_special'),
         ],
       ),
       // ── M1000 Classic (7 OCs) ──
