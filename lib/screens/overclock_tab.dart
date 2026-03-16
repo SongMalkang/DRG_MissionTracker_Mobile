@@ -251,11 +251,14 @@ class _CharacterCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // 캐릭터 이미지 배경
-            Image.asset(
-              character.imagePath,
-              fit: BoxFit.cover,
-              errorBuilder: AssetHelper.assetErrorBuilder,
+            // 캐릭터 이미지 배경 (0.8배 축소하여 잘림 방지)
+            Transform.scale(
+              scale: 0.8,
+              child: Image.asset(
+                character.imagePath,
+                fit: BoxFit.cover,
+                errorBuilder: AssetHelper.assetErrorBuilder,
+              ),
             ),
             // 그라디언트 오버레이
             Container(

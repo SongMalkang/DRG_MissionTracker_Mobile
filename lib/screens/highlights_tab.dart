@@ -12,7 +12,8 @@ import '../widgets/skeleton_loading.dart';
 class HighlightsTab extends StatefulWidget {
   final String lang;
   final bool showWarnings;
-  const HighlightsTab({super.key, required this.lang, this.showWarnings = true});
+  final bool isVisible;
+  const HighlightsTab({super.key, required this.lang, this.showWarnings = true, this.isVisible = true});
 
   @override
   State<HighlightsTab> createState() => _HighlightsTabState();
@@ -22,6 +23,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
   late Timer _timer;
   late DateTime _now;
   final MissionService _missionService = MissionService();
+  String? _lastTimeKey;
 
   // 각 원소: { 'time': DateTime, 'missions': List(Mission), 'isPast': bool,
   //             'isCurrent': bool, 'isTomorrow': bool, 'isDayAfterTomorrow': bool }
@@ -31,18 +33,36 @@ class _HighlightsTabState extends State<HighlightsTab> {
   void initState() {
     super.initState();
     _now = DateTime.now();
+    _lastTimeKey = MissionService.getTimeKey(_now.toUtc());
     _missionService.addListener(_onDataChanged);
     if (_missionService.isInitialized) {
       _processHighlights();
     }
     _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (mounted) {
-        setState(() {
-          _now = DateTime.now();
-          _processHighlights();
-        });
+      if (!mounted || !widget.isVisible) return;
+      final now = DateTime.now();
+      final currentKey = MissionService.getTimeKey(now.toUtc());
+      // 시간 슬롯이 변경된 경우에만 재처리
+      if (currentKey != _lastTimeKey) {
+        _lastTimeKey = currentKey;
+        _now = now;
+        _processHighlights();
+      } else {
+        // 현재 시각 표시만 갱신 (경량)
+        setState(() { _now = now; });
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant HighlightsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 탭이 다시 보이게 되면 시간 갱신
+    if (widget.isVisible && !oldWidget.isVisible) {
+      _now = DateTime.now();
+      _lastTimeKey = MissionService.getTimeKey(_now.toUtc());
+      _processHighlights();
+    }
   }
 
   void _onDataChanged() {
@@ -158,7 +178,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
           child: RefreshIndicator(
             color: Colors.orange,
             backgroundColor: const Color(0xFF1E1E1E),
-            onRefresh: () => MissionService().forceRefresh(),
+            onRefresh: () => _missionService.forceRefresh(),
             child: _slots.isEmpty
               ? ListView(
                   children: [

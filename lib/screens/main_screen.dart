@@ -45,6 +45,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _missionService.removeListener(_onDataChanged);
+    // 싱글톤 서비스는 dispose 하지 않음 — 앱 전체 라이프사이클과 함께 유지
+    // _refreshTimer는 라이프사이클 옵저버(pause/resume)로 관리
     super.dispose();
   }
 
@@ -116,8 +118,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         currentSeason: _currentSeason,
         onSeasonChange: _onSeasonChange,
         showWarnings: _showWarnings,
+        isVisible: _currentIndex == 0,
       ),
-      HighlightsTab(lang: _currentLang, showWarnings: _showWarnings),
+      HighlightsTab(lang: _currentLang, showWarnings: _showWarnings, isVisible: _currentIndex == 1),
       DeepDivesTab(lang: _currentLang),
       OverclockTab(lang: _currentLang),
       DwarfVoiceTab(lang: _currentLang), // kIsWeb 필터 해제 (GSG 데모용 — 복원: if (!kIsWeb) 추가)
@@ -228,6 +231,32 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final isRefreshing = _missionService.status == DataStatus.refreshing;
     final isOffline = _missionService.status == DataStatus.offline;
     final isOutdated = _missionService.status == DataStatus.outdated;
+    final hasClockDrift = _missionService.hasClockDrift;
+
+    // 시계 오차 경고 (전역)
+    if (hasClockDrift && !isRefreshing && !isOffline && !isOutdated) {
+      return PreferredSize(
+        preferredSize: const Size.fromHeight(28),
+        child: Container(
+          height: 28,
+          color: Colors.amber.withValues(alpha: 0.12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.access_time, color: Colors.amber, size: 14),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  t('clock_drift', _currentLang),
+                  style: const TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     if (isRefreshing) {
       return const PreferredSize(

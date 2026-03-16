@@ -298,6 +298,9 @@ Future<void> alarmCallback(int alarmId) async {
       ),
     );
 
+    // 성공한 알림 타임스탬프 저장
+    await prefs.setInt('last_notification_fired', DateTime.now().millisecondsSinceEpoch);
+
     // 다음 주 같은 요일·시간으로 재예약
     final nextWeek = DateTime.now().add(const Duration(days: 7));
     final nextOccurrence = DateTime(

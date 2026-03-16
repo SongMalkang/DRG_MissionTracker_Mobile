@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/strings.dart';
 import '../services/settings_service.dart';
 import '../services/mission_service.dart';
@@ -42,6 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   TimeOfDay _notifEndTime = const TimeOfDay(hour: 22, minute: 0);
   List<int> _notifDays = [1, 2, 3, 4, 5, 6, 7];
   Set<String> _excludedTypes = {};
+  DateTime? _lastNotificationFired;
 
   @override
   void initState() {
@@ -61,6 +63,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final notifDays    = await _notifSettings.getEnabledDays();
     final excluded     = await _notifSettings.getExcludedMissionTypes();
 
+    // 마지막 알림 발화 시각 로드
+    final prefs = await SharedPreferences.getInstance();
+    final lastFiredMs = prefs.getInt('last_notification_fired');
+    final lastFired = lastFiredMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(lastFiredMs)
+        : null;
+
     setState(() {
       _showWarnings   = show;
       _notifEnabled   = notifOn;
@@ -68,6 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _notifEndTime   = notifEndTime;
       _notifDays      = notifDays;
       _excludedTypes  = excluded;
+      _lastNotificationFired = lastFired;
     });
   }
 
@@ -319,6 +329,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onToggleNotifDay: _toggleNotifDay,
             onToggleExcludedType: _toggleExcludedType,
           ),
+          // 알림 상태 정보
+          if (_notifEnabled) _buildNotifStatus(),
           const Divider(color: Colors.white10, height: 24),
 
           // 6. Steam & About
@@ -328,6 +340,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotifStatus() {
+    final langMap = i18n[_selectedLang]!;
+    String lastFiredText;
+    bool isWarning = false;
+
+    if (_lastNotificationFired != null) {
+      final diff = DateTime.now().difference(_lastNotificationFired!);
+      final label = langMap['notif_last_fired'] ?? 'Last notification:';
+      if (diff.inMinutes < 60) {
+        lastFiredText = '$label ${diff.inMinutes} ${langMap['minutes_ago'] ?? 'm ago'}';
+      } else if (diff.inHours < 48) {
+        lastFiredText = '$label ${diff.inHours} ${langMap['hours_ago'] ?? 'h ago'}';
+      } else {
+        lastFiredText = '$label ${diff.inDays} ${langMap['days_ago'] ?? 'd ago'}';
+        isWarning = true; // 48시간 이상 미발생
+      }
+    } else {
+      lastFiredText = langMap['notif_never_fired'] ?? 'No notifications sent yet';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isWarning
+              ? Colors.amber.withValues(alpha: 0.08)
+              : Colors.white.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(8),
+          border: isWarning
+              ? Border.all(color: Colors.amber.withValues(alpha: 0.3))
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isWarning ? Icons.warning_amber_rounded : Icons.notifications_active,
+              color: isWarning ? Colors.amber : Colors.white38,
+              size: 16,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                lastFiredText,
+                style: TextStyle(
+                  color: isWarning ? Colors.amber : Colors.white38,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

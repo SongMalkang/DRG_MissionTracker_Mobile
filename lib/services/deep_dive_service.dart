@@ -2,13 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
-
-// 조건부 임포트: 웹에서는 SharedPreferences, 네이티브에서는 파일 I/O
-import '../platform/file_cache_stub.dart'
-    if (dart.library.io) '../platform/file_cache_native.dart';
+import 'base_data_service.dart';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 
@@ -66,7 +62,7 @@ class DeepDive {
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
-class DeepDiveService {
+class DeepDiveService with ListenerMixin, NetworkFetchMixin, CacheManagementMixin {
   static final DeepDiveService _instance = DeepDiveService._internal();
   factory DeepDiveService() => _instance;
   DeepDiveService._internal();
@@ -85,6 +81,7 @@ class DeepDiveService {
   DateTime? get thursdayUtc => _thursdayUtc;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String? get dataThursdayKey => _dataThursdayKey;
 
   /// 현재 표시 중인 데이터가 이번 주보다 오래된 경우 true
   /// (다음 주 DD가 조기 게시된 경우에는 stale이 아님)
@@ -99,15 +96,7 @@ class DeepDiveService {
   /// 기존 데이터를 보여주면서 백그라운드 로딩 중인 경우 true
   bool get isRefreshing => _isLoading && _dives != null;
 
-  // ── Listeners ─────────────────────────────────────────────────────────
-  final List<VoidCallback> _listeners = [];
-  void addListener(VoidCallback listener) => _listeners.add(listener);
-  void removeListener(VoidCallback listener) => _listeners.remove(listener);
-  void _notifyListeners() {
-    for (final cb in _listeners) {
-      cb();
-    }
-  }
+  // ── Listeners (via ListenerMixin) ─────────────────────────────────────
 
   // ── 이번 주 목요일 UTC 11:00 계산 ──────────────────────────────────────
   DateTime _latestThursday() {
@@ -155,7 +144,7 @@ class DeepDiveService {
     // 주가 바뀌었지만 기존 데이터가 있으면 → 기존 데이터 유지하면서 갱신 시도
     if (!forceRefresh && _dives != null && !hasCurrentData) {
       _isLoading = true;
-      _notifyListeners();
+      notifyListeners();
       try {
         final body = await _fetchFromGitHub();
         _dives = _parseDiveData(body);
@@ -165,13 +154,13 @@ class DeepDiveService {
         // GitHub 실패 → 기존 데이터 유지, isDataStale 유지 (수동 새로고침 가능)
       }
       _isLoading = false;
-      _notifyListeners();
+      notifyListeners();
       return;
     }
 
     _isLoading = true;
     _error = null;
-    _notifyListeners();
+    notifyListeners();
 
     // Tier 1: 로컬 캐시
     if (!forceRefresh) {
@@ -181,7 +170,7 @@ class DeepDiveService {
           _dives = _parseDiveData(body);
           _dataThursdayKey = _extractThursdayKey(body);
           _isLoading = false;
-          _notifyListeners();
+          notifyListeners();
           // 백그라운드에서 GitHub도 확인 (silent refresh)
           unawaited(_silentRefresh());
           return;
@@ -197,7 +186,7 @@ class DeepDiveService {
       _dives = _parseDiveData(body);
       _dataThursdayKey = _extractThursdayKey(body);
       _isLoading = false;
-      _notifyListeners();
+      notifyListeners();
       await _saveToCache(body);
     } catch (e) {
       debugPrint("Deep Dive GitHub fetch failed: $e");
@@ -226,7 +215,7 @@ class DeepDiveService {
       }
 
       _isLoading = false;
-      _notifyListeners();
+      notifyListeners();
     }
   }
 
@@ -238,29 +227,15 @@ class DeepDiveService {
       _dives = dives;
       _dataThursdayKey = _extractThursdayKey(body);
       await _saveToCache(body);
-      _notifyListeners();
+      notifyListeners();
     } catch (_) {
       // silent fail - 캐시 데이터 유지
     }
   }
 
-  // ── GitHub Fetch ──────────────────────────────────────────────────────
-  Future<String> _fetchFromGitHub() async {
-    for (int attempt = 0; attempt < AppConstants.maxRetryAttempts; attempt++) {
-      try {
-        final response = await http
-            .get(Uri.parse(AppConstants.deepDiveDataUrl))
-            .timeout(const Duration(seconds: AppConstants.networkTimeoutSeconds));
-        if (response.statusCode == 200) return response.body;
-      } catch (_) {
-        // retry
-      }
-      if (attempt < AppConstants.maxRetryAttempts - 1) {
-        await Future.delayed(Duration(seconds: 1 << attempt));
-      }
-    }
-    throw Exception('Deep Dive fetch failed after ${AppConstants.maxRetryAttempts} attempts');
-  }
+  // ── GitHub Fetch (via NetworkFetchMixin) ─────────────────────────────
+  Future<String> _fetchFromGitHub() =>
+      fetchBodyWithRetry(AppConstants.deepDiveDataUrl);
 
   // ── Cache Management ──────────────────────────────────────────────────
   Future<String?> _loadCacheBody(DateTime thu, {bool ignoreExpiry = false}) async {
@@ -274,7 +249,7 @@ class DeepDiveService {
         }
       }
 
-      return await loadCacheString(AppConstants.cachedDeepDiveFile);
+      return await loadCache(AppConstants.cachedDeepDiveFile);
     } catch (e) {
       debugPrint("Deep Dive cache load failed: $e");
       return null;
@@ -283,7 +258,7 @@ class DeepDiveService {
 
   Future<void> _saveToCache(String body) async {
     try {
-      await saveCacheString(AppConstants.cachedDeepDiveFile, body);
+      await saveCache(AppConstants.cachedDeepDiveFile, body);
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(
@@ -349,6 +324,6 @@ class DeepDiveService {
   }
 
   void dispose() {
-    _listeners.clear();
+    clearListeners();
   }
 }

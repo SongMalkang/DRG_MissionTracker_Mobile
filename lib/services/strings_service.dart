@@ -5,10 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
 import '../utils/strings.dart';
-
-// 조건부 임포트: 웹에서는 SharedPreferences, 네이티브에서는 파일 I/O
-import '../platform/file_cache_stub.dart'
-    if (dart.library.io) '../platform/file_cache_native.dart';
+import 'base_data_service.dart';
 
 /// 동적 i18n 로더
 ///
@@ -16,7 +13,7 @@ import '../platform/file_cache_stub.dart'
 /// 앱 업데이트 없이 번역을 수정할 수 있도록 strings.dart의 값을 런타임에 덮어씀.
 ///
 /// 업데이트 방법: GitHub repo의 data/strings.json 파일에서 수정할 키:값 쌍을 추가/변경.
-class StringsService {
+class StringsService with CacheManagementMixin {
   static final StringsService _instance = StringsService._internal();
   factory StringsService() => _instance;
   StringsService._internal();
@@ -93,7 +90,7 @@ class StringsService {
 
   Future<Map<String, dynamic>?> _loadFromCache() async {
     try {
-      final content = await loadCacheString(_cacheFile);
+      final content = await loadCache(_cacheFile);
       if (content != null) {
         return jsonDecode(content) as Map<String, dynamic>;
       }
@@ -105,7 +102,7 @@ class StringsService {
 
   Future<void> _saveToCache(Map<String, dynamic> data) async {
     try {
-      await saveCacheString(_cacheFile, jsonEncode(data));
+      await saveCache(_cacheFile, jsonEncode(data));
     } catch (e) {
       debugPrint('StringsService: 캐시 저장 실패: $e');
     }

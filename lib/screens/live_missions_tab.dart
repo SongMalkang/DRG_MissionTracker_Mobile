@@ -15,6 +15,7 @@ class LiveMissionsTab extends StatefulWidget {
   final String currentSeason;
   final Function(String) onSeasonChange;
   final bool showWarnings;
+  final bool isVisible;
 
   const LiveMissionsTab({
     super.key,
@@ -22,6 +23,7 @@ class LiveMissionsTab extends StatefulWidget {
     required this.currentSeason,
     required this.onSeasonChange,
     this.showWarnings = true,
+    this.isVisible = true,
   });
 
   @override
@@ -31,7 +33,6 @@ class LiveMissionsTab extends StatefulWidget {
 class _LiveMissionsTabState extends State<LiveMissionsTab> {
   int _timeOffset = 0; // -1: Past, 0: Current, 1: Next
   late Timer _timer;
-  int _secondsUntilNext = 0;
 
   final MissionService _missionService = MissionService();
   final WatchlistService _watchlistService = WatchlistService();
@@ -48,11 +49,11 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
   @override
   void initState() {
     super.initState();
-    _calculateTimeLeft();
     _missionService.addListener(_onDataChanged);
     _loadWatchlistFilter();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _calculateTimeLeft();
+    // 30초마다 슬롯 전환 감지 (카운트다운은 _CountdownText 위젯이 독립 처리)
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted && widget.isVisible) setState(() {});
     });
   }
 
@@ -80,22 +81,19 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
     }
   }
 
+  @override
+  void didUpdateWidget(covariant LiveMissionsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 탭이 다시 보이게 되면 즉시 갱신
+    if (widget.isVisible && !oldWidget.isVisible) {
+      setState(() {});
+    }
+  }
+
   void _onDataChanged() {
     if (mounted) {
       setState(() {
         _dataVersion++;
-      });
-    }
-  }
-
-  void _calculateTimeLeft() {
-    final now = DateTime.now();
-    final next30 = (now.minute < 30) ? 30 : 60;
-    final target = DateTime(now.year, now.month, now.day, now.hour, next30, 0);
-    final diff = target.difference(now).inSeconds;
-    if (mounted) {
-      setState(() {
-        _secondsUntilNext = diff.clamp(0, AppConstants.missionRotationMinutes * 60);
       });
     }
   }
@@ -225,9 +223,6 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
     final localDisplayTime = targetUtc.toLocal();
     final filteredList = _getFilteredMissions(targetUtc);
 
-    final minutes = (_secondsUntilNext ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_secondsUntilNext % 60).toString().padLeft(2, '0');
-
     final seasonLabel = widget.currentSeason == "s0"
         ? i18n[widget.lang]!['standard']!
         : "SEASON ${widget.currentSeason.replaceAll('s', '')}";
@@ -280,37 +275,9 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
                       ),
                     ],
                   ),
-                  if (_timeOffset == 0) ...[
-                    Text(
-                      '${i18n[widget.lang]!['time_left']} $minutes:$seconds',
-                      style: const TextStyle(fontSize: 12, color: Colors.orangeAccent),
-                    ),
+                  if (_timeOffset == 0 && widget.isVisible) ...[
+                    _CountdownText(lang: widget.lang),
                   ],
-                  if (_missionService.hasClockDrift)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.access_time, color: Colors.amber, size: 14),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                t('clock_drift', widget.lang),
-                                style: const TextStyle(color: Colors.amber, fontSize: 10),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -380,6 +347,56 @@ class _LiveMissionsTabState extends State<LiveMissionsTab> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ── 독립 카운트다운 위젯 (매초 Text 1개만 재빌드) ────────────────────────────
+
+class _CountdownText extends StatefulWidget {
+  final String lang;
+  const _CountdownText({required this.lang});
+
+  @override
+  State<_CountdownText> createState() => _CountdownTextState();
+}
+
+class _CountdownTextState extends State<_CountdownText> {
+  late Timer _timer;
+  int _secondsLeft = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _calculate();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _calculate());
+  }
+
+  void _calculate() {
+    final now = DateTime.now();
+    final next30 = (now.minute < 30) ? 30 : 60;
+    final target = DateTime(now.year, now.month, now.day, now.hour, next30, 0);
+    final diff = target.difference(now).inSeconds;
+    if (mounted) {
+      setState(() {
+        _secondsLeft = diff.clamp(0, AppConstants.missionRotationMinutes * 60);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final minutes = (_secondsLeft ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_secondsLeft % 60).toString().padLeft(2, '0');
+    return Text(
+      '${i18n[widget.lang]!['time_left']} $minutes:$seconds',
+      style: const TextStyle(fontSize: 12, color: Colors.orangeAccent),
     );
   }
 }

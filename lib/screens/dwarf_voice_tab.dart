@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../data/shout_data.dart';
@@ -26,8 +27,8 @@ class DwarfVoiceTab extends StatefulWidget {
 
 class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
   final PageController _pageController = PageController();
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  final AudioPlayer _mcAudioPlayer = AudioPlayer();
+  final AudioPlayer? _audioPlayer = kIsWeb ? null : AudioPlayer();
+  final AudioPlayer? _mcAudioPlayer = kIsWeb ? null : AudioPlayer();
   final Random _random = Random();
   int _currentPage = 0;
 
@@ -43,6 +44,7 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
   // MC 오버레이 상태
   String? _mcSubtitle;
   Timer? _mcDismissTimer;
+  Timer? _mcTriggerTimer;
 
   // 항목별 탭 카운터
   final Map<String, int> _tapCounts = {};
@@ -50,10 +52,11 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
   @override
   void dispose() {
     _pageController.dispose();
-    _audioPlayer.dispose();
-    _mcAudioPlayer.dispose();
+    _audioPlayer?.dispose();
+    _mcAudioPlayer?.dispose();
     _bubbleDismissTimer?.cancel();
     _mcDismissTimer?.cancel();
+    _mcTriggerTimer?.cancel();
     super.dispose();
   }
 
@@ -72,8 +75,8 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
 
     // 1. 기존 사운드 재생
     try {
-      await _audioPlayer.stop();
-      await _audioPlayer.play(
+      await _audioPlayer?.stop();
+      await _audioPlayer?.play(
         AssetSource(item.sounds[index].replaceFirst('assets/', '')),
       );
     } catch (e) {
@@ -114,7 +117,8 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
       final mcIndex = _random.nextInt(item.mcSubtitles.length);
 
       // 800ms 딜레이 후 MC 오버레이 표시
-      Future.delayed(const Duration(milliseconds: 800), () {
+      _mcTriggerTimer?.cancel();
+      _mcTriggerTimer = Timer(const Duration(milliseconds: 800), () {
         if (!mounted) return;
 
         // MC 사운드 재생 (mcSounds가 비어있지 않을 때만)
@@ -122,8 +126,8 @@ class _DwarfVoiceTabState extends State<DwarfVoiceTab> {
           final mcSoundIndex = mcIndex < item.mcSounds.length
               ? mcIndex
               : _random.nextInt(item.mcSounds.length);
-          _mcAudioPlayer.stop();
-          _mcAudioPlayer.play(
+          _mcAudioPlayer?.stop();
+          _mcAudioPlayer?.play(
             AssetSource(item.mcSounds[mcSoundIndex].replaceFirst('assets/', '')),
           );
         }

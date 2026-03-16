@@ -6,10 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/mission_model.dart';
 import '../utils/constants.dart';
-
-// 조건부 임포트: 웹에서는 dart:io / path_provider 사용 불가
-import '../platform/file_cache_stub.dart'
-    if (dart.library.io) '../platform/file_cache_native.dart';
+import 'base_data_service.dart';
 
 // 조건부 임포트: 홈 위젯 (웹에서는 no-op)
 import '../platform/home_widget_stub.dart'
@@ -20,7 +17,7 @@ enum DataStatus { online, offline, outdated, refreshing }
 /// 디바이스 시계가 서버 시간과 5분 이상 차이 날 때 경고
 const int _clockDriftThresholdMinutes = 5;
 
-class MissionService {
+class MissionService with ListenerMixin, NetworkFetchMixin, CacheManagementMixin {
   static final MissionService _instance = MissionService._internal();
   factory MissionService() => _instance;
   MissionService._internal();
@@ -38,9 +35,6 @@ class MissionService {
 
   /// 원시 JSON 데이터 (지연 파싱용, 초기 로드 후 나머지 파싱 완료 시 null)
   Map<String, dynamic>? _rawJsonData;
-
-  // ── Listeners ───────────────────────────────────────────────────────────
-  final List<VoidCallback> _listeners = [];
 
   // ── Public Getters ──────────────────────────────────────────────────────
   Map<String, List<Mission>> get allMissions => _allMissions;
@@ -62,16 +56,6 @@ class MissionService {
       _clockDriftMinutes != null &&
       _clockDriftMinutes!.abs() >= _clockDriftThresholdMinutes;
 
-  // ── Listener Management ─────────────────────────────────────────────────
-  void addListener(VoidCallback listener) => _listeners.add(listener);
-  void removeListener(VoidCallback listener) => _listeners.remove(listener);
-
-  void _notifyListeners() {
-    for (final cb in _listeners) {
-      cb();
-    }
-  }
-
   // ── Initialization ──────────────────────────────────────────────────────
   Future<void> initialize() async {
     if (_isInitialized) {
@@ -82,12 +66,12 @@ class MissionService {
 
     try {
       // Tier 1: 로컬 캐시 (빠른 시작)
-      final cacheJson = await loadCacheString(AppConstants.cachedMissionFile);
+      final cacheJson = await loadCache(AppConstants.cachedMissionFile);
       if (cacheJson != null) {
         _parseJson(cacheJson);
         _status = DataStatus.offline;
         _isInitialized = true;
-        _notifyListeners();
+        notifyListeners();
       }
 
       // Tier 2: 캐시 없으면 번들 에셋
@@ -97,7 +81,7 @@ class MissionService {
           _parseJson(assetJson);
           _status = DataStatus.offline;
           _isInitialized = true;
-          _notifyListeners();
+          notifyListeners();
         } catch (e) {
           debugPrint("Bundled asset load failed: $e");
         }
@@ -119,21 +103,21 @@ class MissionService {
 
     final previousStatus = _status;
     _status = DataStatus.refreshing;
-    if (_isInitialized) _notifyListeners();
+    if (_isInitialized) notifyListeners();
 
     try {
-      final response = await _fetchWithRetry(AppConstants.missionDataUrl);
+      final response = await fetchWithRetry(AppConstants.missionDataUrl);
       _parseJson(response.body);
       _checkClockDrift(response);
 
       // 캐시 저장
-      await saveCacheString(AppConstants.cachedMissionFile, response.body);
+      await saveCache(AppConstants.cachedMissionFile, response.body);
       await _saveCacheTimestamp();
 
       _status = DataStatus.online;
       _lastError = null;
       _isInitialized = true;
-      _notifyListeners();
+      notifyListeners();
 
       // 홈 위젯 데이터 갱신
       unawaited(HomeWidgetService.updateWidget());
@@ -144,7 +128,7 @@ class MissionService {
           ? DataStatus.offline
           : previousStatus;
       _checkDataValidity();
-      _notifyListeners();
+      notifyListeners();
     }
   }
 
@@ -292,7 +276,7 @@ class MissionService {
     _availableSeasons = seasons.toList()..sort();
     _rawJsonData = null; // 원시 데이터 해제
     _checkDataValidity();
-    _notifyListeners();
+    notifyListeners();
   }
 
   // ── Data Validity Check ─────────────────────────────────────────────────
@@ -303,24 +287,6 @@ class MissionService {
         _status = DataStatus.outdated;
       }
     }
-  }
-
-  // ── Network Fetch with Retry ────────────────────────────────────────────
-  Future<http.Response> _fetchWithRetry(String url) async {
-    for (int attempt = 0; attempt < AppConstants.maxRetryAttempts; attempt++) {
-      try {
-        final response = await http.get(Uri.parse(url)).timeout(
-          const Duration(seconds: AppConstants.networkTimeoutSeconds),
-        );
-        if (response.statusCode == 200) return response;
-      } catch (_) {
-        // retry
-      }
-      if (attempt < AppConstants.maxRetryAttempts - 1) {
-        await Future.delayed(Duration(seconds: 1 << attempt));
-      }
-    }
-    throw Exception('Failed after ${AppConstants.maxRetryAttempts} attempts');
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
@@ -359,12 +325,12 @@ class MissionService {
   void debugSetStatus(DataStatus newStatus) {
     if (kDebugMode) {
       _status = newStatus;
-      _notifyListeners();
+      notifyListeners();
     }
   }
 
   void dispose() {
     _refreshTimer?.cancel();
-    _listeners.clear();
+    clearListeners();
   }
 }
