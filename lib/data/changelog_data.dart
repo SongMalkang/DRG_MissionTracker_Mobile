@@ -3,6 +3,23 @@
 // key: pubspec.yaml의 version (예: '1.1.0')
 
 const Map<String, Map<String, String>> changelogData = {
+  '2.0.1': {
+    'KR': '• 누락된 오버클럭을 추가하고 등급/설명을 수정하였습니다.\n'
+        '• 오버클럭 아이콘에 등급별 프레임을 추가했습니다 (Clean/Balanced/Unstable).\n'
+        '• 웹 알림 타이밍을 정각/반 기준으로 정렬하였습니다.\n'
+        '• Deep Dive 탭 및 서비스를 컴포넌트로 분리하여 최적화하였습니다.\n'
+        '• 업데이트 다이얼로그에 GitHub Releases 카드를 추가했습니다.',
+    'EN': '• Added missing overclocks and fixed tier/description errors.\n'
+        '• Added tier-based frames to overclock icons (Clean/Balanced/Unstable).\n'
+        '• Aligned web notification timing to clock boundaries (00/30 min).\n'
+        '• Refactored Deep Dive tab & services into reusable components.\n'
+        '• Redesigned forced update dialog with GitHub Releases card.',
+    'CN': '• 新增缺失的超频并修正等级/描述错误。\n'
+        '• 为超频图标添加等级边框（Clean/Balanced/Unstable）。\n'
+        '• 将网页通知时间对齐到整点/半点。\n'
+        '• 将Deep Dive标签页和服务代码重构为可复用组件。\n'
+        '• 重新设计强制更新弹窗，新增GitHub Releases卡片。',
+  },
   '2.0.0': {
     'KR': '• 오버클럭 수집 트래커 추가: 4클래스 × 24무기 × 159개 오버클럭 체크리스트.\n'
         '• 캐릭터별 수집 진행률 및 전체 진행률 표시.\n'

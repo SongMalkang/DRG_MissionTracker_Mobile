@@ -1,5 +1,47 @@
 # Changelog
 
+## 2.0.1 — 2026-03-16
+
+### 오버클럭 데이터 수정 & UI 개선
+
+- **오버클럭 데이터 수정** — 누락된 오버클럭 추가 (159→160개), 등급(tier) 오류 수정, 효과 설명 갱신 (Wiki 기반 재검증)
+- **오버클럭 아이콘 프레임** — Clean/Balanced/Unstable 등급별 프레임 이미지를 오버클럭 아이콘에 오버레이 표시
+- **웹 알림 타이밍 정렬** — 30분 주기 체크를 정각(00분)/반(30분)에 맞춰 동기화, 알림 정확도 향상
+- **업데이트 다이얼로그 개선** — 강제 업데이트 시 GitHub Releases 카드 UI로 변경 (버전 정보 + 다운로드 링크)
+- **대규모 컴포넌트 분리** — Deep Dive 탭을 3개 위젯으로 분해, 서비스 공통 로직을 mixin으로 추출
+
+### 코드 변경
+
+- **`overclock_data.dart`** — Scorching Tide, Crystal Nucleation, Combustive Goo Mix, Pump Action 등 오버클럭 추가/수정, 아이콘 링크 수정
+- **`asset_helper.dart`** — `getOverclockFrame()` 메서드 추가 (등급별 프레임 경로 반환)
+- **`overclock_detail_modal.dart`** — 오버클럭 아이콘에 등급 프레임 오버레이 적용
+- **`overclock_character_screen.dart`** — 프레임 UI 반영
+- **`web_notification_service.dart`** — 타이머를 정각/반 기준 정렬 로직으로 교체
+- **`update_dialog.dart`** — 강제 업데이트 UI를 GitHub Releases 카드로 재설계
+- **`base_data_service.dart`** (신규) — `ListenerMixin`, `NetworkFetchMixin`, `CacheManagementMixin` 공통 mixin
+- **`deep_dive_card.dart`** (신규) — Deep Dive 카드 위젯 분리
+- **`deep_dive_detail_dialog.dart`** (신규) — Deep Dive 상세 다이얼로그 분리
+- **`deep_dive_stage_row.dart`** (신규) — Deep Dive 스테이지 행 위젯 분리
+- **`deep_dives_tab.dart`** — 938줄 → 경량화 (위젯을 별도 파일로 분리)
+- **`deep_dive_service.dart` / `mission_service.dart`** — `base_data_service.dart` mixin 적용
+- **`settings_screen.dart`** — 설정 항목 추가
+
+---
+
+## 2.0.0 — 2026-03-15
+
+### 오버클럭 수집 트래커
+
+- **오버클럭 트래커** — 4클래스 × 24무기 × 159개 오버클럭 체크리스트
+- **수집 진행률** — 캐릭터별 및 전체 진행률 표시
+- **무기별 아코디언 UI** — Clean/Balanced/Unstable 등급 표시
+- **오버클럭 상세 모달** — 효과 설명 및 수집 토글
+- **로컬 저장** — 수집 상태 앱 재시작 후에도 유지
+- **로드아웃 동기화 예고** — 인게임 모드 연동 준비중
+- **Wiki 기반 에셋** — 무기/오버클럭 아이콘 (WebP)
+
+---
+
 ## 1.6.2 — 2026-03-14
 
 ### Deep Dive 상세 모달 & UI 개선
