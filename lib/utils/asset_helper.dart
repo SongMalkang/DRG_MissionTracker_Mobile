@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/overclock_model.dart';
 
 class AssetHelper {
   /// Image.asset의 errorBuilder에서 사용할 공통 fallback + debugPrint 경고
@@ -56,6 +57,17 @@ class AssetHelper {
 
   static String getOverclockImage(String iconName) {
     return 'assets/images/overclocks/$iconName.webp';
+  }
+
+  static String getOverclockFrame(OverclockTier tier) {
+    switch (tier) {
+      case OverclockTier.clean:
+        return 'assets/images/overclocks/frames/frame_clean.webp';
+      case OverclockTier.balanced:
+        return 'assets/images/overclocks/frames/frame_balanced.webp';
+      case OverclockTier.unstable:
+        return 'assets/images/overclocks/frames/frame_unstable.webp';
+    }
   }
 
   static String getCharacterImage(String className) {

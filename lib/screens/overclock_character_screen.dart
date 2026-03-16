@@ -295,29 +295,28 @@ class _OverclockRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // 티어 컬러 도트
-            Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color,
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 4,
+            // OC 아이콘 (프레임 포함)
+            SizedBox(
+              width: 36,
+              height: 36,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.asset(
+                    AssetHelper.getOverclockFrame(overclock.tier),
+                    width: 36,
+                    height: 36,
+                    errorBuilder: (ctx, e, st) => const SizedBox.shrink(),
+                  ),
+                  Image.asset(
+                    AssetHelper.getOverclockImage(overclock.icon),
+                    width: 20,
+                    height: 20,
+                    errorBuilder: (ctx, e, st) =>
+                        Icon(Icons.extension, color: color, size: 16),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 10),
-            // OC 아이콘
-            Image.asset(
-              AssetHelper.getOverclockImage(overclock.icon),
-              width: 24,
-              height: 24,
-              errorBuilder: (ctx, e, st) =>
-                  Icon(Icons.extension, color: color, size: 20),
             ),
             const SizedBox(width: 10),
             // OC 이름

@@ -113,13 +113,29 @@ class _OverclockDetailDialog extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        // OC 아이콘
-                        Image.asset(
-                          AssetHelper.getOverclockImage(overclock.icon),
-                          width: 32,
-                          height: 32,
-                          errorBuilder: (ctx, e, st) =>
-                              Icon(Icons.extension, color: color, size: 24),
+                        // OC 아이콘 (프레임 포함)
+                        SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Image.asset(
+                                AssetHelper.getOverclockFrame(overclock.tier),
+                                width: 48,
+                                height: 48,
+                                errorBuilder: (ctx, e, st) =>
+                                    const SizedBox.shrink(),
+                              ),
+                              Image.asset(
+                                AssetHelper.getOverclockImage(overclock.icon),
+                                width: 28,
+                                height: 28,
+                                errorBuilder: (ctx, e, st) =>
+                                    Icon(Icons.extension, color: color, size: 24),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
