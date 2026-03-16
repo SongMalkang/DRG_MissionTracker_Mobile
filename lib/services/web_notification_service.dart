@@ -112,13 +112,34 @@ class WebNotificationService {
 
   void _startPeriodicCheck() {
     _checkTimer?.cancel();
-    // 즉시 한 번 체크 + 이후 30분마다
-    _checkMissions();
-    _checkTimer = Timer.periodic(
-      const Duration(minutes: 30),
-      (_) => _checkMissions(),
+    // 다음 정각(00분) 또는 반(30분)에 맞춰 타이머 시작
+    final now = DateTime.now();
+    final nextMin = now.minute < 30 ? 30 : 60;
+    final delayMinutes = nextMin - now.minute;
+    final initialDelay = Duration(
+      minutes: delayMinutes,
+      seconds: -now.second, // 정확히 00초에 맞춤
     );
-    debugPrint('WebNotificationService: periodic check started');
+
+    if (initialDelay.isNegative || initialDelay == Duration.zero) {
+      // 이미 정각/반이면 즉시 체크 후 30분 주기
+      _checkMissions();
+      _checkTimer = Timer.periodic(
+        const Duration(minutes: 30),
+        (_) => _checkMissions(),
+      );
+    } else {
+      // 다음 정각/반까지 대기 후 체크, 이후 30분 주기
+      _checkTimer = Timer(initialDelay, () {
+        _checkMissions();
+        _checkTimer = Timer.periodic(
+          const Duration(minutes: 30),
+          (_) => _checkMissions(),
+        );
+      });
+    }
+    debugPrint('WebNotificationService: periodic check started '
+        '(next check in ${initialDelay.inSeconds}s)');
   }
 
   void _stopPeriodicCheck() {
