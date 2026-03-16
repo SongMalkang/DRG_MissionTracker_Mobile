@@ -70,7 +70,9 @@
       "mcp__filesystem__list_directory",
       "Bash(python3 -c \"import json; data = json.load\\(open\\(''data/deep_dive.json''\\)\\); print\\(''Deep Dives keys:'', list\\(data.get\\(''Deep Dives'', {}\\).keys\\(\\)\\)\\)\")",
       "Bash(python3:*)",
-      "Bash(gh run list --workflow=update_data.yml --limit 10)"
+      "Bash(gh run list --workflow=update_data.yml --limit 10)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developers.cloudflare.com)"
     ]
   }
 }
