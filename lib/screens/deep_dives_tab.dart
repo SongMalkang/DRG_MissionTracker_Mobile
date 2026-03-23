@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../utils/strings.dart';
+import '../utils/constants.dart';
 import '../services/deep_dive_service.dart';
 import '../widgets/deep_dive_card.dart';
 
@@ -16,33 +18,45 @@ class DeepDivesTab extends StatefulWidget {
 class _DeepDivesTabState extends State<DeepDivesTab> {
   final DeepDiveService _ddService = DeepDiveService();
 
+  // ── Feature 4: 새 데이터 도착 감지 ──
+  bool _wasStale = false;
+  bool _showSuccessBanner = false;
+  Timer? _successTimer;
+
   @override
   void initState() {
     super.initState();
     _ddService.addListener(_onDataChanged);
     _ddService.loadDeepDives();
+    _wasStale = _ddService.isDataStale;
   }
 
   void _onDataChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final currentlyStale = _ddService.isDataStale;
+    // stale → fresh 전환 감지 (데이터가 존재할 때만)
+    if (_wasStale && !currentlyStale && _ddService.dives != null) {
+      _showSuccessBanner = true;
+      _successTimer?.cancel();
+      _successTimer = Timer(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _showSuccessBanner = false);
+      });
+    }
+    _wasStale = currentlyStale;
+    setState(() {});
   }
 
   @override
   void dispose() {
     _ddService.removeListener(_onDataChanged);
+    _successTimer?.cancel();
     super.dispose();
-  }
-
-  String _formatNextUpdate() {
-    final next = _ddService.nextThursday().toLocal();
-    return '${next.month}/${next.day}  ${next.hour.toString().padLeft(2, '0')}:00';
   }
 
   /// 현재 표시 중인 데이터의 주차 정보
   String? _dataWeekLabel() {
     final key = _ddService.dataThursdayKey;
     if (key == null) return null;
-    // key format: "YYYY-MM-DD"
     final parts = key.split('-');
     if (parts.length < 3) return null;
     return '${parts[1]}/${parts[2]}';
@@ -100,25 +114,49 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
     return RefreshIndicator(
       color: Colors.blueAccent,
       backgroundColor: const Color(0xFF1E1E1E),
-      onRefresh: () => _ddService.loadDeepDives(forceRefresh: true),
+      // Feature 6: 폴링 중 수동 새로고침 시 안내
+      onRefresh: () {
+        if (_ddService.isThursdayPolling) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                i18n[widget.lang]!['dd_polling_active_snack'] ??
+                    'Auto-checking is active. Will refresh automatically.',
+              ),
+              backgroundColor: Colors.orange.shade800,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          return _ddService.loadDeepDives(forceRefresh: true);
+        }
+        return _ddService.loadDeepDives(forceRefresh: true);
+      },
       child: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 32),
         children: [
           // 업데이트 안내 배너
           _UpdateBanner(
-            nextUpdate: _formatNextUpdate(),
+            nextThursday: _ddService.nextThursday(),
             lang: widget.lang,
             isStale: _ddService.isDataStale,
             isRefreshing: _ddService.isRefreshing,
+            isPolling: _ddService.isThursdayPolling,
+            pollAttempt: _ddService.pollAttempt,
+            nextPollTime: _ddService.nextPollTime,
             onRefresh: () => _ddService.loadDeepDives(forceRefresh: true),
             dataWeekLabel: _dataWeekLabel(),
+            showSuccess: _showSuccessBanner,
           ),
           const SizedBox(height: 12),
 
           // Deep Dive 카드들
           ...(_ddService.dives ?? []).map((dive) => Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: DeepDiveCard(dive: dive, lang: widget.lang),
+                child: DeepDiveCard(
+                  dive: dive,
+                  lang: widget.lang,
+                  isStale: _ddService.isDataStale,
+                ),
               )),
         ],
       ),
@@ -126,41 +164,197 @@ class _DeepDivesTabState extends State<DeepDivesTab> {
   }
 }
 
-// ── 업데이트 배너 (3단계 상태 + 주차 정보) ───────────────────────────────────────
+// ── 배너 상태 ───────────────────────────────────────────────────────────────────
 
-class _UpdateBanner extends StatelessWidget {
-  final String nextUpdate;
+enum _BannerState { success, polling, stale, preReset, normal }
+
+// ── 업데이트 배너 (5단계 상태 머신 + 실시간 카운트다운) ────────────────────────────
+
+class _UpdateBanner extends StatefulWidget {
+  final DateTime nextThursday;
   final String lang;
   final bool isStale;
   final bool isRefreshing;
+  final bool isPolling;
+  final int pollAttempt;
+  final DateTime? nextPollTime;
   final VoidCallback onRefresh;
   final String? dataWeekLabel;
+  final bool showSuccess;
 
   const _UpdateBanner({
-    required this.nextUpdate,
+    required this.nextThursday,
     required this.lang,
     required this.isStale,
     required this.isRefreshing,
+    required this.isPolling,
+    required this.pollAttempt,
+    this.nextPollTime,
     required this.onRefresh,
     this.dataWeekLabel,
+    this.showSuccess = false,
   });
 
   @override
+  State<_UpdateBanner> createState() => _UpdateBannerState();
+}
+
+class _UpdateBannerState extends State<_UpdateBanner> {
+  Timer? _ticker;
+  Duration _timeUntilReset = Duration.zero;
+  int _secondsUntilPoll = 0;
+  bool _lastWasPolling = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _recalc();
+    _startTicker();
+  }
+
+  @override
+  void didUpdateWidget(covariant _UpdateBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPolling != _lastWasPolling) {
+      _startTicker();
+    }
+    _recalc();
+  }
+
+  void _startTicker() {
+    _ticker?.cancel();
+    _lastWasPolling = widget.isPolling;
+    final interval = widget.isPolling
+        ? const Duration(seconds: 1)
+        : const Duration(seconds: 60);
+    _ticker = Timer.periodic(interval, (_) => _recalc());
+  }
+
+  void _recalc() {
+    if (!mounted) return;
+    setState(() {
+      _timeUntilReset = widget.nextThursday.difference(DateTime.now());
+      if (_timeUntilReset.isNegative) _timeUntilReset = Duration.zero;
+      if (widget.nextPollTime != null) {
+        _secondsUntilPoll = widget.nextPollTime!
+            .difference(DateTime.now())
+            .inSeconds
+            .clamp(0, 9999);
+      } else {
+        _secondsUntilPoll = 0;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  _BannerState _currentState() {
+    if (widget.showSuccess) return _BannerState.success;
+    if (widget.isPolling || (widget.isStale && widget.isRefreshing)) {
+      return _BannerState.polling;
+    }
+    if (widget.isStale) return _BannerState.stale;
+    // 리셋 30분 전
+    if (_timeUntilReset.inMinutes <= 30 && _timeUntilReset > Duration.zero) {
+      return _BannerState.preReset;
+    }
+    return _BannerState.normal;
+  }
+
+  String _formatCountdown(Duration d) {
+    if (d.inDays > 0) {
+      return '${d.inDays}d ${d.inHours % 24}h ${d.inMinutes % 60}m';
+    }
+    if (d.inHours > 0) {
+      return '${d.inHours}h ${d.inMinutes % 60}m';
+    }
+    return '${d.inMinutes}m';
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = _currentState();
     final Color bannerColor;
     final IconData bannerIcon;
-    final String bannerText;
+    final bool showSpinner;
+    final String mainText;
+    final List<String> subLines = [];
 
-    if (isStale || isRefreshing) {
-      // 갱신 대기 중: 리셋 시간 경과 + 새 데이터 미도착 or 로딩 중
-      bannerColor = Colors.orange;
-      bannerIcon = Icons.hourglass_top;
-      bannerText = i18n[lang]!['dd_refreshing'] ?? 'Checking for new Deep Dive data...';
-    } else {
-      // 정상
-      bannerColor = Colors.blueAccent;
-      bannerIcon = Icons.update;
-      bannerText = '${i18n[lang]!['dd_next_update'] ?? 'Next Update:'}  $nextUpdate';
+    switch (state) {
+      case _BannerState.success:
+        bannerColor = Colors.green;
+        bannerIcon = Icons.check_circle;
+        showSpinner = false;
+        mainText =
+            i18n[widget.lang]!['dd_fresh_data'] ?? 'New Deep Dive data received!';
+
+      case _BannerState.polling:
+        bannerColor = Colors.orange;
+        bannerIcon = Icons.hourglass_top;
+        showSpinner = widget.isRefreshing;
+        mainText =
+            i18n[widget.lang]!['dd_poll_title'] ?? 'Deep Dive reset! Waiting for new data...';
+        // 다음 체크 카운트다운
+        final pollMin = _secondsUntilPoll ~/ 60;
+        final pollSec = (_secondsUntilPoll % 60).toString().padLeft(2, '0');
+        final nextCheckLabel =
+            i18n[widget.lang]!['dd_poll_next_check'] ?? 'Auto-checking... next check';
+        subLines.add(
+          '$nextCheckLabel $pollMin:$pollSec'
+          '  (${widget.pollAttempt}/${AppConstants.ddPollMaxAttempts})',
+        );
+        if (widget.dataWeekLabel != null) {
+          final showingOld =
+              i18n[widget.lang]!['dd_poll_showing_old'] ?? "Showing last week's data";
+          subLines.add('$showingOld (${widget.dataWeekLabel})');
+        }
+
+      case _BannerState.stale:
+        bannerColor = Colors.orange;
+        bannerIcon = Icons.hourglass_top;
+        showSpinner = widget.isRefreshing;
+        mainText =
+            i18n[widget.lang]!['dd_refreshing'] ?? 'Checking for new Deep Dive data...';
+        if (widget.dataWeekLabel != null) {
+          subLines.add(
+            '${i18n[widget.lang]!['dd_data_week'] ?? 'Data from week of'} ${widget.dataWeekLabel}',
+          );
+        }
+
+      case _BannerState.preReset:
+        bannerColor = Colors.amber;
+        bannerIcon = Icons.timer;
+        showSpinner = false;
+        final imminent =
+            i18n[widget.lang]!['dd_reset_imminent'] ?? 'Deep Dive reset imminent!';
+        final minLeft =
+            i18n[widget.lang]!['dd_minutes_left'] ?? 'min left';
+        mainText = '$imminent ${_timeUntilReset.inMinutes}$minLeft';
+
+      case _BannerState.normal:
+        bannerColor = Colors.blueAccent;
+        bannerIcon = Icons.update;
+        showSpinner = false;
+        final next = widget.nextThursday.toLocal();
+        final dateStr =
+            '${next.month}/${next.day}  ${next.hour.toString().padLeft(2, '0')}:00';
+        mainText =
+            '${i18n[widget.lang]!['dd_next_update'] ?? 'Next Update:'}  $dateStr';
+        // 카운트다운 서브라인
+        if (_timeUntilReset > Duration.zero) {
+          final prefix =
+              i18n[widget.lang]!['dd_countdown_prefix'] ?? 'Next reset in';
+          subLines.add('$prefix ${_formatCountdown(_timeUntilReset)}');
+        }
+        if (widget.dataWeekLabel != null) {
+          subLines.add(
+            '${i18n[widget.lang]!['dd_data_week'] ?? 'Data from week of'} ${widget.dataWeekLabel}',
+          );
+        }
     }
 
     return Container(
@@ -176,7 +370,7 @@ class _UpdateBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (isRefreshing)
+              if (showSpinner)
                 SizedBox(
                   width: 18,
                   height: 18,
@@ -190,7 +384,7 @@ class _UpdateBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  bannerText,
+                  mainText,
                   style: TextStyle(
                     color: bannerColor.withValues(alpha: 0.8),
                     fontSize: 12,
@@ -198,16 +392,16 @@ class _UpdateBanner extends StatelessWidget {
                 ),
               ),
               GestureDetector(
-                onTap: onRefresh,
+                onTap: widget.onRefresh,
                 child: Icon(Icons.refresh, color: bannerColor, size: 18),
               ),
             ],
           ),
-          // 주차 정보 표시 (데이터가 어느 주의 것인지)
-          if (dataWeekLabel != null) ...[
+          // 서브라인들
+          for (final line in subLines) ...[
             const SizedBox(height: 4),
             Text(
-              '${i18n[lang]!['dd_data_week'] ?? 'Data from week of'} $dataWeekLabel',
+              line,
               style: TextStyle(
                 color: bannerColor.withValues(alpha: 0.5),
                 fontSize: 10,

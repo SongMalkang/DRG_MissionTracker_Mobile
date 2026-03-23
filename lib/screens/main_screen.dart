@@ -12,6 +12,7 @@ import '../utils/constants.dart';
 import '../utils/strings.dart';
 import '../services/settings_service.dart';
 import '../services/mission_service.dart';
+import '../services/deep_dive_service.dart';
 import '../services/update_service.dart';
 import '../widgets/changelog_dialog.dart';
 import '../widgets/update_dialog.dart';
@@ -55,8 +56,10 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       _missionService.pausePeriodicRefresh();
+      DeepDiveService().pausePolling();
     } else if (state == AppLifecycleState.resumed) {
       _missionService.resumePeriodicRefresh();
+      DeepDiveService().resumePolling();
     }
   }
 

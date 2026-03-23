@@ -3,9 +3,7 @@ name: Update Mission Data
 on:
   schedule:
     - cron: '5 0 * * *'      # 매일 00:05 UTC: 미션(오늘+내일) + Deep Dive
-    - cron: '1 11 * * 4'    # 목요일 11:01 UTC: DD 리셋(11:00:30 UTC) 직후 수집
-    - cron: '2 11 * * 4'     # 목요일 11:02 UTC: DD 수집 보험 (cron 지연 대비)
-    - cron: '5 11 * * 4'     # 목요일 11:5 UTC: DD 수집 최종 보험
+    - cron: '0 11 * * 4'     # 목요일 11:00 UTC: DD 리셋 직후 수집 (cron 지연 감안)
   workflow_dispatch:
 
 jobs:
@@ -28,6 +26,19 @@ jobs:
 
       - name: Run Fetch Script
         run: python scripts/fetch_daily_missions.py
+
+      - name: Poll for Deep Dive (Thursday only)
+        if: github.event_name == 'schedule'
+        run: |
+          DAY=$(date -u +%u)
+          HOUR=$(date -u +%H)
+          if [ "$DAY" = "4" ] && [ "$HOUR" -ge "10" ] && [ "$HOUR" -le "12" ]; then
+            echo "Thursday DD reset window detected, starting poll..."
+            python scripts/fetch_daily_missions.py --poll
+          else
+            echo "Not in Thursday DD window, skipping poll"
+          fi
+        timeout-minutes: 30
 
       - name: Commit and Push changes
         run: |

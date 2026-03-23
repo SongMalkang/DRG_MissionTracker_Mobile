@@ -9,8 +9,9 @@ import 'deep_dive_stage_row.dart';
 class DeepDiveCard extends StatelessWidget {
   final DeepDive dive;
   final String lang;
+  final bool isStale;
 
-  const DeepDiveCard({super.key, required this.dive, required this.lang});
+  const DeepDiveCard({super.key, required this.dive, required this.lang, this.isStale = false});
 
   @override
   Widget build(BuildContext context) {
@@ -21,51 +22,55 @@ class DeepDiveCard extends StatelessWidget {
         ? (i18n[lang]!['elite_dd'] ?? 'ELITE DEEP DIVE')
         : (i18n[lang]!['standard_dd'] ?? 'STANDARD DEEP DIVE');
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF161616),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accent.withValues(alpha: 0.5), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: 0.08),
-            blurRadius: 16,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(13),
-        child: Column(
-          children: [
-            // ── 헤더: 바이옴 배경 ──────────────────────────────────────────
-            DDHeader(
-              biome: dive.biome,
-              codeName: dive.codeName,
-              typeLabel: typeLabel,
-              accent: accent,
-              lang: lang,
-              stages: dive.stages,
+    return Opacity(
+      opacity: isStale ? 0.7 : 1.0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF161616),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: accent.withValues(alpha: 0.5), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withValues(alpha: 0.08),
+              blurRadius: 16,
+              spreadRadius: 2,
             ),
-
-            // ── 스테이지 목록 ──────────────────────────────────────────────
-            ...dive.stages.asMap().entries.map((entry) {
-              final i = entry.key;
-              final stage = entry.value;
-              return Column(
-                children: [
-                  if (i > 0)
-                    Divider(
-                      height: 1,
-                      color: Colors.white.withValues(alpha: 0.06),
-                      indent: 12,
-                      endIndent: 12,
-                    ),
-                  DeepDiveStageRow(stage: stage, accent: accent, lang: lang, biome: dive.biome),
-                ],
-              );
-            }),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(13),
+          child: Column(
+            children: [
+              // ── 헤더: 바이옴 배경 ──────────────────────────────────────────
+              DDHeader(
+                biome: dive.biome,
+                codeName: dive.codeName,
+                typeLabel: typeLabel,
+                accent: accent,
+                lang: lang,
+                stages: dive.stages,
+                isStale: isStale,
+              ),
+
+              // ── 스테이지 목록 ──────────────────────────────────────────────
+              ...dive.stages.asMap().entries.map((entry) {
+                final i = entry.key;
+                final stage = entry.value;
+                return Column(
+                  children: [
+                    if (i > 0)
+                      Divider(
+                        height: 1,
+                        color: Colors.white.withValues(alpha: 0.06),
+                        indent: 12,
+                        endIndent: 12,
+                      ),
+                    DeepDiveStageRow(stage: stage, accent: accent, lang: lang, biome: dive.biome),
+                  ],
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -81,6 +86,7 @@ class DDHeader extends StatelessWidget {
   final Color accent;
   final String lang;
   final List<DeepDiveStage> stages;
+  final bool isStale;
 
   const DDHeader({
     super.key,
@@ -90,6 +96,7 @@ class DDHeader extends StatelessWidget {
     required this.accent,
     required this.lang,
     required this.stages,
+    this.isStale = false,
   });
 
   @override
@@ -119,6 +126,28 @@ class DDHeader extends StatelessWidget {
               ),
             ),
           ),
+          // PREVIOUS WEEK 칩 (stale 데이터일 때)
+          if (isStale)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  i18n[lang]!['dd_previous_week'] ?? 'PREVIOUS WEEK',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
           // 텍스트 + 스테이지 요약
           Positioned(
             left: 14,

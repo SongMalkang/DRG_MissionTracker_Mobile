@@ -37,6 +37,12 @@ class AppConstants {
   static const int backgroundRefreshIntervalMinutes = 30;
   static const int cacheMaxAgeHours = 6;
 
+  // ── Deep Dive Thursday Polling ────────────────────────────────────────
+  static const int ddPollInitialDelaySeconds = 30;
+  static const int ddPollMaxIntervalSeconds = 300;
+  static const int ddPollMaxAttempts = 20;
+  static const int ddPollWindowMinutes = 90;
+
   // ── UI ──────────────────────────────────────────────────────────────────
   static const double elapsedMissionOpacity = 0.38;
   static const int splashMinDurationMs = 2500;

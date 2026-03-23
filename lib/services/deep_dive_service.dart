@@ -76,12 +76,26 @@ class DeepDiveService with ListenerMixin, NetworkFetchMixin, CacheManagementMixi
   /// 현재 로드된 데이터가 어느 주의 것인지 (JSON의 "thursday" 필드에서 추출)
   String? _dataThursdayKey;
 
+  // ── Thursday Polling State ────────────────────────────────────────────
+  Timer? _thursdayPollTimer;
+  int _pollAttempt = 0;
+  bool _isThursdayPolling = false;
+  DateTime? _nextPollTime;
+
   // ── Public Getters ────────────────────────────────────────────────────
   List<DeepDive>? get dives => _dives;
   DateTime? get thursdayUtc => _thursdayUtc;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get dataThursdayKey => _dataThursdayKey;
+
+  /// 목요일 자동 폴링이 진행 중인 경우 true
+  bool get isThursdayPolling => _isThursdayPolling;
+
+  /// 현재 폴링 시도 횟수
+  int get pollAttempt => _pollAttempt;
+
+  DateTime? get nextPollTime => _nextPollTime;
 
   /// 현재 표시 중인 데이터가 이번 주보다 오래된 경우 true
   /// (다음 주 DD가 조기 게시된 경우에는 stale이 아님)
@@ -146,7 +160,7 @@ class DeepDiveService with ListenerMixin, NetworkFetchMixin, CacheManagementMixi
       _isLoading = true;
       notifyListeners();
       try {
-        final body = await _fetchFromGitHub();
+        final body = await _fetchFromGitHub(bustCache: true);
         _dives = _parseDiveData(body);
         _dataThursdayKey = _extractThursdayKey(body);
         await _saveToCache(body);
@@ -155,6 +169,7 @@ class DeepDiveService with ListenerMixin, NetworkFetchMixin, CacheManagementMixi
       }
       _isLoading = false;
       notifyListeners();
+      _onLoadComplete();
       return;
     }
 
@@ -173,6 +188,7 @@ class DeepDiveService with ListenerMixin, NetworkFetchMixin, CacheManagementMixi
           notifyListeners();
           // 백그라운드에서 GitHub도 확인 (silent refresh)
           unawaited(_silentRefresh());
+          _onLoadComplete();
           return;
         } catch (_) {
           // 캐시 파싱 실패 → 다음 단계로
@@ -180,14 +196,15 @@ class DeepDiveService with ListenerMixin, NetworkFetchMixin, CacheManagementMixi
       }
     }
 
-    // Tier 2: GitHub Raw
+    // Tier 2: GitHub Raw (forceRefresh 시 캐시 버스팅)
     try {
-      final body = await _fetchFromGitHub();
+      final body = await _fetchFromGitHub(bustCache: forceRefresh);
       _dives = _parseDiveData(body);
       _dataThursdayKey = _extractThursdayKey(body);
       _isLoading = false;
       notifyListeners();
       await _saveToCache(body);
+      _onLoadComplete();
     } catch (e) {
       debugPrint("Deep Dive GitHub fetch failed: $e");
 
@@ -216,26 +233,48 @@ class DeepDiveService with ListenerMixin, NetworkFetchMixin, CacheManagementMixi
 
       _isLoading = false;
       notifyListeners();
+      _onLoadComplete();
+    }
+  }
+
+  /// 로드 완료 후 공통 처리: 새 데이터면 폴링 중단, stale이면 폴링 시작
+  void _onLoadComplete() {
+    if (!isDataStale && _isThursdayPolling) {
+      _stopThursdayPolling();
+    } else {
+      _maybeStartThursdayPolling();
     }
   }
 
   // ── Silent Background Refresh ─────────────────────────────────────────
   Future<void> _silentRefresh() async {
     try {
-      final body = await _fetchFromGitHub();
+      final body = await _fetchFromGitHub(bustCache: isDataStale);
       final dives = _parseDiveData(body);
       _dives = dives;
       _dataThursdayKey = _extractThursdayKey(body);
       await _saveToCache(body);
       notifyListeners();
+      // 새 데이터가 도착했으면 폴링 중단
+      if (!isDataStale && _isThursdayPolling) {
+        _stopThursdayPolling();
+      }
     } catch (_) {
       // silent fail - 캐시 데이터 유지
     }
+    // 여전히 stale이면 폴링 시작 시도
+    _maybeStartThursdayPolling();
   }
 
   // ── GitHub Fetch (via NetworkFetchMixin) ─────────────────────────────
-  Future<String> _fetchFromGitHub() =>
-      fetchBodyWithRetry(AppConstants.deepDiveDataUrl);
+  Future<String> _fetchFromGitHub({bool bustCache = false}) {
+    String url = AppConstants.deepDiveDataUrl;
+    if (bustCache) {
+      // 브라우저 HTTP 캐시 및 CDN 캐시를 우회하여 최신 데이터 확보
+      url += '?_cb=${DateTime.now().millisecondsSinceEpoch}';
+    }
+    return fetchBodyWithRetry(url);
+  }
 
   // ── Cache Management ──────────────────────────────────────────────────
   Future<String?> _loadCacheBody(DateTime thu, {bool ignoreExpiry = false}) async {
@@ -317,6 +356,130 @@ class DeepDiveService with ListenerMixin, NetworkFetchMixin, CacheManagementMixi
     }
   }
 
+  // ── Thursday Adaptive Polling ──────────────────────────────────────────
+
+  /// 목요일 리셋 윈도우 내에서 stale 데이터가 감지되면 자동 폴링 시작
+  void _maybeStartThursdayPolling() {
+    if (_isThursdayPolling) return;
+    if (!isDataStale) return;
+    if (!_isInThursdayPollWindow()) return;
+    _startThursdayPolling();
+  }
+
+  /// 현재 시각이 목요일 리셋 윈도우(11:00 ~ 11:00+90분) 안인지 확인
+  bool _isInThursdayPollWindow() {
+    final now = DateTime.now().toUtc();
+    if (now.weekday != DateTime.thursday) return false;
+    final resetTime = DateTime.utc(
+      now.year, now.month, now.day,
+      AppConstants.deepDiveResetHourUtc,
+    );
+    final windowEnd = resetTime.add(
+      const Duration(minutes: AppConstants.ddPollWindowMinutes),
+    );
+    return !now.isBefore(resetTime) && now.isBefore(windowEnd);
+  }
+
+  void _startThursdayPolling() {
+    if (_isThursdayPolling) return;
+    _isThursdayPolling = true;
+    _pollAttempt = 0;
+    debugPrint('Deep Dive: Thursday adaptive polling started');
+    notifyListeners();
+    _thursdayPollTick();
+  }
+
+  Future<void> _thursdayPollTick() async {
+    if (!_isThursdayPolling) return;
+
+    // 수동 새로고침이 진행 중이면 이번 틱은 건너뛰고 다음 틱 예약
+    if (_isLoading) {
+      _scheduleNextPollTick();
+      return;
+    }
+
+    if (_pollAttempt >= AppConstants.ddPollMaxAttempts) {
+      debugPrint('Deep Dive: max poll attempts (${AppConstants.ddPollMaxAttempts}) reached');
+      _stopThursdayPolling();
+      return;
+    }
+
+    if (!_isInThursdayPollWindow()) {
+      debugPrint('Deep Dive: outside Thursday poll window, stopping');
+      _stopThursdayPolling();
+      return;
+    }
+
+    _pollAttempt++;
+    debugPrint('Deep Dive: poll #$_pollAttempt');
+
+    try {
+      final body = await _fetchFromGitHub(bustCache: true);
+      final fetchedKey = _extractThursdayKey(body);
+      final currentKey = _thursdayKey(_latestThursday());
+
+      if (fetchedKey != null && fetchedKey.compareTo(currentKey) >= 0) {
+        // 새로운 데이터 도착
+        _dives = _parseDiveData(body);
+        _dataThursdayKey = fetchedKey;
+        await _saveToCache(body);
+        debugPrint('Deep Dive: fresh data arrived (week: $fetchedKey)');
+        _stopThursdayPolling();
+        return;
+      }
+      debugPrint('Deep Dive: data still stale (got: $fetchedKey, need: $currentKey)');
+    } catch (e) {
+      debugPrint('Deep Dive: poll #$_pollAttempt failed: $e');
+    }
+
+    _scheduleNextPollTick();
+  }
+
+  void _scheduleNextPollTick() {
+    if (!_isThursdayPolling) return;
+    final interval = _calcPollInterval(_pollAttempt);
+    debugPrint('Deep Dive: next poll in ${interval.inSeconds}s');
+    _nextPollTime = DateTime.now().add(interval);
+    _thursdayPollTimer = Timer(interval, _thursdayPollTick);
+    notifyListeners();
+  }
+
+  /// 지수 백오프 간격 계산
+  /// attempt 1-3: 30s, 4-6: 60s, 7-9: 120s, 10+: 300s (최대)
+  Duration _calcPollInterval(int attempt) {
+    final bucket = (attempt - 1) ~/ 3; // 0, 1, 2, 3+
+    final multiplier = 1 << bucket.clamp(0, 4); // 1, 2, 4, 8, 16
+    final seconds = (AppConstants.ddPollInitialDelaySeconds * multiplier)
+        .clamp(AppConstants.ddPollInitialDelaySeconds, AppConstants.ddPollMaxIntervalSeconds);
+    return Duration(seconds: seconds);
+  }
+
+  void _stopThursdayPolling() {
+    _thursdayPollTimer?.cancel();
+    _thursdayPollTimer = null;
+    _isThursdayPolling = false;
+    _pollAttempt = 0;
+    _nextPollTime = null;
+    notifyListeners();
+  }
+
+  /// 앱 백그라운드 전환 시 폴링 타이머 정지 (배터리 절약)
+  void pausePolling() {
+    _thursdayPollTimer?.cancel();
+    _thursdayPollTimer = null;
+  }
+
+  /// 앱 포그라운드 복귀 시 폴링 재개 (데이터가 여전히 stale이면)
+  void resumePolling() {
+    if (_isThursdayPolling && _thursdayPollTimer == null) {
+      // pause로 타이머만 중단된 상태 → 즉시 재개
+      _thursdayPollTick();
+    } else {
+      // 새로 폴링이 필요한지 확인
+      _maybeStartThursdayPolling();
+    }
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────
   DateTime nextThursday() {
     final thu = _thursdayUtc ?? _latestThursday();
@@ -324,6 +487,7 @@ class DeepDiveService with ListenerMixin, NetworkFetchMixin, CacheManagementMixi
   }
 
   void dispose() {
+    _stopThursdayPolling();
     clearListeners();
   }
 }
