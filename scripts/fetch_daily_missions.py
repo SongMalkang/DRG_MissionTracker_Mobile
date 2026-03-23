@@ -118,15 +118,15 @@ def fetch_deep_dive(poll_mode=False, poll_max_seconds=1500):
     out_path = os.path.normpath(out_path)
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
-    # 기존 파일의 CodeName을 읽어서 동일 데이터 재저장 방지
+    # 기존 파일의 CodeName + thursday 값을 읽어서 동일 데이터 재저장 방지
     existing_names = set()
     existing_info = {}
-    existing_has_thursday = False
+    existing_thursday_value = None  # 기존 파일의 thursday 필드 값 (예: "2026-03-19")
     if os.path.exists(out_path):
         try:
             with open(out_path, 'r', encoding='utf-8') as f:
                 existing = json.load(f)
-            existing_has_thursday = "thursday" in existing
+            existing_thursday_value = existing.get("thursday")
             dd = existing.get("Deep Dives", {})
             for key in ["Deep Dive Normal", "Deep Dive Elite"]:
                 cn = dd.get(key, {}).get("CodeName", "")
@@ -151,13 +151,21 @@ def fetch_deep_dive(poll_mode=False, poll_max_seconds=1500):
         date_str = poll_thursday.strftime('%Y-%m-%d')
         url = f"https://doublexp.net/static/json/DD_{date_str}T11-00-00Z.json"
 
+        # ── 이미 최신 데이터인지 확인 (재실행 방어) ──
+        if existing_thursday_value == date_str and existing_names:
+            print(f"[POLL] 이미 이번 주 데이터 보유 (thursday: {existing_thursday_value}, CodeNames: {existing_names})")
+            print(f"[POLL] 폴링 불필요. 종료.")
+            summary.append(f"- **결과**: ✅ 이미 최신 데이터 (thursday={existing_thursday_value})")
+            _write_summary(summary)
+            return
+
         summary.append(f"- **폴링 모드**: 활성화 (최대 {poll_max_seconds}초)")
         summary.append(f"- **대상 URL**: {url}")
 
         print(f"[POLL] Deep Dive 폴링 시작")
         print(f"[POLL] 대상 URL: {url}")
         print(f"[POLL] 최대 대기 시간: {poll_max_seconds}초 ({poll_max_seconds // 60}분)")
-        print(f"[POLL] 기존 데이터 CodeNames: {existing_names or '없음'}")
+        print(f"[POLL] 기존 데이터: thursday={existing_thursday_value}, CodeNames={existing_names or '없음'}")
 
         poll_start = time.monotonic()
         attempt = 0
@@ -204,8 +212,8 @@ def fetch_deep_dive(poll_mode=False, poll_max_seconds=1500):
                                     if cn:
                                         new_names.add(cn)
 
-                                if new_names and new_names == existing_names and existing_has_thursday:
-                                    print(f"[POLL]   GET → 기존 데이터와 동일 (CodeNames: {new_names}), 계속 폴링")
+                                if new_names and new_names == existing_names and existing_thursday_value is not None:
+                                    print(f"[POLL]   GET → 기존 데이터와 동일 (CodeNames: {new_names}, existing thursday: {existing_thursday_value}), 계속 폴링")
                                 else:
                                     # 진짜 새 데이터!
                                     data["thursday"] = date_str
@@ -278,8 +286,8 @@ def fetch_deep_dive(poll_mode=False, poll_max_seconds=1500):
                     if cn:
                         new_names.add(cn)
 
-                if new_names and new_names == existing_names and existing_has_thursday:
-                    print(f"ℹ️ {date_str}: 기존 데이터와 동일, 건너뜀")
+                if new_names and new_names == existing_names and existing_thursday_value is not None:
+                    print(f"ℹ️ {date_str}: 기존 데이터와 동일 (thursday: {existing_thursday_value}), 건너뜀")
                     summary.append(f"- **결과**: ✅ 동일 데이터 (변경 없음)")
                     _write_summary(summary)
                     return
